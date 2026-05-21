@@ -1,0 +1,13 @@
+{
+  "name": "@eobom/config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared configuration for the eobom monorepo",
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/nextjs": "./tsconfig/nextjs.json",
+    "./tsconfig/nestjs": "./tsconfig/nestjs.json",
+    "./eslint/base": "./eslint/base.js",
+    "./prettier": "./prettier/index.js"
+  }
+}

@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────
+// User
+// ──────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 치료사 관계
+  children     Child[]
+  inviteCodes  InviteCode[]
+  schedules    Schedule[]
+
+  // 학부모 관계
+  childLinks    ChildParent[]
+  notifications Notification[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserRole {
+  THERAPIST
+  PARENT
+}
+
+// ──────────────────────────────────────────────
+// Child (아동)
+// ──────────────────────────────────────────────
+
+model Child {
+  id          String    @id @default(cuid())
+  name        String
+  birthDate   DateTime?
+  therapistId String
+  therapist   User      @relation(fields: [therapistId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  parents     ChildParent[]
+  schedules   Schedule[]
+  inviteCodes InviteCode[]
+
+  @@index([therapistId])
+  @@map("children")
+}
+
+// 아동-학부모 다대다 연결 테이블
+model ChildParent {
+  childId  String
+  parentId String
+  child    Child  @relation(fields: [childId], references: [id])
+  parent   User   @relation(fields: [parentId], references: [id])
+  linkedAt DateTime @default(now())
+
+  @@id([childId, parentId])
+  @@map("child_parents")
+}
+
+// ──────────────────────────────────────────────
+// InviteCode (초대 코드)
+// ──────────────────────────────────────────────
+
+model InviteCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  childId     String
+  child       Child     @relation(fields: [childId], references: [id])
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([code])
+  @@index([childId])
+  @@map("invite_codes")
+}
+
+// ──────────────────────────────────────────────
+// Schedule (치료 일정)
+// ──────────────────────────────────────────────
+
+model Schedule {
+  id          String         @id @default(cuid())
+  childId     String
+  child       Child          @relation(fields: [childId], references: [id])
+  therapistId String
+  therapist   User           @relation(fields: [therapistId], references: [id])
+  startAt     DateTime
+  endAt       DateTime
+  status      ScheduleStatus @default(SCHEDULED)
+  note        String?
+  isRecurring Boolean        @default(false)
+  recurringId String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  notifications Notification[]
+  confirmations ScheduleConfirmation[]
+
+  @@index([childId])
+  @@index([therapistId])
+  @@index([startAt])
+  @@index([recurringId])
+  @@map("schedules")
+}
+
+enum ScheduleStatus {
+  SCHEDULED
+  CANCELLED
+  MODIFIED
+}
+
+// 학부모 일정 확인 상태
+model ScheduleConfirmation {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  schedule    Schedule @relation(fields: [scheduleId], references: [id])
+  parentId    String
+  confirmedAt DateTime @default(now())
+
+  @@unique([scheduleId, parentId])
+  @@map("schedule_confirmations")
+}
+
+// ──────────────────────────────────────────────
+// Notification (알림)
+// ──────────────────────────────────────────────
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  scheduleId String?
+  schedule   Schedule?        @relation(fields: [scheduleId], references: [id])
+  type       NotificationType
+  message    String
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([scheduleId])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  SCHEDULE_CREATED
+  SCHEDULE_MODIFIED
+  SCHEDULE_CANCELLED
+}

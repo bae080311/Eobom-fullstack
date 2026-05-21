@@ -1,0 +1,16 @@
+export enum UserRole {
+  THERAPIST = 'THERAPIST',
+  PARENT = 'PARENT',
+}
+
+export enum ScheduleStatus {
+  SCHEDULED = 'SCHEDULED',
+  CANCELLED = 'CANCELLED',
+  MODIFIED = 'MODIFIED',
+}
+
+export enum NotificationType {
+  SCHEDULE_CREATED = 'SCHEDULE_CREATED',
+  SCHEDULE_MODIFIED = 'SCHEDULE_MODIFIED',
+  SCHEDULE_CANCELLED = 'SCHEDULE_CANCELLED',
+}

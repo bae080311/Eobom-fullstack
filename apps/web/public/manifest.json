@@ -1,0 +1,20 @@
+{
+  "name": "이어봄",
+  "short_name": "이어봄",
+  "description": "치료사와 학부모가 치료 일정을 함께 관리하는 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4F86C6",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical"]
+}

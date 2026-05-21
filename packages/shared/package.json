@@ -1,0 +1,25 @@
+{
+  "name": "@eobom/shared",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Shared types, interfaces, and enums for the eobom monorepo",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@eobom/config": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}
