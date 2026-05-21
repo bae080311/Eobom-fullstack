@@ -39,7 +39,7 @@ apps/api/src/modules/<name>/
 ## 금지
 
 - `apps/api` 안에 `packages/shared`와 중복되는 타입 정의
-- 서비스에서 HTTP 예외를 직접 throw (NestJS 표준 예외 `HttpException` 사용)
+- 서비스에서 `HttpException` 직접 throw (대신 `NotFoundException`, `ForbiddenException` 등 표준 예외 클래스 사용)
 - `any` 타입 사용
 
 ## 핵심 참조

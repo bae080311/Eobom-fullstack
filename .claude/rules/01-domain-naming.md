@@ -29,7 +29,7 @@ Create<Entity>Dto   UpdateScheduleDto   ScheduleResponseDto
 
 ```typescript
 UserRole:          THERAPIST | PARENT
-ScheduleStatus:    SCHEDULED | RESCHEDULED | CANCELED | COMPLETED
+ScheduleStatus:    SCHEDULED | MODIFIED | CANCELLED
 InviteCodeStatus:  ACTIVE | USED | EXPIRED | REVOKED
-NotificationType:  SCHEDULE_CREATED | SCHEDULE_UPDATED | SCHEDULE_CANCELED
+NotificationType:  SCHEDULE_CREATED | SCHEDULE_MODIFIED | SCHEDULE_CANCELLED
 ```
