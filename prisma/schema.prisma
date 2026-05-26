@@ -7,159 +7,273 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ──────────────────────────────────────────────
-// User
-// ──────────────────────────────────────────────
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 치료사 관계
-  children     Child[]
-  inviteCodes  InviteCode[]
-  schedules    Schedule[]
-
-  // 학부모 관계
-  childLinks    ChildParent[]
-  notifications Notification[]
-
-  @@index([email])
-  @@map("users")
-}
+// ==================== Enums ====================
 
 enum UserRole {
   THERAPIST
   PARENT
 }
 
-// ──────────────────────────────────────────────
-// Child (아동)
-// ──────────────────────────────────────────────
-
-model Child {
-  id          String    @id @default(cuid())
-  name        String
-  birthDate   DateTime?
-  therapistId String
-  therapist   User      @relation(fields: [therapistId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  parents     ChildParent[]
-  schedules   Schedule[]
-  inviteCodes InviteCode[]
-
-  @@index([therapistId])
-  @@map("children")
+enum OrgMemberRole {
+  OWNER
+  THERAPIST
 }
 
-// 아동-학부모 다대다 연결 테이블
-model ChildParent {
-  childId  String
-  parentId String
-  child    Child  @relation(fields: [childId], references: [id])
-  parent   User   @relation(fields: [parentId], references: [id])
-  linkedAt DateTime @default(now())
-
-  @@id([childId, parentId])
-  @@map("child_parents")
+enum OrgMembershipStatus {
+  ACTIVE
+  LEFT
 }
 
-// ──────────────────────────────────────────────
-// InviteCode (초대 코드)
-// ──────────────────────────────────────────────
-
-model InviteCode {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  childId     String
-  child       Child     @relation(fields: [childId], references: [id])
-  createdById String
-  createdBy   User      @relation(fields: [createdById], references: [id])
-  expiresAt   DateTime
-  usedAt      DateTime?
-  createdAt   DateTime  @default(now())
-
-  @@index([code])
-  @@index([childId])
-  @@map("invite_codes")
+enum ParentRelation {
+  MOTHER
+  FATHER
+  GUARDIAN
+  OTHER
 }
 
-// ──────────────────────────────────────────────
-// Schedule (치료 일정)
-// ──────────────────────────────────────────────
+enum InviteCodeType {
+  THERAPIST_JOIN
+  PARENT_LINK
+}
 
-model Schedule {
-  id          String         @id @default(cuid())
-  childId     String
-  child       Child          @relation(fields: [childId], references: [id])
-  therapistId String
-  therapist   User           @relation(fields: [therapistId], references: [id])
-  startAt     DateTime
-  endAt       DateTime
-  status      ScheduleStatus @default(SCHEDULED)
-  note        String?
-  isRecurring Boolean        @default(false)
-  recurringId String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  notifications Notification[]
-  confirmations ScheduleConfirmation[]
-
-  @@index([childId])
-  @@index([therapistId])
-  @@index([startAt])
-  @@index([recurringId])
-  @@map("schedules")
+enum InviteCodeStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED
 }
 
 enum ScheduleStatus {
   SCHEDULED
-  CANCELLED
-  MODIFIED
-}
-
-// 학부모 일정 확인 상태
-model ScheduleConfirmation {
-  id          String   @id @default(cuid())
-  scheduleId  String
-  schedule    Schedule @relation(fields: [scheduleId], references: [id])
-  parentId    String
-  confirmedAt DateTime @default(now())
-
-  @@unique([scheduleId, parentId])
-  @@map("schedule_confirmations")
-}
-
-// ──────────────────────────────────────────────
-// Notification (알림)
-// ──────────────────────────────────────────────
-
-model Notification {
-  id         String           @id @default(cuid())
-  userId     String
-  user       User             @relation(fields: [userId], references: [id])
-  scheduleId String?
-  schedule   Schedule?        @relation(fields: [scheduleId], references: [id])
-  type       NotificationType
-  message    String
-  isRead     Boolean          @default(false)
-  createdAt  DateTime         @default(now())
-
-  @@index([userId, isRead])
-  @@index([scheduleId])
-  @@map("notifications")
+  RESCHEDULED
+  CANCELED
+  COMPLETED
 }
 
 enum NotificationType {
   SCHEDULE_CREATED
-  SCHEDULE_MODIFIED
-  SCHEDULE_CANCELLED
+  SCHEDULE_UPDATED
+  SCHEDULE_CANCELED
+}
+
+// ==================== Users ====================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  therapistProfile TherapistProfile?
+  parentProfile    ParentProfile?
+}
+
+model TherapistProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNumber String?
+
+  memberships          OrganizationMembership[]
+  primaryOfChildren    Child[]                  @relation("PrimaryTherapist")
+  createdOrganizations Organization[]           @relation("OrgCreator")
+  issuedInviteCodes    InviteCode[]             @relation("InviteIssuer")
+  schedules            Schedule[]
+  recurringRules       RecurringRule[]
+}
+
+model ParentProfile {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber String?
+
+  childLinks       ParentChildLink[]
+  notifications    Notification[]
+  acknowledgements ScheduleAcknowledgement[]
+  usedInviteCodes  InviteCode[]              @relation("InviteUserParent")
+}
+
+// ==================== Organization ====================
+
+model Organization {
+  id                String   @id @default(uuid())
+  name              String
+  joinCode          String   @unique
+  joinCodeRotatedAt DateTime @default(now())
+  createdById       String
+  createdBy         TherapistProfile @relation("OrgCreator", fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  memberships    OrganizationMembership[]
+  children       Child[]
+  inviteCodes    InviteCode[]
+  schedules      Schedule[]
+  recurringRules RecurringRule[]
+  notifications  Notification[]
+}
+
+model OrganizationMembership {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  therapistProfileId String
+  therapistProfile   TherapistProfile    @relation(fields: [therapistProfileId], references: [id], onDelete: Cascade)
+  role               OrgMemberRole
+  status             OrgMembershipStatus @default(ACTIVE)
+  joinedAt           DateTime            @default(now())
+  leftAt             DateTime?
+
+  @@unique([organizationId, therapistProfileId])
+  @@index([therapistProfileId, status])
+  @@index([organizationId, status])
+}
+
+// ==================== Children ====================
+
+model Child {
+  id                 String            @id @default(uuid())
+  name               String
+  birthDate          DateTime?
+  organizationId     String
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryTherapistId String?
+  primaryTherapist   TherapistProfile? @relation("PrimaryTherapist", fields: [primaryTherapistId], references: [id])
+  memo               String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  parentLinks    ParentChildLink[]
+  schedules      Schedule[]
+  recurringRules RecurringRule[]
+  inviteCodes    InviteCode[]
+  notifications  Notification[]
+
+  @@index([organizationId])
+  @@index([primaryTherapistId])
+}
+
+model ParentChildLink {
+  id       String         @id @default(uuid())
+  parentId String
+  parent   ParentProfile  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  childId  String
+  child    Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  relation ParentRelation
+  linkedAt DateTime       @default(now())
+
+  @@unique([parentId, childId])
+  @@index([childId])
+}
+
+// ==================== Invite Codes ====================
+
+model InviteCode {
+  id             String           @id @default(uuid())
+  code           String           @unique
+  type           InviteCodeType
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  childId        String?
+  child          Child?           @relation(fields: [childId], references: [id], onDelete: Cascade)
+  issuedById     String
+  issuedBy       TherapistProfile @relation("InviteIssuer", fields: [issuedById], references: [id])
+  status         InviteCodeStatus @default(ACTIVE)
+  expiresAt      DateTime
+  usedAt         DateTime?
+  usedByParentId String?
+  usedByParent   ParentProfile?   @relation("InviteUserParent", fields: [usedByParentId], references: [id])
+  createdAt      DateTime         @default(now())
+
+  @@index([organizationId, status])
+  @@index([childId, status])
+  @@index([type, status])
+}
+
+// ==================== Schedules ====================
+
+model Schedule {
+  id              String           @id @default(uuid())
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  childId         String
+  child           Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
+  therapistId     String
+  therapist       TherapistProfile @relation(fields: [therapistId], references: [id])
+  startAt         DateTime
+  endAt           DateTime
+  status          ScheduleStatus   @default(SCHEDULED)
+  title           String
+  notes           String?
+  recurringRuleId String?
+  recurringRule   RecurringRule?   @relation(fields: [recurringRuleId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  acknowledgements ScheduleAcknowledgement[]
+  notifications    Notification[]
+
+  @@index([organizationId, startAt])
+  @@index([childId, startAt])
+  @@index([therapistId, startAt])
+  @@index([status])
+}
+
+model RecurringRule {
+  id             String           @id @default(uuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  childId        String
+  child          Child            @relation(fields: [childId], references: [id], onDelete: Cascade)
+  therapistId    String
+  therapist      TherapistProfile @relation(fields: [therapistId], references: [id])
+  daysOfWeek     Int[]
+  startTime      String
+  endTime        String
+  timezone       String
+  startDate      DateTime
+  endDate        DateTime?
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+
+  schedules Schedule[]
+
+  @@index([organizationId, active])
+  @@index([childId, active])
+}
+
+// ==================== Acks & Notifications ====================
+
+model ScheduleAcknowledgement {
+  id             String        @id @default(uuid())
+  scheduleId     String
+  schedule       Schedule      @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  parentId       String
+  parent         ParentProfile @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  acknowledgedAt DateTime      @default(now())
+
+  @@unique([scheduleId, parentId])
+}
+
+model Notification {
+  id             String           @id @default(uuid())
+  parentId       String
+  parent         ParentProfile    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  type           NotificationType
+  organizationId String?
+  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  scheduleId     String?
+  schedule       Schedule?        @relation(fields: [scheduleId], references: [id])
+  childId        String?
+  child          Child?           @relation(fields: [childId], references: [id])
+  payload        Json
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  @@index([parentId, readAt])
+  @@index([parentId, createdAt])
 }
