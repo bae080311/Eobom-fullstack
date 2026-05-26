@@ -1,4 +1,4 @@
-import type { ParentRelation } from '../enums';
+import type { ParentRelation } from "../enums/index.js";
 
 export interface CreateChildDto {
   name: string;

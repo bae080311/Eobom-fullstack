@@ -1,4 +1,4 @@
-import type { ScheduleStatus } from '../enums';
+import type { ScheduleStatus } from "../enums/index.js";
 
 export interface CreateScheduleDto {
   childId: string;

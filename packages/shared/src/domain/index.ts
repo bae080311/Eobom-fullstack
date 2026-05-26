@@ -7,7 +7,7 @@ import type {
   InviteCodeStatus,
   ScheduleStatus,
   NotificationType,
-} from '../enums';
+} from "../enums/index.js";
 
 export interface IUser {
   id: string;

@@ -1,3 +1,3 @@
-export * from './domain';
-export * from './dto';
-export * from './enums';
+export * from "./domain/index.js";
+export * from "./dto/index.js";
+export * from "./enums/index.js";

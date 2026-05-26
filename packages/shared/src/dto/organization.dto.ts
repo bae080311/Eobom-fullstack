@@ -1,4 +1,4 @@
-import type { OrgMemberRole, OrgMembershipStatus } from '../enums';
+import type { OrgMemberRole, OrgMembershipStatus } from "../enums/index.js";
 
 export interface CreateOrganizationDto {
   name: string;

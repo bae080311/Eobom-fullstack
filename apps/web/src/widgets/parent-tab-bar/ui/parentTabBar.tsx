@@ -19,7 +19,7 @@ export function ParentTabBar({ active }: Props) {
     }`;
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 h-[84px] bg-white/90 backdrop-blur-xl border-t border-gray-200 grid grid-cols-4 pt-2 pb-[30px] z-50">
+    <nav className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 grid grid-cols-4 pt-2 pb-2 safe-area-inset-bottom z-50">
       <Link href="/home" className={cls('home')} aria-label="홈">
         <IconHome size={22} /> 홈
       </Link>

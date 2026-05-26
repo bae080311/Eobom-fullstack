@@ -1,12 +1,12 @@
-import type { UserRole, OrgMemberRole } from '../enums';
+import type { UserRole, OrgMemberRole } from "../enums/index.js";
 
 export interface SignupOrganizationCreate {
-  mode: 'CREATE';
+  mode: "CREATE";
   name: string;
 }
 
 export interface SignupOrganizationJoin {
-  mode: 'JOIN';
+  mode: "JOIN";
   joinCode: string;
 }
 

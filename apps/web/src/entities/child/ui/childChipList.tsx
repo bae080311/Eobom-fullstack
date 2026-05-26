@@ -29,7 +29,8 @@ export function ChildChipList({ items, defaultSelectedId, onSelect }: Props) {
               : 'bg-white border-gray-200 text-gray-600'
           }`}
         >
-          {child.name} · {child.age}
+          {child.name}
+          {child.age ? ` · ${child.age}` : ''}
         </button>
       ))}
       <button
