@@ -13,9 +13,13 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@eobom/shared": "workspace:*",
+    "@hookform/resolvers": "^5.4.0",
+    "@tanstack/react-query": "^5.100.14",
     "next": "^15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.76.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eobom/config": "workspace:*",
