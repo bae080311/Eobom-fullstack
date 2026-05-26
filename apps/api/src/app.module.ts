@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
-import { ChildrenModule } from './modules/children/children.module';
-import { InviteCodesModule } from './modules/invite-codes/invite-codes.module';
-import { SchedulesModule } from './modules/schedules/schedules.module';
-import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DatabaseModule } from './database/database.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { UsersModule } from './modules/users/users.module.js';
+import { ChildrenModule } from './modules/children/children.module.js';
+import { InviteCodesModule } from './modules/invite-codes/invite-codes.module.js';
+import { SchedulesModule } from './modules/schedules/schedules.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { OrganizationsModule } from './modules/organizations/organizations.module.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     DatabaseModule,
     AuthModule,
     UsersModule,
+    OrganizationsModule,
     ChildrenModule,
     InviteCodesModule,
     SchedulesModule,
