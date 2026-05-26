@@ -1,18 +1,28 @@
+import type { ParentRelation } from "../enums/index.js";
+
 export interface CreateChildDto {
   name: string;
   birthDate?: string;
+  memo?: string;
+  primaryTherapistId?: string | null;
 }
 
 export interface UpdateChildDto {
   name?: string;
   birthDate?: string;
+  memo?: string;
 }
 
-export interface CreateInviteCodeDto {
+export interface SetPrimaryTherapistDto {
+  primaryTherapistId: string;
+}
+
+export interface IssueParentLinkCodeDto {
   childId: string;
-  expiresInDays?: number;
+  ttlMinutes?: number;
 }
 
-export interface UseInviteCodeDto {
+export interface RedeemInviteCodeDto {
   code: string;
+  relation: ParentRelation;
 }

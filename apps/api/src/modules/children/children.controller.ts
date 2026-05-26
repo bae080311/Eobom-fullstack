@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
-import { ChildrenService } from './children.service';
+import { ChildrenService } from './children.service.js';
 import type { CreateChildDto, UpdateChildDto } from '@eobom/shared';
 
 @Controller('children')

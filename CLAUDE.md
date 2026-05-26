@@ -26,8 +26,15 @@ cp .env.example .env && docker compose up -d && pnpm install && pnpm db:migrate 
 
 ## 용어 사전
 
-`Therapist` 치료사 · `Parent` 학부모 · `Child` 아동 · `InviteCode` 초대코드
-`Schedule` 치료 세션 · `RecurringRule` 반복 규칙 · `Notification` 알림 · `Acknowledgement` 확인
+`Organization` 기관 · `OrganizationMembership` 멤버십 · `OrgMemberRole` OWNER/THERAPIST
+`Therapist` 치료사 · `TherapistProfile` 치료사 프로필 · `Parent` 학부모 · `ParentProfile` 학부모 프로필
+`Child` 아동 · `ParentChildLink` 학부모-아동 연결 (구 ChildParent)
+`InviteCode` 초대코드 · `InviteCodeType` THERAPIST_JOIN/PARENT_LINK
+`Schedule` 치료 세션 · `RecurringRule` 반복 규칙
+`ScheduleAcknowledgement` 일정 확인 (구 ScheduleConfirmation) · `Notification` 알림
+
+**ScheduleStatus**: `SCHEDULED` `RESCHEDULED` `CANCELED` `COMPLETED`
+**NotificationType**: `SCHEDULE_CREATED` `SCHEDULE_UPDATED` `SCHEDULE_CANCELED`
 
 코드 식별자는 영어만. 한국어는 UI 문자열·주석에만.
 

@@ -1,30 +1,38 @@
-import type { ScheduleStatus } from '../enums';
+import type { ScheduleStatus } from "../enums/index.js";
 
 export interface CreateScheduleDto {
   childId: string;
   startAt: string;
   endAt: string;
-  note?: string;
-  isRecurring?: boolean;
-  recurringPattern?: RecurringPattern;
+  title: string;
+  notes?: string;
+  therapistId?: string | null;
 }
 
 export interface UpdateScheduleDto {
   startAt?: string;
   endAt?: string;
-  note?: string;
-  status?: ScheduleStatus;
+  title?: string;
+  notes?: string;
+  therapistId?: string;
 }
 
-export interface RecurringPattern {
-  frequency: 'WEEKLY' | 'BIWEEKLY';
-  endDate: string;
+export interface CreateRecurringScheduleDto {
+  childId: string;
   daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  timezone: string;
+  startDate: string;
+  endDate?: string;
+  title: string;
+  therapistId?: string | null;
 }
 
 export interface ScheduleQueryDto {
   childId?: string;
-  startDate?: string;
-  endDate?: string;
+  organizationId?: string;
+  from?: string;
+  to?: string;
   status?: ScheduleStatus;
 }

@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
-import { SchedulesService } from './schedules.service';
+import { SchedulesService } from './schedules.service.js';
 import type { CreateScheduleDto, UpdateScheduleDto, ScheduleQueryDto } from '@eobom/shared';
 
 @Controller('schedules')

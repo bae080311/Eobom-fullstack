@@ -28,8 +28,6 @@ export default function HomePage() {
             회원가입
           </Link>
         </div>
-
-        <p className="text-xs text-gray-400">치료사와 학부모 모두 같은 앱을 사용합니다</p>
       </div>
     </main>
   );

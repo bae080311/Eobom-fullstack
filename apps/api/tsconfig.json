@@ -2,7 +2,7 @@
   "extends": "../../packages/config/tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "../..",
     "paths": {
       "@eobom/shared": ["../../packages/shared/src/index.ts"],
       "@eobom/shared/*": ["../../packages/shared/src/*"]
