@@ -210,7 +210,7 @@ model Schedule {
   title           String
   notes           String?
   recurringRuleId String?
-  recurringRule   RecurringRule?   @relation(fields: [recurringRuleId], references: [id])
+  recurringRule   RecurringRule?   @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -265,11 +265,11 @@ model Notification {
   parent         ParentProfile    @relation(fields: [parentId], references: [id], onDelete: Cascade)
   type           NotificationType
   organizationId String?
-  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   scheduleId     String?
-  schedule       Schedule?        @relation(fields: [scheduleId], references: [id])
+  schedule       Schedule?        @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   childId        String?
-  child          Child?           @relation(fields: [childId], references: [id])
+  child          Child?           @relation(fields: [childId], references: [id], onDelete: Cascade)
   payload        Json
   readAt         DateTime?
   createdAt      DateTime         @default(now())
