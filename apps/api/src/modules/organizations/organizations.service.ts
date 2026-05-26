@@ -4,6 +4,7 @@ import type {
   OrganizationResponseDto,
   MemberResponseDto,
   RotateJoinCodeResponseDto,
+  UpdateMembershipDto,
 } from '@eobom/shared';
 
 // Phase 2에서 전체 구현 예정 (JWT 컨텍스트, Prisma, 멤버십 권한 검증)
@@ -29,7 +30,7 @@ export class OrganizationsService {
     throw new Error('Not implemented - Phase 2');
   }
 
-  async updateMember(_orgId: string, _membershipId: string, _dto: unknown): Promise<MemberResponseDto> {
+  async updateMember(_orgId: string, _membershipId: string, _dto: UpdateMembershipDto): Promise<MemberResponseDto> {
     throw new Error('Not implemented - Phase 2');
   }
 

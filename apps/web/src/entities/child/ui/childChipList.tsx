@@ -6,17 +6,23 @@ import type { Child } from '../model/types';
 interface Props {
   children: Child[];
   defaultSelectedId?: string;
+  onSelect?: (id: string) => void;
 }
 
-export function ChildChipList({ children, defaultSelectedId }: Props) {
+export function ChildChipList({ children, defaultSelectedId, onSelect }: Props) {
   const [selectedId, setSelectedId] = useState(defaultSelectedId ?? children[0]?.id);
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    onSelect?.(id);
+  };
 
   return (
     <div className="flex gap-2 px-5 pb-4 overflow-x-auto no-scrollbar">
       {children.map((child) => (
         <button
           key={child.id}
-          onClick={() => setSelectedId(child.id)}
+          onClick={() => handleSelect(child.id)}
           className={`rounded-pill px-[14px] py-2 text-body2 font-semibold whitespace-nowrap border transition-colors ${
             selectedId === child.id
               ? 'bg-brand border-brand text-white'

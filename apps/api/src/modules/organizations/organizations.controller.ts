@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Patch, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service.js';
-import type { CreateOrganizationDto } from '@eobom/shared';
+import type { CreateOrganizationDto, UpdateMembershipDto } from '@eobom/shared';
 
 @Controller('organizations')
 export class OrganizationsController {
@@ -36,7 +36,7 @@ export class OrganizationsController {
   updateMember(
     @Param('orgId') orgId: string,
     @Param('membershipId') membershipId: string,
-    @Body() dto: unknown,
+    @Body() dto: UpdateMembershipDto,
   ) {
     return this.organizationsService.updateMember(orgId, membershipId, dto);
   }

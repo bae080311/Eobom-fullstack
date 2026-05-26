@@ -19,8 +19,8 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  refresh() {
-    return this.authService.refresh();
+  refresh(@Body() dto: { refreshToken: string }) {
+    return this.authService.refresh(dto);
   }
 
   @Post('logout')

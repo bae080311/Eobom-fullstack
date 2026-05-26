@@ -30,3 +30,7 @@ export interface RotateJoinCodeResponseDto {
   joinCode: string;
   rotatedAt: string;
 }
+
+export interface UpdateMembershipDto {
+  role?: OrgMemberRole;
+}

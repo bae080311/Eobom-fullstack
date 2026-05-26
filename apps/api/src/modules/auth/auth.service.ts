@@ -12,7 +12,7 @@ export class AuthService {
     throw new Error('Not implemented - Phase 2');
   }
 
-  async refresh(): Promise<Pick<AuthResponseDto, 'accessToken'>> {
+  async refresh(_dto: { refreshToken: string }): Promise<Pick<AuthResponseDto, 'accessToken'>> {
     throw new Error('Not implemented - Phase 2');
   }
 
