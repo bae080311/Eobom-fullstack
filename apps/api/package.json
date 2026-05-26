@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "이어봄 API 서버 (NestJS)",
   "private": true,
+  "type": "module",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",
