@@ -4,13 +4,13 @@ import { useState } from 'react';
 import type { Child } from '../model/types';
 
 interface Props {
-  children: Child[];
+  items: Child[];
   defaultSelectedId?: string;
   onSelect?: (id: string) => void;
 }
 
-export function ChildChipList({ children, defaultSelectedId, onSelect }: Props) {
-  const [selectedId, setSelectedId] = useState(defaultSelectedId ?? children[0]?.id);
+export function ChildChipList({ items, defaultSelectedId, onSelect }: Props) {
+  const [selectedId, setSelectedId] = useState(defaultSelectedId ?? items[0]?.id);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
@@ -19,7 +19,7 @@ export function ChildChipList({ children, defaultSelectedId, onSelect }: Props) 
 
   return (
     <div className="flex gap-2 px-5 pb-4 overflow-x-auto no-scrollbar">
-      {children.map((child) => (
+      {items.map((child) => (
         <button
           key={child.id}
           onClick={() => handleSelect(child.id)}

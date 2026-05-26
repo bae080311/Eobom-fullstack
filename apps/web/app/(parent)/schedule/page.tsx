@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: '일정' };
 
 export default function ParentSchedulePage() {
   const upcoming = MOCK_UPCOMING.filter((s) => s.status !== 'past');
-  const past     = MOCK_UPCOMING.filter((s) => s.status === 'past');
+  const past = MOCK_UPCOMING.filter((s) => s.status === 'past');
 
   return (
     <PageShell>
@@ -26,7 +26,7 @@ export default function ParentSchedulePage() {
       />
 
       <ChildChipList
-        children={[{ id: 'all', name: '전체', age: '' }, ...MOCK_CHILDREN]}
+        items={[{ id: 'all', name: '전체', age: '' }, ...MOCK_CHILDREN]}
         defaultSelectedId="all"
       />
 
@@ -36,7 +36,9 @@ export default function ParentSchedulePage() {
           right={<span className="text-body2 text-gray-600 font-medium">{upcoming.length}건</span>}
         />
         <div className="flex flex-col gap-2">
-          {upcoming.map((s) => <SessionRow key={s.id} session={s} />)}
+          {upcoming.map((s) => (
+            <SessionRow key={s.id} session={s} />
+          ))}
         </div>
       </section>
 
@@ -46,7 +48,9 @@ export default function ParentSchedulePage() {
           right={<span className="text-body2 text-gray-600 font-medium">{past.length}건</span>}
         />
         <div className="flex flex-col gap-2 opacity-60">
-          {past.map((s) => <SessionRow key={s.id} session={s} />)}
+          {past.map((s) => (
+            <SessionRow key={s.id} session={s} />
+          ))}
         </div>
       </section>
 

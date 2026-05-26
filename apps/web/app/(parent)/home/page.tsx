@@ -25,7 +25,7 @@ export default function ParentHomePage() {
         }
       />
 
-      <ChildChipList children={MOCK_CHILDREN} defaultSelectedId="c1" />
+      <ChildChipList items={MOCK_CHILDREN} defaultSelectedId="c1" />
 
       <NextSessionHero session={MOCK_NEXT_SESSION} />
 
@@ -41,9 +41,11 @@ export default function ParentHomePage() {
           }
         />
         <div className="flex flex-col gap-2">
-          {MOCK_UPCOMING.filter((s) => s.status !== 'past').slice(0, 3).map((s) => (
-            <SessionRow key={s.id} session={s} />
-          ))}
+          {MOCK_UPCOMING.filter((s) => s.status !== 'past')
+            .slice(0, 3)
+            .map((s) => (
+              <SessionRow key={s.id} session={s} />
+            ))}
         </div>
       </section>
 
@@ -51,7 +53,10 @@ export default function ParentHomePage() {
         <SectionHeader
           title="최근 알림"
           right={
-            <Link href="/notifications" className="text-body2 text-gray-600 font-semibold no-underline">
+            <Link
+              href="/notifications"
+              className="text-body2 text-gray-600 font-semibold no-underline"
+            >
               전체
             </Link>
           }
