@@ -101,48 +101,52 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(dto.password);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: verifiedEmail,
-        passwordHash,
-        name: dto.name,
-        role: dto.role,
-        emailVerifiedAt: new Date(),
-        ...(dto.role === UserRole.THERAPIST
-          ? { therapistProfile: { create: {} } }
-          : { parentProfile: { create: {} } }),
-      },
-      include: { therapistProfile: true, parentProfile: true },
-    });
+    const { user, membership } = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: verifiedEmail,
+          passwordHash,
+          name: dto.name,
+          role: dto.role,
+          emailVerifiedAt: new Date(),
+          ...(dto.role === UserRole.THERAPIST
+            ? { therapistProfile: { create: {} } }
+            : { parentProfile: { create: {} } }),
+        },
+        include: { therapistProfile: true, parentProfile: true },
+      });
 
-    if (dto.role === UserRole.THERAPIST && dto.organization && user.therapistProfile) {
-      const therapistProfileId = user.therapistProfile.id;
+      if (dto.role === UserRole.THERAPIST && dto.organization && user.therapistProfile) {
+        const therapistProfileId = user.therapistProfile.id;
 
-      if (dto.organization.mode === 'CREATE') {
-        await this.prisma.organization.create({
-          data: {
-            name: dto.organization.name,
-            joinCode: this.generateJoinCode(),
-            createdById: therapistProfileId,
-            memberships: {
-              create: { therapistProfileId, role: OrgMemberRole.OWNER },
+        if (dto.organization.mode === 'CREATE') {
+          await tx.organization.create({
+            data: {
+              name: dto.organization.name,
+              joinCode: this.generateJoinCode(),
+              createdById: therapistProfileId,
+              memberships: {
+                create: { therapistProfileId, role: OrgMemberRole.OWNER },
+              },
             },
-          },
-        });
-      } else {
-        const org = await this.prisma.organization.findUnique({
-          where: { joinCode: dto.organization.joinCode },
-        });
-        if (!org) throw new NotFoundException('유효하지 않은 참여 코드입니다.');
-        await this.prisma.organizationMembership.create({
-          data: { organizationId: org.id, therapistProfileId, role: OrgMemberRole.THERAPIST },
-        });
+          });
+        } else {
+          const org = await tx.organization.findUnique({
+            where: { joinCode: dto.organization.joinCode },
+          });
+          if (!org) throw new NotFoundException('유효하지 않은 참여 코드입니다.');
+          await tx.organizationMembership.create({
+            data: { organizationId: org.id, therapistProfileId, role: OrgMemberRole.THERAPIST },
+          });
+        }
       }
-    }
 
-    const membership = await this.prisma.organizationMembership.findFirst({
-      where: { therapistProfile: { userId: user.id }, status: 'ACTIVE' },
-      include: { organization: true },
+      const membership = await tx.organizationMembership.findFirst({
+        where: { therapistProfile: { userId: user.id }, status: 'ACTIVE' },
+        include: { organization: true },
+      });
+
+      return { user, membership };
     });
 
     this.logger.log(`signup success: user=${user.id}`);

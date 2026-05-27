@@ -19,24 +19,29 @@ import type { PrismaService } from '../../database/prisma.service.js';
 import type { UsersService } from '../users/users.service.js';
 import type { EmailService } from './email.service.js';
 
-const makePrisma = () => ({
-  emailVerificationRequest: {
-    upsert: vi.fn().mockResolvedValue({}),
-    findUnique: vi.fn().mockResolvedValue(null),
-    delete: vi.fn().mockResolvedValue({}),
-  },
-  user: {
-    create: vi.fn(),
-  },
-  organization: {
-    create: vi.fn().mockResolvedValue({ id: 'org1' }),
-    findUnique: vi.fn().mockResolvedValue(null),
-  },
-  organizationMembership: {
-    create: vi.fn().mockResolvedValue({}),
-    findFirst: vi.fn().mockResolvedValue(null),
-  },
-});
+const makePrisma = () => {
+  const ctx = {
+    emailVerificationRequest: {
+      upsert: vi.fn().mockResolvedValue({}),
+      findUnique: vi.fn().mockResolvedValue(null),
+      delete: vi.fn().mockResolvedValue({}),
+    },
+    user: {
+      create: vi.fn(),
+    },
+    organization: {
+      create: vi.fn().mockResolvedValue({ id: 'org1' }),
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+    organizationMembership: {
+      create: vi.fn().mockResolvedValue({}),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    $transaction: vi.fn(),
+  };
+  ctx.$transaction.mockImplementation((fn: (tx: typeof ctx) => Promise<unknown>) => fn(ctx));
+  return ctx;
+};
 
 const makeUsers = () => ({
   findByEmail: vi.fn().mockResolvedValue(null),
