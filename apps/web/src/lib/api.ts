@@ -1,5 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 interface FetchOptions extends RequestInit {
   token?: string;
 }
@@ -17,8 +27,8 @@ async function fetchApi<T>(path: string, options: FetchOptions = {}): Promise<T>
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: '요청에 실패했습니다.' }));
-    throw new Error(error.message || '요청에 실패했습니다.');
+    const body = await res.json().catch(() => ({ message: '요청에 실패했습니다.' }));
+    throw new ApiError(body.message || '요청에 실패했습니다.', res.status);
   }
 
   if (res.status === 204) return undefined as T;
