@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="min-h-screen flex flex-col items-center justify-center px-4 bg-white">
       <div className="max-w-md w-full text-center space-y-8">
         <div>
-          <h1 className="text-4xl font-bold text-primary-500">이어봄</h1>
+          <h1 className="text-4xl font-bold text-brand">이어봄</h1>
           <p className="mt-3 text-gray-500 text-lg">치료 일정을 함께 확인하세요</p>
         </div>
 
@@ -17,13 +17,13 @@ export default function HomePage() {
         <div className="space-y-3">
           <Link
             href="/login"
-            className="block w-full py-3 px-6 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors"
+            className="block w-full py-3 px-6 bg-brand text-white rounded-xl font-medium hover:bg-brand-hover transition-colors"
           >
             로그인
           </Link>
           <Link
             href="/register"
-            className="block w-full py-3 px-6 border border-primary-500 text-primary-500 rounded-xl font-medium hover:bg-primary-50 transition-colors"
+            className="block w-full py-3 px-6 border border-brand text-brand rounded-xl font-medium hover:bg-brand-softer transition-colors"
           >
             회원가입
           </Link>
