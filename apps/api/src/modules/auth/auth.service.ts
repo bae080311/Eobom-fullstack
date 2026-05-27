@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomInt } from 'crypto';
 import type {
   SendVerificationCodeDto,
   VerifyCodeDto,
@@ -246,7 +246,7 @@ export class AuthService {
   }
 
   private generateVerifyCode(): string {
-    return String(Math.floor(100000 + Math.random() * 900000));
+    return randomInt(100000, 1000000).toString();
   }
 
   private generateJoinCode(): string {
