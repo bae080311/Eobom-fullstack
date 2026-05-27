@@ -4,7 +4,8 @@ import { THERAPIST_ROUTES, PARENT_ROUTES, AUTH_ROUTES, ROLE_HOME } from '@/share
 
 function decodeRole(token: string): string | null {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
     return (payload.role as string) ?? null;
   } catch {
     return null;
