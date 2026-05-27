@@ -59,16 +59,27 @@ enum NotificationType {
 // ==================== Users ====================
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         UserRole
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  role            UserRole
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   therapistProfile TherapistProfile?
   parentProfile    ParentProfile?
+}
+
+model EmailVerificationRequest {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model TherapistProfile {

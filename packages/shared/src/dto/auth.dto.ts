@@ -1,27 +1,54 @@
-import type { UserRole, OrgMemberRole } from "../enums/index.js";
+import { z } from "zod";
+import { UserRole } from "../enums/index.js";
+import type { OrgMemberRole } from "../enums/index.js";
 
-export interface SignupOrganizationCreate {
-  mode: "CREATE";
-  name: string;
-}
+export const signupOrganizationSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("CREATE"),
+    name: z.string().min(1, "기관 이름을 입력해주세요"),
+  }),
+  z.object({
+    mode: z.literal("JOIN"),
+    joinCode: z.string().min(1, "참여 코드를 입력해주세요"),
+  }),
+]);
 
-export interface SignupOrganizationJoin {
-  mode: "JOIN";
-  joinCode: string;
-}
+export const sendVerificationCodeSchema = z.object({
+  email: z.email("올바른 이메일을 입력해주세요"),
+});
 
-export interface SignupDto {
-  email: string;
-  password: string;
-  name: string;
-  role: UserRole;
-  organization?: SignupOrganizationCreate | SignupOrganizationJoin;
-}
+export const verifyCodeSchema = z.object({
+  email: z.email(),
+  code: z.string().length(6, "인증 코드는 6자리입니다"),
+});
 
-export interface LoginDto {
-  email: string;
-  password: string;
-}
+export const signupSchema = z.object({
+  emailVerifiedToken: z.string(),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력해주세요"),
+  role: z.enum(UserRole),
+  organization: signupOrganizationSchema.optional(),
+});
+
+export const loginSchema = z.object({
+  email: z.email("올바른 이메일을 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
+export type SendVerificationCodeDto = z.infer<
+  typeof sendVerificationCodeSchema
+>;
+export type VerifyCodeDto = z.infer<typeof verifyCodeSchema>;
+export type SignupOrganizationCreate = Extract<
+  z.infer<typeof signupOrganizationSchema>,
+  { mode: "CREATE" }
+>;
+export type SignupOrganizationJoin = Extract<
+  z.infer<typeof signupOrganizationSchema>,
+  { mode: "JOIN" }
+>;
+export type SignupDto = z.infer<typeof signupSchema>;
+export type LoginDto = z.infer<typeof loginSchema>;
 
 export interface ActiveOrgMembership {
   organizationId: string;

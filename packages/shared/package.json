@@ -21,5 +21,8 @@
   "devDependencies": {
     "@eobom/config": "workspace:*",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
   }
 }
