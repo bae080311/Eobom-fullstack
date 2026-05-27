@@ -109,6 +109,13 @@ describe('AuthService', () => {
       expect(result.message).toBeTruthy();
     });
 
+    it('propagates error when email sending fails', async () => {
+      email.sendVerificationCode.mockRejectedValue(new Error('SMTP 연결 실패'));
+      await expect(service.sendVerificationCode({ email: 'new@eobom.com' })).rejects.toThrow(
+        'SMTP 연결 실패',
+      );
+    });
+
     it('upsert payload contains a 10-minute expiry window', async () => {
       const before = Date.now();
       await service.sendVerificationCode({ email: 'new@eobom.com' });

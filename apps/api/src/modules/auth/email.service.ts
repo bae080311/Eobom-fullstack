@@ -40,6 +40,7 @@ export class EmailService {
       });
     } catch (err) {
       this.logger.error(`이메일 발송 실패 (${to}): ${(err as Error).message}`);
+      throw err;
     }
   }
 }
