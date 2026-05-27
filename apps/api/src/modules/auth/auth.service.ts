@@ -10,11 +10,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 import type {
+  SendVerificationCodeDto,
+  VerifyCodeDto,
   SignupDto,
   LoginDto,
   AuthResponseDto,
-  VerifyEmailDto,
-  ResendVerificationDto,
 } from '@eobom/shared';
 import { OrgMemberRole, UserRole } from '@eobom/shared';
 import { PrismaService } from '../../database/prisma.service.js';
@@ -28,7 +28,13 @@ interface JwtPayload {
   role: string;
 }
 
+interface EmailVerifiedPayload {
+  email: string;
+  verified: true;
+}
+
 const VERIFY_CODE_TTL_MS = 10 * 60 * 1000;
+const EMAIL_VERIFIED_TOKEN_TTL = '15m';
 
 @Injectable()
 export class AuthService {
@@ -41,34 +47,72 @@ export class AuthService {
     private readonly email: EmailService,
   ) {}
 
-  async signup(dto: SignupDto): Promise<{ message: string }> {
-    this.logger.log(`signup attempt: ${dto.email} role=${dto.role}`);
+  async sendVerificationCode(dto: SendVerificationCodeDto): Promise<{ message: string }> {
+    this.logger.log(`sendVerificationCode: ${dto.email}`);
+
     const existing = await this.users.findByEmail(dto.email);
     if (existing) {
-      this.logger.warn(`signup conflict: ${dto.email} already exists`);
+      this.logger.warn(`sendVerificationCode conflict: ${dto.email} already exists`);
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+
+    const code = this.generateVerifyCode();
+
+    await this.prisma.emailVerificationRequest.upsert({
+      where: { email: dto.email },
+      create: { email: dto.email, code, expiresAt: new Date(Date.now() + VERIFY_CODE_TTL_MS) },
+      update: { code, expiresAt: new Date(Date.now() + VERIFY_CODE_TTL_MS) },
+    });
+
+    await this.email.sendVerificationCode(dto.email, code);
+    return { message: '인증 코드를 이메일로 발송했습니다.' };
+  }
+
+  async verifyCode(dto: VerifyCodeDto): Promise<{ emailVerifiedToken: string }> {
+    this.logger.log(`verifyCode attempt: ${dto.email}`);
+    const req = await this.prisma.emailVerificationRequest.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!req || req.code !== dto.code || req.expiresAt < new Date()) {
+      this.logger.warn(`verifyCode failed: ${dto.email}`);
+      throw new BadRequestException('인증 코드가 올바르지 않거나 만료됐습니다.');
+    }
+
+    await this.prisma.emailVerificationRequest.delete({ where: { email: dto.email } });
+
+    const emailVerifiedToken = this.jwt.sign(
+      { email: dto.email, verified: true } satisfies EmailVerifiedPayload,
+      { expiresIn: EMAIL_VERIFIED_TOKEN_TTL },
+    );
+    this.logger.log(`verifyCode success: ${dto.email}`);
+    return { emailVerifiedToken };
+  }
+
+  async signup(dto: SignupDto): Promise<AuthResponseDto> {
+    const verifiedEmail = this.extractVerifiedEmail(dto.emailVerifiedToken);
+    this.logger.log(`signup attempt: ${verifiedEmail} role=${dto.role}`);
+
+    const existing = await this.users.findByEmail(verifiedEmail);
+    if (existing) {
+      this.logger.warn(`signup conflict: ${verifiedEmail} already exists`);
       throw new ConflictException('이미 사용 중인 이메일입니다.');
     }
 
     const passwordHash = await argon2.hash(dto.password);
-    const verifyCode = this.generateVerifyCode();
-    const verifyExpiresAt = new Date(Date.now() + VERIFY_CODE_TTL_MS);
 
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email: verifiedEmail,
         passwordHash,
         name: dto.name,
         role: dto.role,
-        emailVerifyToken: verifyCode,
-        emailVerifyTokenExpiresAt: verifyExpiresAt,
+        emailVerifiedAt: new Date(),
         ...(dto.role === UserRole.THERAPIST
           ? { therapistProfile: { create: {} } }
           : { parentProfile: { create: {} } }),
       },
-      include: {
-        therapistProfile: true,
-        parentProfile: true,
-      },
+      include: { therapistProfile: true, parentProfile: true },
     });
 
     if (dto.role === UserRole.THERAPIST && dto.organization && user.therapistProfile) {
@@ -96,52 +140,15 @@ export class AuthService {
       }
     }
 
-    await this.email.sendVerificationCode(user.email, user.name, verifyCode);
-    this.logger.log(`signup success: user=${user.id} email=${user.email}`);
-
-    return { message: '인증 코드를 이메일로 발송했습니다.' };
-  }
-
-  async verifyEmail(dto: VerifyEmailDto): Promise<AuthResponseDto> {
-    this.logger.log(`verifyEmail attempt: ${dto.email}`);
-    const user = await this.users.findByEmail(dto.email);
-    if (!user) throw new NotFoundException();
-
-    if (user.emailVerifiedAt) {
-      throw new BadRequestException('이미 인증된 이메일입니다.');
-    }
-    if (
-      !user.emailVerifyToken ||
-      !user.emailVerifyTokenExpiresAt ||
-      user.emailVerifyToken !== dto.code ||
-      user.emailVerifyTokenExpiresAt < new Date()
-    ) {
-      throw new BadRequestException('인증 코드가 올바르지 않거나 만료됐습니다.');
-    }
-
-    const verified = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerifiedAt: new Date(),
-        emailVerifyToken: null,
-        emailVerifyTokenExpiresAt: null,
-      },
-    });
-
     const membership = await this.prisma.organizationMembership.findFirst({
-      where: { therapistProfile: { userId: verified.id }, status: 'ACTIVE' },
+      where: { therapistProfile: { userId: user.id }, status: 'ACTIVE' },
       include: { organization: true },
     });
 
-    this.logger.log(`verifyEmail success: user=${verified.id}`);
+    this.logger.log(`signup success: user=${user.id}`);
     return {
-      ...this.generateTokens(verified),
-      user: {
-        id: verified.id,
-        email: verified.email,
-        name: verified.name,
-        role: verified.role as UserRole,
-      },
+      ...this.generateTokens(user),
+      user: { id: user.id, email: user.email, name: user.name, role: user.role as UserRole },
       ...(membership
         ? {
             activeOrgMembership: {
@@ -152,27 +159,6 @@ export class AuthService {
           }
         : {}),
     };
-  }
-
-  async resendVerification(dto: ResendVerificationDto): Promise<{ message: string }> {
-    const user = await this.users.findByEmail(dto.email);
-    if (!user) return { message: '인증 코드를 이메일로 발송했습니다.' }; // 이메일 존재 여부 노출 방지
-
-    if (user.emailVerifiedAt) {
-      throw new BadRequestException('이미 인증된 이메일입니다.');
-    }
-
-    const verifyCode = this.generateVerifyCode();
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerifyToken: verifyCode,
-        emailVerifyTokenExpiresAt: new Date(Date.now() + VERIFY_CODE_TTL_MS),
-      },
-    });
-
-    await this.email.sendVerificationCode(user.email, user.name, verifyCode);
-    return { message: '인증 코드를 이메일로 발송했습니다.' };
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
@@ -234,8 +220,16 @@ export class AuthService {
     return { accessToken };
   }
 
-  async logout(): Promise<void> {
-    // 클라이언트 측 토큰 제거로 처리
+  async logout(): Promise<void> {}
+
+  private extractVerifiedEmail(token: string): string {
+    try {
+      const payload = this.jwt.verify<EmailVerifiedPayload>(token);
+      if (!payload.verified) throw new Error();
+      return payload.email;
+    } catch {
+      throw new BadRequestException('이메일 인증이 필요합니다.');
+    }
   }
 
   private generateTokens(user: { id: string; email: string; name: string; role: string }) {

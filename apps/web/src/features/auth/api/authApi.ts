@@ -1,22 +1,24 @@
 import { api } from '@/lib/api';
 import type {
+  SendVerificationCodeDto,
+  VerifyCodeDto,
   SignupDto,
   LoginDto,
   AuthResponseDto,
-  VerifyEmailDto,
-  ResendVerificationDto,
 } from '@eobom/shared';
 
-export async function signup(dto: SignupDto): Promise<{ message: string }> {
-  return api.post<{ message: string }>('/auth/signup', dto);
+export async function sendVerificationCode(
+  dto: SendVerificationCodeDto,
+): Promise<{ message: string }> {
+  return api.post<{ message: string }>('/auth/email/send-code', dto);
 }
 
-export async function verifyEmail(dto: VerifyEmailDto): Promise<AuthResponseDto> {
-  return api.post<AuthResponseDto>('/auth/verify-email', dto);
+export async function verifyCode(dto: VerifyCodeDto): Promise<{ emailVerifiedToken: string }> {
+  return api.post<{ emailVerifiedToken: string }>('/auth/email/verify-code', dto);
 }
 
-export async function resendVerification(dto: ResendVerificationDto): Promise<{ message: string }> {
-  return api.post<{ message: string }>('/auth/resend-verification', dto);
+export async function signup(dto: SignupDto): Promise<AuthResponseDto> {
+  return api.post<AuthResponseDto>('/auth/signup', dto);
 }
 
 export async function login(dto: LoginDto): Promise<AuthResponseDto> {

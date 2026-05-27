@@ -21,7 +21,7 @@ export class EmailService {
     this.from = config.get<string>('EMAIL_FROM') ?? 'noreply@example.com';
   }
 
-  async sendVerificationCode(to: string, name: string, code: string): Promise<void> {
+  async sendVerificationCode(to: string, code: string): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: this.from,
@@ -30,7 +30,6 @@ export class EmailService {
         html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
             <h2 style="color: #3D7A6B; margin-bottom: 8px;">이어봄</h2>
-            <p style="color: #374151;">${name}님, 안녕하세요!</p>
             <p style="color: #374151;">아래 인증 코드를 입력해 이메일 인증을 완료해주세요.</p>
             <div style="background: #F3F4F6; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
               <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #3D7A6B;">${code}</span>

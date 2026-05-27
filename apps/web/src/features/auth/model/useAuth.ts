@@ -3,14 +3,40 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type {
+  SendVerificationCodeDto,
+  VerifyCodeDto,
   SignupDto,
   LoginDto,
-  VerifyEmailDto,
-  ResendVerificationDto,
   UserRole,
 } from '@eobom/shared';
 import * as authApi from '../api/authApi';
 import { tokenStorage } from './tokenStorage';
+import { ROLE_HOME } from '@/shared/lib/routes';
+
+export function useSendVerificationCode() {
+  return useMutation({
+    mutationFn: (dto: SendVerificationCodeDto) => authApi.sendVerificationCode(dto),
+  });
+}
+
+export function useVerifyCode() {
+  return useMutation({
+    mutationFn: (dto: VerifyCodeDto) => authApi.verifyCode(dto),
+  });
+}
+
+export function useSignup() {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (dto: SignupDto) => authApi.signup(dto),
+    onSuccess(data) {
+      tokenStorage.setTokens(data.accessToken, data.refreshToken);
+      const role: UserRole = data.user.role;
+      router.replace(role === 'THERAPIST' ? ROLE_HOME.THERAPIST : ROLE_HOME.PARENT);
+    },
+  });
+}
 
 export function useLogin() {
   const router = useRouter();
@@ -20,43 +46,8 @@ export function useLogin() {
     onSuccess(data) {
       tokenStorage.setTokens(data.accessToken, data.refreshToken);
       const role: UserRole = data.user.role;
-      router.replace(role === 'THERAPIST' ? '/dashboard' : '/home');
+      router.replace(role === 'THERAPIST' ? ROLE_HOME.THERAPIST : ROLE_HOME.PARENT);
     },
-    onError(error, variables) {
-      if (error.message === 'EMAIL_NOT_VERIFIED') {
-        router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
-      }
-    },
-  });
-}
-
-export function useSignup() {
-  const router = useRouter();
-
-  return useMutation({
-    mutationFn: (dto: SignupDto) => authApi.signup(dto),
-    onSuccess(_data, variables) {
-      router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
-    },
-  });
-}
-
-export function useVerifyEmail() {
-  const router = useRouter();
-
-  return useMutation({
-    mutationFn: (dto: VerifyEmailDto) => authApi.verifyEmail(dto),
-    onSuccess(data) {
-      tokenStorage.setTokens(data.accessToken, data.refreshToken);
-      const role: UserRole = data.user.role;
-      router.replace(role === 'THERAPIST' ? '/dashboard' : '/home');
-    },
-  });
-}
-
-export function useResendVerification() {
-  return useMutation({
-    mutationFn: (dto: ResendVerificationDto) => authApi.resendVerification(dto),
   });
 }
 
