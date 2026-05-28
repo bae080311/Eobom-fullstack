@@ -53,6 +53,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/schedules/:path*',
     '/home/:path*',
     '/schedule/:path*',
     '/notifications/:path*',
