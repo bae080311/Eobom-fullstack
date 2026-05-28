@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { ScheduleStatus, OrgMembershipStatus } from '@eobom/shared';
 import type {
@@ -71,13 +77,19 @@ export class SchedulesService {
     });
     if (!membership) throw new NotFoundException('소속 기관을 찾을 수 없습니다.');
 
+    const startAt = new Date(dto.startAt);
+    const endAt = new Date(dto.endAt);
+    if (startAt >= endAt) {
+      throw new BadRequestException('시작 시간은 종료 시간보다 빨라야 합니다.');
+    }
+
     const schedule = await this.prisma.schedule.create({
       data: {
         childId: dto.childId,
         therapistId: dto.therapistId ?? profile.id,
         organizationId: membership.organizationId,
-        startAt: new Date(dto.startAt),
-        endAt: new Date(dto.endAt),
+        startAt,
+        endAt,
         title: dto.title,
         notes: dto.notes,
       },
@@ -98,14 +110,20 @@ export class SchedulesService {
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
     if (schedule.therapistId !== profile.id) throw new ForbiddenException();
 
+    const startAt = dto.startAt ? new Date(dto.startAt) : schedule.startAt;
+    const endAt = dto.endAt ? new Date(dto.endAt) : schedule.endAt;
+    if (startAt >= endAt) {
+      throw new BadRequestException('시작 시간은 종료 시간보다 빨라야 합니다.');
+    }
+
     const timeChanged = !!(dto.startAt || dto.endAt);
 
     const updated = await this.prisma.schedule.update({
       where: { id },
       data: {
-        ...(dto.startAt ? { startAt: new Date(dto.startAt) } : {}),
-        ...(dto.endAt ? { endAt: new Date(dto.endAt) } : {}),
-        ...(dto.title ? { title: dto.title } : {}),
+        ...(dto.startAt ? { startAt } : {}),
+        ...(dto.endAt ? { endAt } : {}),
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
         ...(timeChanged ? { status: ScheduleStatus.RESCHEDULED } : {}),
       },
