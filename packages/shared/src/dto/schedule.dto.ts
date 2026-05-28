@@ -1,5 +1,17 @@
 import type { ScheduleStatus } from "../enums/index.js";
 
+export interface ScheduleResponseDto {
+  id: string;
+  childId: string;
+  childName: string;
+  therapistId: string;
+  startAt: string;
+  endAt: string;
+  status: ScheduleStatus;
+  title: string;
+  notes: string | null;
+}
+
 export interface CreateScheduleDto {
   childId: string;
   startAt: string;
