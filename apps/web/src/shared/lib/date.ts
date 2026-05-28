@@ -1,11 +1,54 @@
-const DAYS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const KST_TZ = 'Asia/Seoul';
 
 export function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: KST_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const hour = parts.find((p) => p.type === 'hour')?.value ?? '00';
+  const minute = parts.find((p) => p.type === 'minute')?.value ?? '00';
+  return `${hour}:${minute}`;
 }
 
 export function formatDateLabel(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`;
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: KST_TZ,
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+  }).formatToParts(new Date(iso));
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? '';
+  return `${month}월 ${day}일 (${weekday})`;
+}
+
+export function toKSTDateString(iso: string | Date): string {
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: KST_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  return `${year}-${month}-${day}`;
+}
+
+export function getKSTStartOfDay(date: Date = new Date()): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: KST_TZ,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(date);
+  const year = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
+  const month = parseInt(parts.find((p) => p.type === 'month')!.value, 10) - 1;
+  const day = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
+  // KST midnight = UTC midnight of the KST date minus 9 hours
+  return new Date(Date.UTC(year, month, day) - 9 * 60 * 60 * 1000);
 }
