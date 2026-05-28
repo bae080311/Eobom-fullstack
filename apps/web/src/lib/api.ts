@@ -31,7 +31,10 @@ async function request<T>(promise: ReturnType<typeof client.get>): Promise<T> {
   } catch (err) {
     if (err instanceof HTTPError) {
       const body = await err.response.json().catch(() => ({}));
-      throw new ApiError(body.message ?? '요청에 실패했습니다.', err.response.status);
+      const message = Array.isArray(body.message)
+        ? body.message.join(', ')
+        : (body.message ?? '요청에 실패했습니다.');
+      throw new ApiError(message, err.response.status);
     }
     throw err;
   }
