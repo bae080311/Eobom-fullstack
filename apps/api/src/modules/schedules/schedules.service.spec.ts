@@ -227,11 +227,29 @@ describe('SchedulesService', () => {
         makeScheduleRow({ status: ScheduleStatus.RESCHEDULED }),
       );
 
-      const result = await service.update('s1', { startAt: '2025-06-02T10:00:00Z' }, 'u1');
+      // startAt만 변경 시 기존 endAt(11:00)보다 앞인 시각을 전달해야 검증을 통과한다
+      const result = await service.update(
+        's1',
+        { startAt: '2025-06-01T09:00:00Z', endAt: '2025-06-01T11:00:00Z' },
+        'u1',
+      );
 
       const updateData = prisma.schedule.update.mock.calls[0][0].data;
       expect(updateData.status).toBe(ScheduleStatus.RESCHEDULED);
       expect(result.status).toBe(ScheduleStatus.RESCHEDULED);
+    });
+
+    it('startAt이 endAt 이후이면 BadRequestException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+
+      await expect(
+        service.update(
+          's1',
+          { startAt: '2025-06-01T12:00:00Z', endAt: '2025-06-01T11:00:00Z' },
+          'u1',
+        ),
+      ).rejects.toThrow('시작 시간은 종료 시간보다 빨라야 합니다.');
     });
 
     it('시간 미변경 시 status 필드가 포함되지 않는다', async () => {

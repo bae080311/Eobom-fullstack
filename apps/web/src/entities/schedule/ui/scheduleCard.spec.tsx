@@ -4,14 +4,16 @@ import { ScheduleStatus } from '@eobom/shared';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { ScheduleCard } from './scheduleCard';
 
+// KST 10:00 = UTC 01:00, KST 11:30 = UTC 02:30
+// UTC 고정값을 사용해 CI(UTC) 환경에서도 Intl(Asia/Seoul) 결과가 일정하도록 한다.
 function makeSchedule(overrides: Partial<ScheduleResponseDto> = {}): ScheduleResponseDto {
   return {
     id: 's1',
     childId: 'c1',
     childName: '김아동',
     therapistId: 't1',
-    startAt: new Date(2024, 0, 15, 10, 0, 0).toISOString(),
-    endAt: new Date(2024, 0, 15, 11, 30, 0).toISOString(),
+    startAt: '2024-01-15T01:00:00.000Z', // KST 10:00
+    endAt: '2024-01-15T02:30:00.000Z', // KST 11:30
     status: ScheduleStatus.SCHEDULED,
     title: '언어치료',
     notes: null,
@@ -76,13 +78,12 @@ describe('ScheduleCard', () => {
     });
 
     it('notes가 빈 문자열이면 표시하지 않는다', () => {
-      // ScheduleCard 구현: {schedule.notes && <span className="... truncate mt-0.5">}
       // 빈 문자열("")은 falsy이므로 notes span이 렌더링되지 않는다
       const { container } = render(
         <ScheduleCard schedule={makeSchedule({ notes: '' as unknown as null })} />,
       );
-      // notes span은 text-gray-400 클래스를 가진 유일한 span이다
-      // (endTime span은 text-gray-400이지만 font-medium도 함께 가짐)
+      // notes span: text-gray-400 + italic (font-medium 없음)
+      // endTime span: text-gray-400 + font-medium
       const allSpans = Array.from(container.querySelectorAll('span'));
       const notesSpan = allSpans.find(
         (el) => el.classList.contains('text-gray-400') && !el.classList.contains('font-medium'),
@@ -96,40 +97,39 @@ describe('ScheduleCard', () => {
       const { container } = render(
         <ScheduleCard schedule={makeSchedule({ status: ScheduleStatus.SCHEDULED })} />,
       );
-      const bar = container.querySelector('.bg-brand');
-      expect(bar).toBeInTheDocument();
+      expect(container.querySelector('.bg-brand')).toBeInTheDocument();
     });
 
     it('CANCELED 상태는 왼쪽 바에 bg-danger 클래스를 갖는다', () => {
       const { container } = render(
         <ScheduleCard schedule={makeSchedule({ status: ScheduleStatus.CANCELED })} />,
       );
-      const bar = container.querySelector('.bg-danger');
-      expect(bar).toBeInTheDocument();
+      expect(container.querySelector('.bg-danger')).toBeInTheDocument();
     });
 
     it('COMPLETED 상태는 왼쪽 바에 bg-gray-300 클래스를 갖는다', () => {
       const { container } = render(
         <ScheduleCard schedule={makeSchedule({ status: ScheduleStatus.COMPLETED })} />,
       );
-      const bar = container.querySelector('.bg-gray-300');
-      expect(bar).toBeInTheDocument();
+      expect(container.querySelector('.bg-gray-300')).toBeInTheDocument();
     });
   });
 
   describe('다양한 시간 포맷', () => {
     it('자정 시작 시간(00:00)을 올바르게 표시한다', () => {
-      const d = new Date(2024, 0, 15, 0, 0, 0);
-      render(<ScheduleCard schedule={makeSchedule({ startAt: d.toISOString() })} />);
+      // KST 00:00 = UTC 전날 15:00
+      render(<ScheduleCard schedule={makeSchedule({ startAt: '2024-01-14T15:00:00.000Z' })} />);
       expect(screen.getByText('00:00')).toBeInTheDocument();
     });
 
     it('분이 한 자리인 시간(09:05)을 올바르게 표시한다', () => {
-      const start = new Date(2024, 0, 15, 9, 5, 0);
-      const end = new Date(2024, 0, 15, 9, 50, 0);
+      // KST 09:05 = UTC 00:05 / KST 09:50 = UTC 00:50
       render(
         <ScheduleCard
-          schedule={makeSchedule({ startAt: start.toISOString(), endAt: end.toISOString() })}
+          schedule={makeSchedule({
+            startAt: '2024-01-15T00:05:00.000Z',
+            endAt: '2024-01-15T00:50:00.000Z',
+          })}
         />,
       );
       expect(screen.getByText('09:05')).toBeInTheDocument();
