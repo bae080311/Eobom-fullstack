@@ -16,8 +16,13 @@
   "hooks": {
     "Stop": [
       {
-        "type": "command",
-        "command": "bash -c 'echo \"\\n[Flywheel] 세션 종료 — 새로 배운 것이 있으면 Notion 9.8 Flywheel Log에 한 줄 기록하세요.\\nhttps://baekyungjin.notion.site/367085d59d5e81c287a5dc3838527446\"'"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"\\n[Flywheel] 세션 종료 — 새로 배운 것이 있으면 Notion 9.8 Flywheel Log에 한 줄 기록하세요.\\nhttps://baekyungjin.notion.site/367085d59d5e81c287a5dc3838527446\"'"
+          }
+        ]
       }
     ]
   }
