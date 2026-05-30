@@ -33,7 +33,6 @@ vi.mock('@/shared/ui', () => ({
 }));
 
 vi.mock('@/shared/lib/date', () => ({
-  getKSTWeekStart: vi.fn().mockReturnValue(new Date('2026-05-25T15:00:00.000Z')),
   toKSTDateString: vi.fn().mockImplementation((d: string | Date) => {
     const date = typeof d === 'string' ? new Date(d) : d;
     return date.toISOString().slice(0, 10);
@@ -69,6 +68,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[mockSchedule]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );
@@ -83,6 +83,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );
@@ -96,6 +97,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );
@@ -109,6 +111,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[mockSchedule]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );
@@ -122,6 +125,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );
@@ -135,6 +139,7 @@ describe('TherapistDashboard', () => {
         weekInitialData={[]}
         userProfile={null}
         todayLabel="5월 30일 (금)"
+        weekStart="2026-05-25T15:00:00.000Z"
       />,
       { wrapper: makeWrapper() },
     );

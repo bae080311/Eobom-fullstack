@@ -7,13 +7,13 @@ import { useTodaySchedules, useWeekSchedules } from '@/entities/schedule';
 import type { UserWithProfile } from '@/entities/user';
 import { SectionHeader } from '@/shared/ui';
 import { toKSTDateString } from '@/shared/lib/date';
-import { getKSTWeekStart } from '@/shared/lib/date';
 
 interface Props {
   todayInitialData: ScheduleResponseDto[];
   weekInitialData: ScheduleResponseDto[];
   userProfile: UserWithProfile | null;
   todayLabel: string;
+  weekStart: string;
 }
 
 const DOW_KO = ['월', '화', '수', '목', '금', '토', '일'];
@@ -32,12 +32,13 @@ export function TherapistDashboard({
   weekInitialData,
   userProfile,
   todayLabel,
+  weekStart,
 }: Props) {
   const { data: todaySchedules = [] } = useTodaySchedules(todayInitialData);
   const { data: weekSchedules = [] } = useWeekSchedules(weekInitialData);
 
-  const weekStart = getKSTWeekStart();
-  const weekDots = buildWeekDots(weekStart, weekSchedules);
+  const weekStartParsed = new Date(weekStart);
+  const weekDots = buildWeekDots(weekStartParsed, weekSchedules);
 
   return (
     <div className="pb-24">

@@ -54,21 +54,8 @@ export function getKSTStartOfDay(date: Date = new Date()): Date {
 
 export function getKSTWeekStart(date: Date = new Date()): Date {
   const todayStart = getKSTStartOfDay(date);
-  const kstDow = new Intl.DateTimeFormat('en-US', {
-    timeZone: KST_TZ,
-    weekday: 'short',
-  })
-    .format(date)
-    .slice(0, 3);
-  const dowMap: Record<string, number> = {
-    Sun: 6,
-    Mon: 0,
-    Tue: 1,
-    Wed: 2,
-    Thu: 3,
-    Fri: 4,
-    Sat: 5,
-  };
-  const daysFromMonday = dowMap[kstDow] ?? 0;
+  const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const utcDay = kstDate.getUTCDay();
+  const daysFromMonday = utcDay === 0 ? 6 : utcDay - 1;
   return new Date(todayStart.getTime() - daysFromMonday * 24 * 60 * 60 * 1000);
 }

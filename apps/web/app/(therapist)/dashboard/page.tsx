@@ -45,6 +45,7 @@ export default async function TherapistDashboardPage() {
         weekInitialData={weekSchedules}
         userProfile={userProfile}
         todayLabel={todayLabel}
+        weekStart={weekFrom.toISOString()}
       />
       <TherapistTabBar active="home" />
     </PageShell>
