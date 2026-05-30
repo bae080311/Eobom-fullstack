@@ -11,5 +11,6 @@ export {
   useCancelSchedule,
   useConfirmSchedule,
 } from './model/useSchedules';
+export { useTodaySchedules, useWeekSchedules } from './model/useTodaySchedules';
 export { SessionRow } from './ui/sessionRow';
 export { DetailRow } from './ui/detailRow';
