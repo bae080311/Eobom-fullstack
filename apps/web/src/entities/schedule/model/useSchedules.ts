@@ -9,6 +9,8 @@ import type { CreateScheduleDto, UpdateScheduleDto, ScheduleResponseDto } from '
 export const scheduleKeys = {
   all: ['schedules'] as const,
   month: (year: number, month: number) => ['schedules', year, month] as const,
+  today: (dateStr: string) => ['schedules', 'today', dateStr] as const,
+  week: (weekStart: string) => ['schedules', 'week', weekStart] as const,
 };
 
 export function useSchedules(year: number, month: number, initialData?: ScheduleResponseDto[]) {

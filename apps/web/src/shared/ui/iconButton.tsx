@@ -9,7 +9,7 @@ export function IconButton({ children, label, hasDot, onClick }: Props) {
   return (
     <button
       type="button"
-      className="w-[38px] h-[38px] rounded-full bg-gray-100 inline-flex items-center justify-center text-gray-700 border-0 cursor-pointer relative"
+      className="size-8 rounded-full bg-gray-100 inline-flex items-center justify-center text-gray-500 border-0 cursor-pointer relative"
       aria-label={label}
       onClick={onClick}
     >

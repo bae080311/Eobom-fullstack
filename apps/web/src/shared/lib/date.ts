@@ -7,7 +7,6 @@ export function formatTime(iso: string): string {
     minute: '2-digit',
     hour12: false,
   }).formatToParts(new Date(iso));
-  // ko-K + hour12:false 는 자정을 "24:00"으로 표시하는 경우가 있어 정규화한다
   const hour = (parts.find((p) => p.type === 'hour')?.value ?? '00').replace('24', '00');
   const minute = parts.find((p) => p.type === 'minute')?.value ?? '00';
   return `${hour}:${minute}`;
@@ -50,6 +49,13 @@ export function getKSTStartOfDay(date: Date = new Date()): Date {
   const year = parseInt(parts.find((p) => p.type === 'year')!.value, 10);
   const month = parseInt(parts.find((p) => p.type === 'month')!.value, 10) - 1;
   const day = parseInt(parts.find((p) => p.type === 'day')!.value, 10);
-  // KST midnight = UTC midnight of the KST date minus 9 hours
   return new Date(Date.UTC(year, month, day) - 9 * 60 * 60 * 1000);
+}
+
+export function getKSTWeekStart(date: Date = new Date()): Date {
+  const todayStart = getKSTStartOfDay(date);
+  const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const utcDay = kstDate.getUTCDay();
+  const daysFromMonday = utcDay === 0 ? 6 : utcDay - 1;
+  return new Date(todayStart.getTime() - daysFromMonday * 24 * 60 * 60 * 1000);
 }
