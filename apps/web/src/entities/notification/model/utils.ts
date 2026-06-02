@@ -15,7 +15,10 @@ const TYPE_VARIANT: Record<NotificationType, NotificationVariant> = {
 };
 
 function formatRelativeTime(createdAt: string): string {
-  const diffMs = Date.now() - new Date(createdAt).getTime();
+  const date = new Date(createdAt);
+  if (isNaN(date.getTime())) return '';
+
+  const diffMs = Date.now() - date.getTime();
   const mins = Math.floor(diffMs / 60_000);
   const hours = Math.floor(diffMs / 3_600_000);
   const days = Math.floor(diffMs / 86_400_000);
