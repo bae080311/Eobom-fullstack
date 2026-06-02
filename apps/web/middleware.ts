@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { THERAPIST_ROUTES, PARENT_ROUTES, AUTH_ROUTES, ROLE_HOME } from '@/shared/lib/routes';
+import {
+  THERAPIST_ROUTES,
+  PARENT_ROUTES,
+  COMMON_ROUTES,
+  AUTH_ROUTES,
+  ROLE_HOME,
+} from '@/shared/lib/routes';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 const ACCESS_MAX_AGE = 15 * 60;
+const ACCESS_COOKIE = {
+  httpOnly: false,
+  path: '/',
+  maxAge: ACCESS_MAX_AGE,
+  sameSite: 'lax',
+} as const;
 
 function decodeRole(token: string): string | null {
   try {
@@ -30,49 +42,35 @@ async function tryRefresh(refreshToken: string): Promise<string | null> {
   }
 }
 
+function getRoleRedirectPath(role: string, pathname: string): string | null {
+  const isTherapist = THERAPIST_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isParent = PARENT_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isAuth = AUTH_ROUTES.some((p) => pathname.startsWith(p));
+
+  if (isAuth) return role === 'THERAPIST' ? ROLE_HOME.THERAPIST : ROLE_HOME.PARENT;
+  if (isTherapist && role !== 'THERAPIST') return ROLE_HOME.PARENT;
+  if (isParent && role !== 'PARENT') return ROLE_HOME.THERAPIST;
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  let accessToken = request.cookies.get('eobom_access')?.value;
+  const accessToken = request.cookies.get('eobom_access')?.value;
   const refreshToken = request.cookies.get('eobom_refresh')?.value;
 
-  const isTherapistRoute = THERAPIST_ROUTES.some(
-    (p) => pathname === p || pathname.startsWith(p + '/'),
+  const isProtected = [...THERAPIST_ROUTES, ...PARENT_ROUTES, ...COMMON_ROUTES].some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
-  const isParentRoute = PARENT_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
-  const isProtected = isTherapistRoute || isParentRoute;
-  const isAuthRoute = AUTH_ROUTES.some((p) => pathname.startsWith(p));
 
   if (!accessToken && refreshToken) {
-    const newAccessToken = await tryRefresh(refreshToken);
-    if (newAccessToken) {
-      accessToken = newAccessToken;
-      const response = isProtected ? NextResponse.next() : NextResponse.next();
-      response.cookies.set('eobom_access', newAccessToken, {
-        httpOnly: false,
-        path: '/',
-        maxAge: ACCESS_MAX_AGE,
-        sameSite: 'lax',
-      });
-      const role = decodeRole(newAccessToken);
-      if (role) {
-        if (isAuthRoute) {
-          const dest = role === 'THERAPIST' ? ROLE_HOME.THERAPIST : ROLE_HOME.PARENT;
-          const redirect = NextResponse.redirect(new URL(dest, request.url));
-          redirect.cookies.set('eobom_access', newAccessToken, {
-            httpOnly: false,
-            path: '/',
-            maxAge: ACCESS_MAX_AGE,
-            sameSite: 'lax',
-          });
-          return redirect;
-        }
-        if (isTherapistRoute && role !== 'THERAPIST') {
-          return NextResponse.redirect(new URL(ROLE_HOME.PARENT, request.url));
-        }
-        if (isParentRoute && role !== 'PARENT') {
-          return NextResponse.redirect(new URL(ROLE_HOME.THERAPIST, request.url));
-        }
-      }
+    const newToken = await tryRefresh(refreshToken);
+    if (newToken) {
+      const role = decodeRole(newToken);
+      const redirectPath = role ? getRoleRedirectPath(role, pathname) : null;
+      const response = redirectPath
+        ? NextResponse.redirect(new URL(redirectPath, request.url))
+        : NextResponse.next();
+      response.cookies.set('eobom_access', newToken, ACCESS_COOKIE);
       return response;
     }
   }
@@ -83,23 +81,10 @@ export async function middleware(request: NextRequest) {
 
   if (accessToken) {
     const role = decodeRole(accessToken);
-
-    if (!role && isProtected) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
+    if (!role && isProtected) return NextResponse.redirect(new URL('/login', request.url));
     if (role) {
-      if (isAuthRoute) {
-        const dest = role === 'THERAPIST' ? ROLE_HOME.THERAPIST : ROLE_HOME.PARENT;
-        return NextResponse.redirect(new URL(dest, request.url));
-      }
-
-      if (isTherapistRoute && role !== 'THERAPIST') {
-        return NextResponse.redirect(new URL(ROLE_HOME.PARENT, request.url));
-      }
-      if (isParentRoute && role !== 'PARENT') {
-        return NextResponse.redirect(new URL(ROLE_HOME.THERAPIST, request.url));
-      }
+      const redirectPath = getRoleRedirectPath(role, pathname);
+      if (redirectPath) return NextResponse.redirect(new URL(redirectPath, request.url));
     }
   }
 
