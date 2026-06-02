@@ -45,7 +45,15 @@ export function NotificationList({ initialData }: Props) {
               {groupItems.map((n) => (
                 <div
                   key={n.id}
+                  role="button"
+                  tabIndex={n.unread ? 0 : -1}
                   onClick={() => n.unread && markAsRead(n.id)}
+                  onKeyDown={(e) => {
+                    if (n.unread && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      markAsRead(n.id);
+                    }
+                  }}
                   className={n.unread ? 'cursor-pointer' : undefined}
                 >
                   <NotificationCard notification={n} />
