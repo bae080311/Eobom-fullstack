@@ -27,6 +27,17 @@ function decodeRole(token: string): string | null {
   }
 }
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    if (typeof payload.exp !== 'number') return true;
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
 async function tryRefresh(refreshToken: string): Promise<string | null> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh`, {
@@ -55,16 +66,19 @@ function getRoleRedirectPath(role: string, pathname: string): string | null {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get('eobom_access')?.value;
+  let accessToken = request.cookies.get('eobom_access')?.value;
   const refreshToken = request.cookies.get('eobom_refresh')?.value;
 
   const isProtected = [...THERAPIST_ROUTES, ...PARENT_ROUTES, ...COMMON_ROUTES].some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 
-  if (!accessToken && refreshToken) {
+  const isExpired = accessToken ? isTokenExpired(accessToken) : true;
+
+  if (isExpired && refreshToken) {
     const newToken = await tryRefresh(refreshToken);
     if (newToken) {
+      accessToken = newToken;
       const role = decodeRole(newToken);
       const redirectPath = role ? getRoleRedirectPath(role, pathname) : null;
       const response = redirectPath
@@ -73,6 +87,9 @@ export async function middleware(request: NextRequest) {
       response.cookies.set('eobom_access', newToken, ACCESS_COOKIE);
       return response;
     }
+    accessToken = undefined;
+  } else if (isExpired) {
+    accessToken = undefined;
   }
 
   if (isProtected && !accessToken) {
