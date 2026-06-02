@@ -6,7 +6,7 @@ import { ParentTabBar } from '@/widgets/parent-tab-bar';
 import { SessionRow, MOCK_NEXT_SESSION, MOCK_UPCOMING, MOCK_WEEK } from '@/entities/schedule';
 import { NotificationCard, MOCK_PARENT_NOTIFICATIONS } from '@/entities/notification';
 import { ChildChipList, MOCK_CHILDREN } from '@/entities/child';
-import { PageShell, PageTopBar, SectionHeader, IconButton, IconBell } from '@/shared/ui';
+import { PageShell, PageTopBar, SectionHeader, IconLink, IconBell } from '@/shared/ui';
 
 export const metadata: Metadata = { title: '홈' };
 
@@ -17,11 +17,9 @@ export default function ParentHomePage() {
         title="안녕하세요, 민서희님"
         subtitle="5월 22일 목요일"
         action={
-          <Link href="/notifications" aria-label="알림" className="relative inline-flex">
-            <IconButton label="알림" hasDot>
-              <IconBell size={18} />
-            </IconButton>
-          </Link>
+          <IconLink label="알림" hasDot href="/notifications">
+            <IconBell size={18} />
+          </IconLink>
         }
       />
 
