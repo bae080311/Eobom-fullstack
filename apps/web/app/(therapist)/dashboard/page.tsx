@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import Link from 'next/link';
-import { PageShell, PageTopBar, IconButton, IconBell } from '@/shared/ui';
+import { PageShell, PageTopBar, IconLink, IconBell } from '@/shared/ui';
 import { fetchSchedules } from '@/entities/schedule';
 import { fetchUserMe } from '@/entities/user';
 import { TherapistDashboard } from '@/widgets/therapist-dashboard';
@@ -33,11 +32,9 @@ export default async function TherapistDashboardPage() {
     <PageShell>
       <PageTopBar
         action={
-          <Link href="/notifications" aria-label="알림" className="relative inline-flex">
-            <IconButton label="알림">
-              <IconBell size={14} />
-            </IconButton>
-          </Link>
+          <IconLink label="알림" href="/notifications">
+            <IconBell size={14} />
+          </IconLink>
         }
       />
       <TherapistDashboard
