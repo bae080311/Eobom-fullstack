@@ -29,9 +29,9 @@ export function ParentTabBar({ active }: Props) {
       <button className={btnCls('notes')} aria-label="수업노트">
         <IconFileText size={22} /> 수업노트
       </button>
-      <button className={btnCls('me')} aria-label="내 정보">
+      <Link href="/me" className={cls('me')} aria-label="내 정보">
         <IconUser size={22} /> 내 정보
-      </button>
+      </Link>
     </nav>
   );
 }
