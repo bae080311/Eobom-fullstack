@@ -25,9 +25,12 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const dto: UpdateProfileDto = { name };
-    if (isTherapist) dto.licenseNumber = licenseNumber;
-    else dto.phoneNumber = phoneNumber;
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    const dto: UpdateProfileDto = { name: trimmedName };
+    if (isTherapist) dto.licenseNumber = licenseNumber.trim();
+    else dto.phoneNumber = phoneNumber.trim();
     mutate(dto, { onSuccess: onClose });
   };
 

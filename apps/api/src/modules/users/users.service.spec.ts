@@ -45,22 +45,24 @@ describe('UsersService', () => {
         parentProfile: { phoneNumber: '01012345678' },
         therapistProfile: null,
       };
-      prisma.user.findUnique.mockResolvedValueOnce(existing).mockResolvedValueOnce(updated);
-      prisma.user.update.mockResolvedValue({});
-      prisma.parentProfile.upsert.mockResolvedValue({});
+      prisma.user.findUnique.mockResolvedValueOnce(existing);
+      prisma.user.update.mockResolvedValue(updated);
 
       const result = await service.updateMe('u1', { name: '새이름', phoneNumber: '01012345678' });
 
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: 'u1' },
-        data: { name: '새이름' },
+        data: {
+          name: '새이름',
+          parentProfile: {
+            upsert: {
+              create: { phoneNumber: '01012345678' },
+              update: { phoneNumber: '01012345678' },
+            },
+          },
+        },
+        include: { therapistProfile: true, parentProfile: true },
       });
-      expect(prisma.parentProfile.upsert).toHaveBeenCalledWith({
-        where: { userId: 'u1' },
-        update: { phoneNumber: '01012345678' },
-        create: { userId: 'u1', phoneNumber: '01012345678' },
-      });
-      expect(prisma.therapistProfile.upsert).not.toHaveBeenCalled();
       expect(result).toEqual(updated);
     });
 
@@ -71,17 +73,23 @@ describe('UsersService', () => {
         therapistProfile: { licenseNumber: 'L-1' },
         parentProfile: null,
       };
-      prisma.user.findUnique.mockResolvedValueOnce(existing).mockResolvedValueOnce(updated);
-      prisma.therapistProfile.upsert.mockResolvedValue({});
+      prisma.user.findUnique.mockResolvedValueOnce(existing);
+      prisma.user.update.mockResolvedValue(updated);
 
       const result = await service.updateMe('u2', { licenseNumber: 'L-1' });
 
-      expect(prisma.therapistProfile.upsert).toHaveBeenCalledWith({
-        where: { userId: 'u2' },
-        update: { licenseNumber: 'L-1' },
-        create: { userId: 'u2', licenseNumber: 'L-1' },
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'u2' },
+        data: {
+          therapistProfile: {
+            upsert: {
+              create: { licenseNumber: 'L-1' },
+              update: { licenseNumber: 'L-1' },
+            },
+          },
+        },
+        include: { therapistProfile: true, parentProfile: true },
       });
-      expect(prisma.parentProfile.upsert).not.toHaveBeenCalled();
       expect(result).toEqual(updated);
     });
 

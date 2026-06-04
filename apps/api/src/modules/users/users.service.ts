@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { UserRole } from '@eobom/shared';
 import type { UpdateProfileDto } from '@eobom/shared';
 import { PrismaService } from '../../database/prisma.service.js';
@@ -25,28 +26,42 @@ export class UsersService {
       throw new NotFoundException();
     }
 
+    const data: Prisma.UserUpdateInput = {};
+
     if (dto.name !== undefined) {
-      await this.prisma.user.update({ where: { id: userId }, data: { name: dto.name } });
+      data.name = dto.name;
     }
 
     if (user.role === UserRole.THERAPIST && dto.licenseNumber !== undefined) {
-      await this.prisma.therapistProfile.upsert({
-        where: { userId },
-        update: { licenseNumber: dto.licenseNumber },
-        create: { userId, licenseNumber: dto.licenseNumber },
-      });
+      data.therapistProfile = {
+        upsert: {
+          create: { licenseNumber: dto.licenseNumber },
+          update: { licenseNumber: dto.licenseNumber },
+        },
+      };
     }
 
     if (user.role === UserRole.PARENT && dto.phoneNumber !== undefined) {
-      await this.prisma.parentProfile.upsert({
-        where: { userId },
-        update: { phoneNumber: dto.phoneNumber },
-        create: { userId, phoneNumber: dto.phoneNumber },
-      });
+      data.parentProfile = {
+        upsert: {
+          create: { phoneNumber: dto.phoneNumber },
+          update: { phoneNumber: dto.phoneNumber },
+        },
+      };
     }
 
+    if (Object.keys(data).length === 0) {
+      return this.getMe(userId);
+    }
+
+    // 단일 update 쿼리로 user + profile을 트랜잭션 안전하게 갱신
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      include: { therapistProfile: true, parentProfile: true },
+    });
     this.logger.log(`User ${userId} updated profile`);
-    return this.getMe(userId);
+    return updated;
   }
 
   async findById(id: string) {
