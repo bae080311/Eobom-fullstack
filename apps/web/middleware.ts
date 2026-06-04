@@ -115,6 +115,7 @@ export const config = {
     '/home/:path*',
     '/schedule/:path*',
     '/notifications/:path*',
+    '/me/:path*',
     '/login',
     '/register',
     '/verify-email',
