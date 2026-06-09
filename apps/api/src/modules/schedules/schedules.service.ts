@@ -144,7 +144,23 @@ export class SchedulesService {
     });
 
     this.logger.log(`acknowledge: schedule=${id} parent=${parentProfile.id}`);
-    return this.findOne(id, user);
+
+    // findOne을 재호출하면 parentProfile·parentChildLink를 중복 조회하므로,
+    // 검증을 마친 이 시점에서 detail 형태로 직접 재조회한다.
+    const updatedSchedule = await this.prisma.schedule.findUnique({
+      where: { id },
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { user: { select: { name: true } } } },
+        acknowledgements: {
+          where: { parentId: parentProfile.id },
+          select: { acknowledgedAt: true },
+        },
+      },
+    });
+    if (!updatedSchedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
+
+    return this.toDetailDto(updatedSchedule, updatedSchedule.acknowledgements[0] ?? null);
   }
 
   async create(dto: CreateScheduleDto, userId: string): Promise<ScheduleResponseDto> {
