@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { ScheduleResponseDto } from '@eobom/shared';
+import type { ScheduleResponseDto, ScheduleDetailResponseDto } from '@eobom/shared';
 
 export async function fetchSchedules(
   token: string,
@@ -11,4 +11,12 @@ export async function fetchSchedules(
       ScheduleResponseDto[]
     >(`/schedules?from=${from.toISOString()}&to=${to.toISOString()}`, { token, cache: 'no-store' })
     .catch(() => []);
+}
+
+// 상세는 에러를 삼키지 않는다 — 호출하는 페이지가 throw를 받아 notFound()를 호출한다.
+export async function fetchScheduleDetail(
+  token: string,
+  id: string,
+): Promise<ScheduleDetailResponseDto> {
+  return api.get<ScheduleDetailResponseDto>(`/schedules/${id}`, { token, cache: 'no-store' });
 }

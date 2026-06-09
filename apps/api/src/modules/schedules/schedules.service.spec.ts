@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ScheduleStatus, OrgMembershipStatus } from '@eobom/shared';
+import { ScheduleStatus, OrgMembershipStatus, UserRole } from '@eobom/shared';
+import type { IUser } from '@eobom/shared';
 
 import { SchedulesService } from './schedules.service.js';
 import type { PrismaService } from '../../database/prisma.service.js';
@@ -11,7 +12,10 @@ import type { PrismaService } from '../../database/prisma.service.js';
 
 const makePrisma = () => ({
   therapistProfile: { findUnique: vi.fn() },
+  parentProfile: { findUnique: vi.fn() },
+  parentChildLink: { findUnique: vi.fn() },
   organizationMembership: { findFirst: vi.fn() },
+  scheduleAcknowledgement: { upsert: vi.fn() },
   schedule: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
@@ -51,6 +55,42 @@ const makeScheduleRow = (overrides?: object) => ({
   notes: null,
   ...overrides,
 });
+
+// findOne/acknowledge가 반환하는 detail 형태(치료사 이름·확인 목록 포함)
+const makeDetailRow = (overrides?: object) => ({
+  ...makeScheduleRow(),
+  therapist: { user: { name: '이치료' } },
+  acknowledgements: [] as Array<{ acknowledgedAt: Date }>,
+  ...overrides,
+});
+
+const makeParentProfile = (overrides?: object) => ({ id: 'pp1', userId: 'pu1', ...overrides });
+
+const makeLink = (overrides?: object) => ({
+  id: 'link1',
+  parentId: 'pp1',
+  childId: 'c1',
+  relation: 'MOTHER',
+  ...overrides,
+});
+
+const therapistUser: IUser = {
+  id: 'u1',
+  email: 't@x.com',
+  name: '이치료',
+  role: UserRole.THERAPIST,
+  createdAt: new Date('2025-01-01T00:00:00Z'),
+  updatedAt: new Date('2025-01-01T00:00:00Z'),
+};
+
+const parentUser: IUser = {
+  id: 'pu1',
+  email: 'p@x.com',
+  name: '김부모',
+  role: UserRole.PARENT,
+  createdAt: new Date('2025-01-01T00:00:00Z'),
+  updatedAt: new Date('2025-01-01T00:00:00Z'),
+};
 
 // ---------------------------------------------------------------------------
 // Suite
@@ -124,35 +164,156 @@ describe('SchedulesService', () => {
   // findOne
   // -------------------------------------------------------------------------
 
-  describe('findOne', () => {
-    it('자신의 일정이면 ScheduleResponseDto를 반환한다', async () => {
+  describe('findOne (therapist)', () => {
+    it('자신의 일정이면 ScheduleDetailResponseDto를 반환한다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
-      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.findUnique.mockResolvedValue(makeDetailRow());
 
-      const result = await service.findOne('s1', 'u1');
+      const result = await service.findOne('s1', therapistUser);
 
       expect(result.id).toBe('s1');
       expect(result.therapistId).toBe('tp1');
+      expect(result.therapistName).toBe('이치료');
+      expect(result.acknowledged).toBe(false);
+      expect(result.acknowledgedAt).toBeNull();
+    });
+
+    it('임의 학부모가 확인한 일정이면 acknowledged=true로 표시한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeDetailRow({ acknowledgements: [{ acknowledgedAt: new Date('2025-06-02T00:00:00Z') }] }),
+      );
+
+      const result = await service.findOne('s1', therapistUser);
+
+      expect(result.acknowledged).toBe(true);
+      expect(result.acknowledgedAt).toBe('2025-06-02T00:00:00.000Z');
     });
 
     it('치료사 프로필이 없으면 NotFoundException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('s1', 'unknown')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('s1', therapistUser)).rejects.toThrow(NotFoundException);
     });
 
     it('일정이 존재하지 않으면 NotFoundException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('no-such-id', 'u1')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('no-such-id', therapistUser)).rejects.toThrow(NotFoundException);
     });
 
     it('다른 치료사의 일정이면 ForbiddenException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
-      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow({ therapistId: 'tp-other' }));
+      prisma.schedule.findUnique.mockResolvedValue(makeDetailRow({ therapistId: 'tp-other' }));
 
-      await expect(service.findOne('s1', 'u1')).rejects.toThrow(ForbiddenException);
+      await expect(service.findOne('s1', therapistUser)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('findOne (parent)', () => {
+    it('연결된 아동의 일정이면 detail DTO를 반환한다(미확인)', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeDetailRow());
+      prisma.parentChildLink.findUnique.mockResolvedValue(makeLink());
+
+      const result = await service.findOne('s1', parentUser);
+
+      expect(result.therapistName).toBe('이치료');
+      expect(result.acknowledged).toBe(false);
+    });
+
+    it('본인이 확인한 일정이면 acknowledged=true이고 본인 ack만 조회한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeDetailRow({ acknowledgements: [{ acknowledgedAt: new Date('2025-06-03T00:00:00Z') }] }),
+      );
+      prisma.parentChildLink.findUnique.mockResolvedValue(makeLink());
+
+      const result = await service.findOne('s1', parentUser);
+
+      expect(result.acknowledged).toBe(true);
+      expect(result.acknowledgedAt).toBe('2025-06-03T00:00:00.000Z');
+
+      const includeArg = prisma.schedule.findUnique.mock.calls[0][0].include;
+      expect(includeArg.acknowledgements.where).toEqual({ parentId: 'pp1' });
+    });
+
+    it('연결되지 않은 아동의 일정이면 ForbiddenException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeDetailRow());
+      prisma.parentChildLink.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne('s1', parentUser)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('학부모 프로필이 없으면 NotFoundException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne('s1', parentUser)).rejects.toThrow(NotFoundException);
+    });
+
+    it('일정이 없으면 연결 검사 전에 NotFoundException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne('no-such-id', parentUser)).rejects.toThrow(NotFoundException);
+      expect(prisma.parentChildLink.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('acknowledge', () => {
+    it('확인 레코드를 upsert하고 acknowledged=true detail DTO를 반환한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique
+        .mockResolvedValueOnce(makeScheduleRow()) // guard 단계 plain row
+        .mockResolvedValueOnce(
+          makeDetailRow({
+            acknowledgements: [{ acknowledgedAt: new Date('2025-06-04T00:00:00Z') }],
+          }),
+        ); // findOne 재조회 detail row
+      prisma.parentChildLink.findUnique.mockResolvedValue(makeLink());
+      prisma.scheduleAcknowledgement.upsert.mockResolvedValue({});
+
+      const result = await service.acknowledge('s1', parentUser);
+
+      expect(prisma.scheduleAcknowledgement.upsert).toHaveBeenCalledOnce();
+      const upsertArg = prisma.scheduleAcknowledgement.upsert.mock.calls[0][0];
+      expect(upsertArg.where.scheduleId_parentId).toEqual({ scheduleId: 's1', parentId: 'pp1' });
+      expect(upsertArg.update).toEqual({});
+      expect(result.acknowledged).toBe(true);
+      expect(result.acknowledgedAt).toBe('2025-06-04T00:00:00.000Z');
+    });
+
+    it('치료사가 호출하면 ForbiddenException을 던지고 upsert하지 않는다', async () => {
+      await expect(service.acknowledge('s1', therapistUser)).rejects.toThrow(ForbiddenException);
+      expect(prisma.parentProfile.findUnique).not.toHaveBeenCalled();
+      expect(prisma.scheduleAcknowledgement.upsert).not.toHaveBeenCalled();
+    });
+
+    it('연결되지 않은 아동의 일정이면 ForbiddenException을 던지고 upsert하지 않는다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.parentChildLink.findUnique.mockResolvedValue(null);
+
+      await expect(service.acknowledge('s1', parentUser)).rejects.toThrow(ForbiddenException);
+      expect(prisma.scheduleAcknowledgement.upsert).not.toHaveBeenCalled();
+    });
+
+    it('학부모 프로필이 없으면 NotFoundException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(null);
+
+      await expect(service.acknowledge('s1', parentUser)).rejects.toThrow(NotFoundException);
+    });
+
+    it('일정이 없으면 NotFoundException을 던지고 upsert하지 않는다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.schedule.findUnique.mockResolvedValue(null);
+
+      await expect(service.acknowledge('no-such-id', parentUser)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.scheduleAcknowledgement.upsert).not.toHaveBeenCalled();
     });
   });
 

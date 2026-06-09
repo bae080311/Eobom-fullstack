@@ -6,12 +6,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { ScheduleStatus, OrgMembershipStatus } from '@eobom/shared';
+import { ScheduleStatus, OrgMembershipStatus, UserRole } from '@eobom/shared';
 import type {
   CreateScheduleDto,
   UpdateScheduleDto,
   ScheduleQueryDto,
   ScheduleResponseDto,
+  ScheduleDetailResponseDto,
+  IUser,
 } from '@eobom/shared';
 
 @Injectable()
@@ -50,20 +52,115 @@ export class SchedulesService {
     return schedules.map((s) => this.toDto(s));
   }
 
-  async findOne(id: string, userId: string): Promise<ScheduleResponseDto> {
-    this.logger.log(`findOne: id=${id} userId=${userId}`);
+  async findOne(id: string, user: IUser): Promise<ScheduleDetailResponseDto> {
+    this.logger.log(`findOne: id=${id} userId=${user.id} role=${user.role}`);
 
-    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
+    if (user.role === UserRole.PARENT) {
+      const parentProfile = await this.prisma.parentProfile.findUnique({
+        where: { userId: user.id },
+      });
+      if (!parentProfile) {
+        this.logger.warn(`findOne: parentProfile not found for userId=${user.id}`);
+        throw new NotFoundException('학부모 프로필을 찾을 수 없습니다.');
+      }
+
+      const schedule = await this.prisma.schedule.findUnique({
+        where: { id },
+        include: {
+          child: { select: { id: true, name: true } },
+          therapist: { select: { user: { select: { name: true } } } },
+          acknowledgements: {
+            where: { parentId: parentProfile.id },
+            select: { acknowledgedAt: true },
+          },
+        },
+      });
+      if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
+
+      const link = await this.prisma.parentChildLink.findUnique({
+        where: { parentId_childId: { parentId: parentProfile.id, childId: schedule.childId } },
+      });
+      if (!link) {
+        this.logger.warn(
+          `findOne: parent=${parentProfile.id} not linked to child=${schedule.childId}`,
+        );
+        throw new ForbiddenException();
+      }
+
+      return this.toDetailDto(schedule, schedule.acknowledgements[0] ?? null);
+    }
+
+    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId: user.id } });
     if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
     const schedule = await this.prisma.schedule.findUnique({
       where: { id },
-      include: { child: { select: { id: true, name: true } } },
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { user: { select: { name: true } } } },
+        acknowledgements: {
+          orderBy: { acknowledgedAt: 'asc' },
+          take: 1,
+          select: { acknowledgedAt: true },
+        },
+      },
     });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
     if (schedule.therapistId !== profile.id) throw new ForbiddenException();
 
-    return this.toDto(schedule);
+    return this.toDetailDto(schedule, schedule.acknowledgements[0] ?? null);
+  }
+
+  async acknowledge(id: string, user: IUser): Promise<ScheduleDetailResponseDto> {
+    this.logger.log(`acknowledge: id=${id} userId=${user.id} role=${user.role}`);
+
+    if (user.role !== UserRole.PARENT) {
+      this.logger.warn(`acknowledge: non-parent role=${user.role} userId=${user.id}`);
+      throw new ForbiddenException('학부모만 일정을 확인할 수 있습니다.');
+    }
+
+    const parentProfile = await this.prisma.parentProfile.findUnique({
+      where: { userId: user.id },
+    });
+    if (!parentProfile) throw new NotFoundException('학부모 프로필을 찾을 수 없습니다.');
+
+    const schedule = await this.prisma.schedule.findUnique({ where: { id } });
+    if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
+
+    const link = await this.prisma.parentChildLink.findUnique({
+      where: { parentId_childId: { parentId: parentProfile.id, childId: schedule.childId } },
+    });
+    if (!link) {
+      this.logger.warn(
+        `acknowledge: parent=${parentProfile.id} not linked to child=${schedule.childId}`,
+      );
+      throw new ForbiddenException();
+    }
+
+    await this.prisma.scheduleAcknowledgement.upsert({
+      where: { scheduleId_parentId: { scheduleId: id, parentId: parentProfile.id } },
+      create: { scheduleId: id, parentId: parentProfile.id },
+      update: {},
+    });
+
+    this.logger.log(`acknowledge: schedule=${id} parent=${parentProfile.id}`);
+
+    // findOne을 재호출하면 parentProfile·parentChildLink를 중복 조회하므로,
+    // 검증을 마친 이 시점에서 detail 형태로 직접 재조회한다.
+    const updatedSchedule = await this.prisma.schedule.findUnique({
+      where: { id },
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { user: { select: { name: true } } } },
+        acknowledgements: {
+          where: { parentId: parentProfile.id },
+          select: { acknowledgedAt: true },
+        },
+      },
+    });
+    if (!updatedSchedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
+
+    return this.toDetailDto(updatedSchedule, updatedSchedule.acknowledgements[0] ?? null);
   }
 
   async create(dto: CreateScheduleDto, userId: string): Promise<ScheduleResponseDto> {
@@ -195,6 +292,29 @@ export class SchedulesService {
       status: schedule.status as ScheduleStatus,
       title: schedule.title,
       notes: schedule.notes,
+    };
+  }
+
+  private toDetailDto(
+    schedule: {
+      id: string;
+      childId: string;
+      child: { name: string };
+      therapistId: string;
+      startAt: Date;
+      endAt: Date;
+      status: string;
+      title: string;
+      notes: string | null;
+      therapist: { user: { name: string } };
+    },
+    ack: { acknowledgedAt: Date } | null,
+  ): ScheduleDetailResponseDto {
+    return {
+      ...this.toDto(schedule),
+      therapistName: schedule.therapist.user.name,
+      acknowledged: ack !== null,
+      acknowledgedAt: ack ? ack.acknowledgedAt.toISOString() : null,
     };
   }
 }

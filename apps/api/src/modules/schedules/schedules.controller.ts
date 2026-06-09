@@ -17,7 +17,7 @@ export class SchedulesController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: IUser) {
-    return this.schedulesService.findOne(id, user.id);
+    return this.schedulesService.findOne(id, user);
   }
 
   @Post()
@@ -38,5 +38,10 @@ export class SchedulesController {
   @Post(':id/confirm')
   confirm(@Param('id') id: string, @CurrentUser() user: IUser) {
     return this.schedulesService.confirm(id, user.id);
+  }
+
+  @Post(':id/acknowledge')
+  acknowledge(@Param('id') id: string, @CurrentUser() user: IUser) {
+    return this.schedulesService.acknowledge(id, user);
   }
 }

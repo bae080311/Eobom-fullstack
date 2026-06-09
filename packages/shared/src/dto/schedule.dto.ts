@@ -12,6 +12,12 @@ export interface ScheduleResponseDto {
   notes: string | null;
 }
 
+export interface ScheduleDetailResponseDto extends ScheduleResponseDto {
+  therapistName: string;
+  acknowledged: boolean;
+  acknowledgedAt: string | null;
+}
+
 export interface CreateScheduleDto {
   childId: string;
   startAt: string;

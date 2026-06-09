@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScheduleStatus } from '@eobom/shared';
-import type { ScheduleResponseDto } from '@eobom/shared';
+import type { ScheduleResponseDto, ScheduleDetailResponseDto } from '@eobom/shared';
 
 vi.mock('@/lib/api', () => ({
   api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -15,7 +15,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { api } from '@/lib/api';
-import { fetchSchedules } from './index';
+import { fetchSchedules, fetchScheduleDetail } from './index';
 
 const mockGet = vi.mocked(api.get);
 
@@ -96,5 +96,41 @@ describe('fetchSchedules', () => {
     await fetchSchedules('test-token', new Date(2024, 0, 1), new Date(2024, 0, 31));
     const [, opts] = mockGet.mock.calls[0] as [string, { cache: string }];
     expect(opts.cache).toBe('no-store');
+  });
+});
+
+const mockDetail: ScheduleDetailResponseDto = {
+  ...mockSchedule,
+  therapistName: '이치료',
+  acknowledged: false,
+  acknowledgedAt: null,
+};
+
+describe('fetchScheduleDetail', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('api.get을 /schedules/:id와 token·no-store 옵션으로 호출한다', async () => {
+    mockGet.mockResolvedValue(mockDetail);
+
+    await fetchScheduleDetail('test-token', 's1');
+
+    expect(mockGet).toHaveBeenCalledWith(
+      '/schedules/s1',
+      expect.objectContaining({ token: 'test-token', cache: 'no-store' }),
+    );
+  });
+
+  it('성공 시 ScheduleDetailResponseDto를 반환한다', async () => {
+    mockGet.mockResolvedValue(mockDetail);
+    const result = await fetchScheduleDetail('test-token', 's1');
+    expect(result).toEqual(mockDetail);
+  });
+
+  it('에러를 삼키지 않고 그대로 던진다(페이지가 notFound 처리)', async () => {
+    const { ApiError } = await import('@/lib/api');
+    mockGet.mockRejectedValue(new ApiError('Not Found', 404));
+    await expect(fetchScheduleDetail('test-token', 's1')).rejects.toBeInstanceOf(ApiError);
   });
 });
