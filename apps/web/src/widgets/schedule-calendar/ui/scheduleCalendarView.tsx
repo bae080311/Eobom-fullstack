@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { ScheduleCard, useSchedules } from '@/entities/schedule';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
@@ -50,6 +51,7 @@ interface Props {
 }
 
 export function ScheduleCalendarView({ initialData }: Props) {
+  const router = useRouter();
   const today = startOfDay(new Date());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -265,7 +267,11 @@ export function ScheduleCalendarView({ initialData }: Props) {
         ) : (
           <div className="flex flex-col gap-2">
             {selectedSchedules.map((s) => (
-              <ScheduleCard key={s.id} schedule={s} />
+              <ScheduleCard
+                key={s.id}
+                schedule={s}
+                onClick={() => router.push(`/schedules/${s.id}`)}
+              />
             ))}
           </div>
         )}
