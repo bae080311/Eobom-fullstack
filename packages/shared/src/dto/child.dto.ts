@@ -13,6 +13,14 @@ export interface UpdateChildDto {
   memo?: string;
 }
 
+export interface ChildResponseDto {
+  id: string;
+  name: string;
+  birthDate: string | null;
+  memo: string | null;
+  nextSessionAt: string | null;
+}
+
 export interface SetPrimaryTherapistDto {
   primaryTherapistId: string;
 }
