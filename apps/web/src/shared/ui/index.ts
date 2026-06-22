@@ -5,3 +5,4 @@ export * from './sectionHeader';
 export * from './iconButton';
 export * from './iconLink';
 export * from './confirmDialog';
+export * from './skeleton';
