@@ -10,6 +10,10 @@ describe('formatKoreanAge', () => {
     expect(formatKoreanAge(null)).toBeNull();
   });
 
+  it('birthDate가 유효하지 않은 날짜 문자열이면 null을 반환한다', () => {
+    expect(formatKoreanAge('not-a-date')).toBeNull();
+  });
+
   it('생일이 지났으면 만 나이를 반환한다', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-19T00:00:00Z'));
