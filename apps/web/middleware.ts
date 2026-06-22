@@ -112,6 +112,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/schedules/:path*',
+    '/children/:path*',
     '/home/:path*',
     '/schedule/:path*',
     '/notifications/:path*',

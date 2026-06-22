@@ -47,4 +47,17 @@ describe('TherapistTabBar', () => {
     expect(meLink.className).toContain('text-brand');
     expect(homeLink.className).toContain('text-gray-400');
   });
+
+  it('담당 아동 탭을 렌더링하고 /children을 가리킨다', () => {
+    render(<TherapistTabBar active="children" />);
+    expect(screen.getByRole('link', { name: '담당 아동' })).toHaveAttribute('href', '/children');
+  });
+
+  it('active="children"이면 담당 아동 링크가 text-brand 클래스를 가진다', () => {
+    render(<TherapistTabBar active="children" />);
+    const childrenLink = screen.getByRole('link', { name: '담당 아동' });
+    const homeLink = screen.getByRole('link', { name: '홈' });
+    expect(childrenLink.className).toContain('text-brand');
+    expect(homeLink.className).toContain('text-gray-400');
+  });
 });
