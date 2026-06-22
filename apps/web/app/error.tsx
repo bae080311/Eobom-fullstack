@@ -7,7 +7,7 @@ interface Props {
   reset: () => void;
 }
 
-export default function GlobalError({ error, reset }: Props) {
+export default function RootError({ error, reset }: Props) {
   useEffect(() => {
     console.error(error);
   }, [error]);
