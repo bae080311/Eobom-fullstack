@@ -7,6 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { OrgMemberRole, OrgMembershipStatus } from '@eobom/shared';
 import type {
   CreateOrganizationDto,
@@ -50,8 +51,14 @@ export class OrganizationsService {
       include: { memberships: { where: { therapistProfileId: profile.id } } },
     });
 
+    const membership = org.memberships[0];
+    if (!membership) {
+      this.logger.error(`create: membership not created for org=${org.id}`);
+      throw new ConflictException('기관 멤버십 생성에 실패했습니다.');
+    }
+
     this.logger.log(`create: org=${org.id} owner=${profile.id}`);
-    return this.toOrganizationDto(org, org.memberships[0]);
+    return this.toOrganizationDto(org, membership);
   }
 
   async findMine(userId: string): Promise<OrganizationResponseDto> {
@@ -79,9 +86,13 @@ export class OrganizationsService {
 
     const membership = await this.requireMembership(userId, orgId, { ownerOnly: true });
 
+    if (dto.name === undefined) {
+      throw new BadRequestException('수정할 기관 이름을 입력해주세요.');
+    }
+
     const org = await this.prisma.organization.update({
       where: { id: orgId },
-      data: { ...(dto.name !== undefined ? { name: dto.name } : {}) },
+      data: { name: dto.name },
     });
 
     this.logger.log(`update: org=${org.id}`);
@@ -133,16 +144,23 @@ export class OrganizationsService {
     });
     if (!target) throw new NotFoundException('멤버를 찾을 수 없습니다.');
 
-    // 마지막 OWNER를 강등하면 기관에 OWNER가 없어지므로 차단
-    if (target.role === OrgMemberRole.OWNER && dto.role && dto.role !== OrgMemberRole.OWNER) {
-      await this.assertNotLastOwner(orgId);
-    }
+    const isOwnerDemotion =
+      target.role === OrgMemberRole.OWNER && dto.role && dto.role !== OrgMemberRole.OWNER;
 
-    const updated = await this.prisma.organizationMembership.update({
-      where: { id: membershipId },
-      data: { ...(dto.role !== undefined ? { role: dto.role } : {}) },
-      include: { therapistProfile: { include: { user: true } } },
-    });
+    // 마지막 OWNER 강등 검증과 업데이트를 한 트랜잭션으로 묶어 동시성 경쟁을 차단
+    const updated = await this.prisma.$transaction(
+      async (tx) => {
+        if (isOwnerDemotion) {
+          await this.assertNotLastOwner(orgId, tx);
+        }
+        return tx.organizationMembership.update({
+          where: { id: membershipId },
+          data: { ...(dto.role !== undefined ? { role: dto.role } : {}) },
+          include: { therapistProfile: { include: { user: true } } },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     this.logger.log(`updateMember: membership=${membershipId} role=${updated.role}`);
     return this.toMemberDto(updated);
@@ -165,15 +183,20 @@ export class OrganizationsService {
       throw new ForbiddenException('다른 멤버를 내보낼 권한이 없습니다.');
     }
 
-    // 마지막 OWNER는 떠날 수 없음 (기관에 OWNER가 없어지는 것 방지)
-    if (target.role === OrgMemberRole.OWNER) {
-      await this.assertNotLastOwner(orgId);
-    }
-
-    await this.prisma.organizationMembership.update({
-      where: { id: membershipId },
-      data: { status: OrgMembershipStatus.LEFT, leftAt: new Date() },
-    });
+    // 마지막 OWNER 탈퇴 검증과 업데이트를 한 트랜잭션으로 묶어 동시성 경쟁을 차단
+    const isOwnerLeaving = target.role === OrgMemberRole.OWNER;
+    await this.prisma.$transaction(
+      async (tx) => {
+        if (isOwnerLeaving) {
+          await this.assertNotLastOwner(orgId, tx);
+        }
+        await tx.organizationMembership.update({
+          where: { id: membershipId },
+          data: { status: OrgMembershipStatus.LEFT, leftAt: new Date() },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     this.logger.log(`leaveMember: membership=${membershipId} left`);
   }
@@ -217,8 +240,11 @@ export class OrganizationsService {
     return membership;
   }
 
-  private async assertNotLastOwner(orgId: string): Promise<void> {
-    const ownerCount = await this.prisma.organizationMembership.count({
+  private async assertNotLastOwner(
+    orgId: string,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<void> {
+    const ownerCount = await client.organizationMembership.count({
       where: {
         organizationId: orgId,
         role: OrgMemberRole.OWNER,
