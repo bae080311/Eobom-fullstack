@@ -70,10 +70,10 @@ export class InviteCodesService {
   async findAll(userId: string, childId?: string): Promise<InviteCodeResponseDto[]> {
     this.logger.log(`findAll: userId=${userId} childId=${childId ?? '-'}`);
 
-    const { profile } = await this.requireActiveMembership(userId);
+    const { profile, organizationId } = await this.requireActiveMembership(userId);
 
     const codes = await this.prisma.inviteCode.findMany({
-      where: { issuedById: profile.id, ...(childId ? { childId } : {}) },
+      where: { issuedById: profile.id, organizationId, ...(childId ? { childId } : {}) },
       include: {
         child: { select: { id: true, name: true } },
         organization: { select: { id: true, name: true } },
@@ -94,7 +94,7 @@ export class InviteCodesService {
     if (!code) throw new NotFoundException('초대 코드를 찾을 수 없습니다.');
 
     // 발급자 본인이거나, 같은 기관의 OWNER만 취소 가능
-    const isIssuer = code.issuedById === profile.id;
+    const isIssuer = code.issuedById === profile.id && code.organizationId === organizationId;
     const isOwnerOfOrg = role === OrgMemberRole.OWNER && code.organizationId === organizationId;
     if (!isIssuer && !isOwnerOfOrg) {
       this.logger.warn(`revoke: therapist=${profile.id} cannot revoke code=${id}`);
@@ -168,19 +168,25 @@ export class InviteCodesService {
       throw new ConflictException('이미 연결된 아동입니다.');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.parentChildLink.create({
-        data: { parentId: parentProfile.id, childId: code.child.id, relation: dto.relation },
-      }),
-      this.prisma.inviteCode.update({
-        where: { id: code.id },
+    // 동시 redeem 레이스 컨디션 방지: ACTIVE 조건으로 원자적 점유 후 링크 생성
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.inviteCode.updateMany({
+        where: { id: code.id, status: InviteCodeStatus.ACTIVE },
         data: {
           status: InviteCodeStatus.USED,
           usedAt: new Date(),
           usedByParentId: parentProfile.id,
         },
-      }),
-    ]);
+      });
+
+      if (claimed.count === 0) {
+        throw new ConflictException('이미 사용되었거나 만료된 코드입니다.');
+      }
+
+      await tx.parentChildLink.create({
+        data: { parentId: parentProfile.id, childId: code.child!.id, relation: dto.relation },
+      });
+    });
 
     this.logger.log(`redeem: parent=${parentProfile.id} linked to child=${code.child.id}`);
 
