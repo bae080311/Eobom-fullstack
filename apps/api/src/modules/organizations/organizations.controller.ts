@@ -1,49 +1,85 @@
-import { Controller, Post, Get, Patch, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { OrganizationsService } from './organizations.service.js';
-import type { CreateOrganizationDto, UpdateMembershipDto } from '@eobom/shared';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import {
+  createOrganizationSchema,
+  updateOrganizationSchema,
+  updateMembershipSchema,
+} from '@eobom/shared';
+import type {
+  CreateOrganizationDto,
+  UpdateOrganizationDto,
+  UpdateMembershipDto,
+  IUser,
+} from '@eobom/shared';
 
 @Controller('organizations')
+@UseGuards(JwtAuthGuard)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @Post()
-  create(@Body() dto: CreateOrganizationDto) {
-    return this.organizationsService.create(dto);
+  create(
+    @CurrentUser() user: IUser,
+    @Body(new ZodValidationPipe(createOrganizationSchema)) dto: CreateOrganizationDto,
+  ) {
+    return this.organizationsService.create(user.id, dto);
   }
 
   @Get('me')
-  findMine() {
-    return this.organizationsService.findMine();
+  findMine(@CurrentUser() user: IUser) {
+    return this.organizationsService.findMine(user.id);
   }
 
   @Patch(':orgId')
-  update(@Param('orgId') orgId: string, @Body() dto: Partial<CreateOrganizationDto>) {
-    return this.organizationsService.update(orgId, dto);
+  update(
+    @CurrentUser() user: IUser,
+    @Param('orgId') orgId: string,
+    @Body(new ZodValidationPipe(updateOrganizationSchema)) dto: UpdateOrganizationDto,
+  ) {
+    return this.organizationsService.update(user.id, orgId, dto);
   }
 
   @Post(':orgId/join-code\\:rotate')
   @HttpCode(HttpStatus.OK)
-  rotateJoinCode(@Param('orgId') orgId: string) {
-    return this.organizationsService.rotateJoinCode(orgId);
+  rotateJoinCode(@CurrentUser() user: IUser, @Param('orgId') orgId: string) {
+    return this.organizationsService.rotateJoinCode(user.id, orgId);
   }
 
   @Get(':orgId/members')
-  findMembers(@Param('orgId') orgId: string) {
-    return this.organizationsService.findMembers(orgId);
+  findMembers(@CurrentUser() user: IUser, @Param('orgId') orgId: string) {
+    return this.organizationsService.findMembers(user.id, orgId);
   }
 
   @Patch(':orgId/members/:membershipId')
   updateMember(
+    @CurrentUser() user: IUser,
     @Param('orgId') orgId: string,
     @Param('membershipId') membershipId: string,
-    @Body() dto: UpdateMembershipDto,
+    @Body(new ZodValidationPipe(updateMembershipSchema)) dto: UpdateMembershipDto,
   ) {
-    return this.organizationsService.updateMember(orgId, membershipId, dto);
+    return this.organizationsService.updateMember(user.id, orgId, membershipId, dto);
   }
 
   @Post(':orgId/members/:membershipId\\:leave')
   @HttpCode(HttpStatus.NO_CONTENT)
-  leaveMember(@Param('orgId') orgId: string, @Param('membershipId') membershipId: string) {
-    return this.organizationsService.leaveMember(orgId, membershipId);
+  leaveMember(
+    @CurrentUser() user: IUser,
+    @Param('orgId') orgId: string,
+    @Param('membershipId') membershipId: string,
+  ) {
+    return this.organizationsService.leaveMember(user.id, orgId, membershipId);
   }
 }
