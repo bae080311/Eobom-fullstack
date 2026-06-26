@@ -37,6 +37,7 @@ export class OllamaService {
       const res = await fetch(`${baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(30000), // 로컬 LLM 무한 대기로 인한 커넥션 고갈 방지
         body: JSON.stringify({
           model,
           stream: false,

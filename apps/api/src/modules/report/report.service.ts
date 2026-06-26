@@ -27,19 +27,23 @@ export class ReportService {
       throw new ForbiddenException('치료사만 리포트를 생성할 수 있습니다.');
     }
 
+    const schedule = await this.prisma.schedule.findUnique({ where: { id: scheduleId } });
+    if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
+
     const profile = await this.prisma.therapistProfile.findUnique({ where: { userId: user.id } });
     if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
+    // 다중 기관 소속 치료사를 고려해, 일정의 기관에 대한 활성 멤버십을 직접 검증한다.
     const membership = await this.prisma.organizationMembership.findFirst({
-      where: { therapistProfileId: profile.id, status: OrgMembershipStatus.ACTIVE },
+      where: {
+        therapistProfileId: profile.id,
+        organizationId: schedule.organizationId,
+        status: OrgMembershipStatus.ACTIVE,
+      },
     });
-    if (!membership) throw new NotFoundException('소속 기관을 찾을 수 없습니다.');
-
-    const schedule = await this.prisma.schedule.findUnique({ where: { id: scheduleId } });
-    if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.organizationId !== membership.organizationId) {
+    if (!membership) {
       this.logger.warn(`generate: therapist=${profile.id} cannot access schedule=${scheduleId}`);
-      throw new ForbiddenException();
+      throw new ForbiddenException('해당 일정의 기관에 소속되어 있지 않습니다.');
     }
 
     const report = await this.ollama.generateReport(dto.memo);
@@ -104,9 +108,13 @@ export class ReportService {
       if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
       const membership = await this.prisma.organizationMembership.findFirst({
-        where: { therapistProfileId: profile.id, status: OrgMembershipStatus.ACTIVE },
+        where: {
+          therapistProfileId: profile.id,
+          organizationId: schedule.organizationId,
+          status: OrgMembershipStatus.ACTIVE,
+        },
       });
-      if (!membership || schedule.organizationId !== membership.organizationId) {
+      if (!membership) {
         this.logger.warn(`findOne: therapist=${profile.id} cannot access schedule=${scheduleId}`);
         throw new ForbiddenException();
       }
