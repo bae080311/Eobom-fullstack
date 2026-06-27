@@ -4,6 +4,7 @@ import { PageShell, PageTopBar } from '@/shared/ui';
 import { fetchSchedules } from '@/entities/schedule';
 import { ScheduleCalendarView } from '@/widgets/schedule-calendar';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
+import { CreateScheduleButton } from '@/features/create-schedule';
 import { getKSTStartOfDay } from '@/shared/lib/date';
 
 export const metadata: Metadata = { title: '일정' };
@@ -29,7 +30,7 @@ export default async function TherapistSchedulesPage() {
 
   return (
     <PageShell noPb>
-      <PageTopBar title="일정" action={null} />
+      <PageTopBar title="일정" action={<CreateScheduleButton />} />
       <ScheduleCalendarView initialData={schedules} />
       <TherapistTabBar active="schedules" />
     </PageShell>
