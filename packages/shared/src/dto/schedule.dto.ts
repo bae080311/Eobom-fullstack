@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { ScheduleStatus } from "../enums/index.js";
 
 export interface ScheduleResponseDto {
@@ -18,14 +19,23 @@ export interface ScheduleDetailResponseDto extends ScheduleResponseDto {
   acknowledgedAt: string | null;
 }
 
-export interface CreateScheduleDto {
-  childId: string;
-  startAt: string;
-  endAt: string;
-  title: string;
-  notes?: string;
-  therapistId?: string | null;
-}
+export const createScheduleSchema = z
+  .object({
+    childId: z.string().min(1, "아동을 선택해주세요"),
+    title: z.string().min(1, "치료 유형을 입력해주세요"),
+    startAt: z
+      .string()
+      .datetime({ message: "올바른 시작 시간 형식이 아닙니다" }),
+    endAt: z.string().datetime({ message: "올바른 종료 시간 형식이 아닙니다" }),
+    notes: z.string().optional(),
+    therapistId: z.string().nullable().optional(),
+  })
+  .refine((d) => new Date(d.startAt) < new Date(d.endAt), {
+    message: "종료 시간은 시작 시간보다 늦어야 합니다",
+    path: ["endAt"],
+  });
+
+export type CreateScheduleDto = z.infer<typeof createScheduleSchema>;
 
 export interface UpdateScheduleDto {
   startAt?: string;
