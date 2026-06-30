@@ -35,7 +35,17 @@ const inputCls =
 const errorCls = 'mt-1 text-xs text-danger';
 
 export function CreateScheduleForm({ open, childList, childrenLoading, onClose }: Props) {
-  const form = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      childId: '',
+      title: '',
+      date: '',
+      startTime: '',
+      endTime: '',
+      notes: '',
+    },
+  });
   const { mutate, isPending } = useCreateSchedule();
 
   if (!open) return null;
@@ -48,8 +58,8 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
   };
 
   const onSubmit = (data: FormData) => {
-    const startAt = new Date(`${data.date}T${data.startTime}`).toISOString();
-    const endAt = new Date(`${data.date}T${data.endTime}`).toISOString();
+    const startAt = new Date(`${data.date}T${data.startTime}:00+09:00`).toISOString();
+    const endAt = new Date(`${data.date}T${data.endTime}:00+09:00`).toISOString();
     mutate(
       {
         childId: data.childId,
@@ -83,7 +93,12 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
 
         <label className="flex flex-col gap-1.5">
           <span className="text-label text-gray-500 font-semibold">아동</span>
-          <select {...form.register('childId')} className={inputCls} defaultValue="">
+          <select
+            {...form.register('childId')}
+            className={inputCls}
+            defaultValue=""
+            disabled={childrenLoading}
+          >
             <option value="" disabled>
               {childrenLoading ? '불러오는 중...' : '아동을 선택하세요'}
             </option>

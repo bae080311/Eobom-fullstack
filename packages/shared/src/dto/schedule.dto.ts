@@ -23,8 +23,10 @@ export const createScheduleSchema = z
   .object({
     childId: z.string().min(1, "아동을 선택해주세요"),
     title: z.string().min(1, "치료 유형을 입력해주세요"),
-    startAt: z.string().min(1, "시작 시간을 선택해주세요"),
-    endAt: z.string().min(1, "종료 시간을 선택해주세요"),
+    startAt: z
+      .string()
+      .datetime({ message: "올바른 시작 시간 형식이 아닙니다" }),
+    endAt: z.string().datetime({ message: "올바른 종료 시간 형식이 아닙니다" }),
     notes: z.string().optional(),
     therapistId: z.string().nullable().optional(),
   })
