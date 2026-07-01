@@ -41,7 +41,7 @@ grep -rn "interface.*Dto\|type.*Dto" apps/api/src --include="*.ts"
 grep -rn "HttpException" apps/api/src --include="*.ts"
 
 # Logger 누락 서비스
-grep -rL "private readonly logger" apps/api/src/modules --include="*.service.ts" -r
+grep -rL "private readonly logger" apps/api/src/modules --include="*.service.ts"
 
 # FSD 역방향 임포트 의심 (entities에서 features 임포트)
 grep -rn "from.*features/" apps/web/src/entities --include="*.ts" --include="*.tsx"

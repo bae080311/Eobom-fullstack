@@ -53,7 +53,7 @@ git diff main...HEAD | grep "^+" | grep ": any"
 git diff main...HEAD | grep "^+" | grep "HttpException"
 
 # Logger 없는 서비스 (추가된 .service.ts 파일에 logger 없으면)
-git diff main...HEAD --name-only | grep "\.service\.ts" | xargs grep -L "private readonly logger" 2>/dev/null
+git diff main...HEAD --name-only | grep "\.service\.ts" | xargs -r grep -L "private readonly logger" 2>/dev/null
 
 # shared DTO 미사용 (apps/api 안에 Dto 인터페이스 직접 정의)
 git diff main...HEAD | grep "^+" | grep -E "interface.*Dto|type.*Dto" | grep -v "packages/shared"

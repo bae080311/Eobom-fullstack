@@ -46,8 +46,10 @@ refactor/<kebab-case-scope>
 예시: `feat/children-crud`, `feat/recurring-rule`, `feat/notification-system`
 
 ```bash
-# 현재 브랜치가 main이면 새 브랜치 생성
-git checkout -b feat/<feature-name>
+# 현재 브랜치가 main인 경우에만 새 브랜치 생성
+if [ "$(git branch --show-current)" = "main" ]; then
+  git checkout -b feat/<feature-name>
+fi
 ```
 
 ### 3단계 — 스테이징 및 커밋
