@@ -10,7 +10,13 @@
       "Bash(docker compose*)",
       "Bash(npx prisma*)",
       "Bash(gh run*)",
-      "Bash(gh pr*)"
+      "Bash(gh pr*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(grep*)",
+      "Bash(ls*)"
     ]
   },
   "hooks": {
