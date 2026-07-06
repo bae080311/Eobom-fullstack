@@ -61,6 +61,9 @@ export class SchedulesService {
       select: { childId: true },
     });
     const childIds = links.map((l) => l.childId);
+    if (childIds.length === 0) {
+      return [];
+    }
 
     const schedules = await this.prisma.schedule.findMany({
       where: {
@@ -75,7 +78,7 @@ export class SchedulesService {
     });
 
     this.logger.log(`findAll: found ${schedules.length} schedules for parent=${parentProfile.id}`);
-    return schedules.map((s) => ({ ...this.toDto(s), therapistName: s.therapist.user.name }));
+    return schedules.map((s) => ({ ...this.toDto(s), therapistName: s.therapist?.user?.name }));
   }
 
   private async findAllForTherapist(

@@ -17,8 +17,9 @@ function getKSTDayOfMonth(iso: string | Date): number {
 function getSessionStatus(startAt: string, now: Date): SessionStatus {
   const startDateStr = toKSTDateString(startAt);
   const nowDateStr = toKSTDateString(now);
-  if (startDateStr === nowDateStr) return 'today';
-  return startDateStr > nowDateStr ? 'upcoming' : 'past';
+  if (startDateStr > nowDateStr) return 'upcoming';
+  if (startDateStr < nowDateStr) return 'past';
+  return new Date(startAt) > now ? 'today' : 'past';
 }
 
 function formatTimeUntil(startAt: string, now: Date): string {
@@ -29,6 +30,7 @@ function formatTimeUntil(startAt: string, now: Date): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
+  if (totalMinutes === 0) return '곧 시작';
   if (hours === 0) return `${minutes}분 뒤`;
   if (minutes === 0) return `${hours}시간 뒤`;
   return `${hours}시간 ${minutes}분 뒤`;

@@ -80,6 +80,15 @@ describe('mapScheduleToUpcoming', () => {
     );
     expect(result.status).toBe('past');
   });
+
+  it('같은 KST 날짜지만 이미 지난 시각이면 status는 past이다', () => {
+    // NOW = KST 14:00, startAt = KST 09:00 (같은 날, 이미 지남)
+    const result = mapScheduleToUpcoming(
+      makeSchedule({ startAt: '2026-06-19T00:00:00.000Z' }),
+      NOW,
+    );
+    expect(result.status).toBe('past');
+  });
 });
 
 describe('mapScheduleToNextSession', () => {
@@ -131,6 +140,15 @@ describe('mapScheduleToNextSession', () => {
       NOW,
     );
     expect(result.timeUntil).toBe('20분 뒤');
+  });
+
+  it('1분 미만 남았으면 timeUntil은 "곧 시작"이다', () => {
+    // 14:00 → 14:00:30 = 30초
+    const result = mapScheduleToNextSession(
+      makeSchedule({ startAt: '2026-06-19T05:00:30.000Z' }),
+      NOW,
+    );
+    expect(result.timeUntil).toBe('곧 시작');
   });
 
   it('과거 일정이면 timeUntil은 빈 문자열이다', () => {

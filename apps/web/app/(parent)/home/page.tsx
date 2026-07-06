@@ -68,11 +68,15 @@ export default async function ParentHomePage() {
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
-  const nextSessionDto = activeSchedules[0];
+  const futureSchedules = activeSchedules.filter(
+    (s) => s.status !== ScheduleStatus.COMPLETED && new Date(s.startAt) > now,
+  );
+
+  const nextSessionDto = futureSchedules[0];
   const nextSession = nextSessionDto ? mapScheduleToNextSession(nextSessionDto, now) : null;
 
   const weekDays = buildWeekDays(weekStart, activeSchedules, now);
-  const upcoming = activeSchedules
+  const upcoming = futureSchedules
     .slice(0, UPCOMING_LIMIT)
     .map((s) => mapScheduleToUpcoming(s, now));
   const childChips = children.map(mapChildToChip);

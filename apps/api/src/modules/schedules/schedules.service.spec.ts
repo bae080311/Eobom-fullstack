@@ -187,16 +187,24 @@ describe('SchedulesService', () => {
       expect(result[0].therapistName).toBe('이치료');
     });
 
-    it('연결된 아동이 없으면 빈 배열을 childId.in에 전달한다', async () => {
+    it('연결된 아동이 없으면 조회 없이 빈 배열을 반환한다', async () => {
       prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
       prisma.parentChildLink.findMany.mockResolvedValue([]);
-      prisma.schedule.findMany.mockResolvedValue([]);
 
       const result = await service.findAll({}, parentUser);
 
-      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
-      expect(whereArg.childId).toEqual({ in: [] });
+      expect(prisma.schedule.findMany).not.toHaveBeenCalled();
       expect(result).toEqual([]);
+    });
+
+    it('therapist 관계가 없으면 therapistName은 undefined로 매핑한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.parentChildLink.findMany.mockResolvedValue([{ childId: 'c1' }]);
+      prisma.schedule.findMany.mockResolvedValue([{ ...makeScheduleRow(), therapist: undefined }]);
+
+      const result = await service.findAll({}, parentUser);
+
+      expect(result[0].therapistName).toBeUndefined();
     });
 
     it('from·to·status 필터가 where 절에 포함된다', async () => {
