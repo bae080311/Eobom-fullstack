@@ -27,7 +27,16 @@ export default async function TherapistScheduleDetailPage({ params }: Props) {
     <ScheduleDetailView
       schedule={schedule}
       backHref="/schedules"
-      footer={<TherapistScheduleActions scheduleId={schedule.id} status={schedule.status} />}
+      footer={
+        <TherapistScheduleActions
+          scheduleId={schedule.id}
+          status={schedule.status}
+          title={schedule.title}
+          startAt={schedule.startAt}
+          endAt={schedule.endAt}
+          notes={schedule.notes}
+        />
+      }
     />
   );
 }
