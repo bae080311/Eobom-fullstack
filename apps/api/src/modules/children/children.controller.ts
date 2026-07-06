@@ -11,7 +11,7 @@ export class ChildrenController {
 
   @Get()
   findAll(@CurrentUser() user: IUser) {
-    return this.childrenService.findAll(user.id);
+    return this.childrenService.findAll(user);
   }
 
   @Get(':id')

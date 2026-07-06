@@ -7,10 +7,11 @@ interface Props {
 
 export function NextSessionHero({ session: s }: Props) {
   return (
-    <div className="relative bg-brand text-white rounded-[22px] p-[22px] mx-5 overflow-hidden
+    <div
+      className="relative bg-brand text-white rounded-[22px] p-[22px] mx-5 overflow-hidden
       before:absolute before:content-[''] before:-right-[50px] before:-top-[50px] before:w-[180px] before:h-[180px] before:border before:border-white/20 before:rounded-full before:pointer-events-none
-      after:absolute after:content-[''] after:right-[50px] after:top-4 after:w-20 after:h-20 after:border after:border-white/20 after:rounded-full after:pointer-events-none">
-
+      after:absolute after:content-[''] after:right-[50px] after:top-4 after:w-20 after:h-20 after:border after:border-white/20 after:rounded-full after:pointer-events-none"
+    >
       <span className="inline-flex items-center gap-1.5 bg-white/20 px-2.5 py-1.5 rounded-full text-label font-bold">
         <IconClock size={12} /> {s.timeUntil}
       </span>
@@ -29,9 +30,11 @@ export function NextSessionHero({ session: s }: Props) {
         <span className="flex items-center gap-2">
           <IconUser size={14} /> {s.therapistName}
         </span>
-        <span className="flex items-center gap-2">
-          <IconMapPin size={14} /> {s.location}
-        </span>
+        {s.location && (
+          <span className="flex items-center gap-2">
+            <IconMapPin size={14} /> {s.location}
+          </span>
+        )}
       </div>
 
       <div className="flex gap-2 mt-[18px] relative z-10">

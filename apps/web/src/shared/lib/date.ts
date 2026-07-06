@@ -25,6 +25,11 @@ export function formatDateLabel(iso: string): string {
   return `${month}월 ${day}일 (${weekday})`;
 }
 
+export function getKSTWeekdayShort(iso: string | Date): string {
+  const d = typeof iso === 'string' ? new Date(iso) : iso;
+  return new Intl.DateTimeFormat('ko-KR', { timeZone: KST_TZ, weekday: 'short' }).format(d);
+}
+
 export function toKSTDateString(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   const parts = new Intl.DateTimeFormat('en-US', {

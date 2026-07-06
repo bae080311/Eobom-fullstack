@@ -13,7 +13,7 @@ import type { PrismaService } from '../../database/prisma.service.js';
 const makePrisma = () => ({
   therapistProfile: { findUnique: vi.fn() },
   parentProfile: { findUnique: vi.fn() },
-  parentChildLink: { findUnique: vi.fn() },
+  parentChildLink: { findUnique: vi.fn(), findMany: vi.fn() },
   organizationMembership: { findFirst: vi.fn() },
   scheduleAcknowledgement: { upsert: vi.fn() },
   schedule: {
@@ -109,12 +109,12 @@ describe('SchedulesService', () => {
   // findAll
   // -------------------------------------------------------------------------
 
-  describe('findAll', () => {
+  describe('findAll (therapist)', () => {
     it('치료사 프로필이 있으면 일정 목록을 ScheduleResponseDto 배열로 반환한다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findMany.mockResolvedValue([makeScheduleRow()]);
 
-      const result = await service.findAll({}, 'u1');
+      const result = await service.findAll({}, therapistUser);
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('s1');
@@ -125,14 +125,14 @@ describe('SchedulesService', () => {
     it('치료사 프로필이 없으면 NotFoundException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(null);
 
-      await expect(service.findAll({}, 'unknown')).rejects.toThrow(NotFoundException);
+      await expect(service.findAll({}, therapistUser)).rejects.toThrow(NotFoundException);
     });
 
     it('from 파라미터가 있으면 findMany where 절에 gte 조건이 포함된다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findMany.mockResolvedValue([]);
 
-      await service.findAll({ from: '2025-06-01' }, 'u1');
+      await service.findAll({ from: '2025-06-01' }, therapistUser);
 
       const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
       expect(whereArg.startAt.gte).toEqual(new Date('2025-06-01'));
@@ -142,7 +142,7 @@ describe('SchedulesService', () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findMany.mockResolvedValue([]);
 
-      await service.findAll({ to: '2025-06-30' }, 'u1');
+      await service.findAll({ to: '2025-06-30' }, therapistUser);
 
       const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
       expect(whereArg.startAt.lte).toEqual(new Date('2025-06-30'));
@@ -152,11 +152,67 @@ describe('SchedulesService', () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findMany.mockResolvedValue([]);
 
-      await service.findAll({ from: '2025-06-01', to: '2025-06-30' }, 'u1');
+      await service.findAll({ from: '2025-06-01', to: '2025-06-30' }, therapistUser);
 
       const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
       expect(whereArg.startAt.gte).toEqual(new Date('2025-06-01'));
       expect(whereArg.startAt.lte).toEqual(new Date('2025-06-30'));
+    });
+  });
+
+  describe('findAll (parent)', () => {
+    it('학부모 프로필이 없으면 NotFoundException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(null);
+
+      await expect(service.findAll({}, parentUser)).rejects.toThrow(NotFoundException);
+      expect(prisma.schedule.findMany).not.toHaveBeenCalled();
+    });
+
+    it('연결된 아동들의 childId로 조회하고 therapistName을 매핑한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.parentChildLink.findMany.mockResolvedValue([{ childId: 'c1' }, { childId: 'c2' }]);
+      prisma.schedule.findMany.mockResolvedValue([
+        { ...makeScheduleRow(), therapist: { user: { name: '이치료' } } },
+      ]);
+
+      const result = await service.findAll({}, parentUser);
+
+      const linkArg = prisma.parentChildLink.findMany.mock.calls[0][0];
+      expect(linkArg.where).toEqual({ parentId: 'pp1' });
+
+      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
+      expect(whereArg.childId).toEqual({ in: ['c1', 'c2'] });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].therapistName).toBe('이치료');
+    });
+
+    it('연결된 아동이 없으면 빈 배열을 childId.in에 전달한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.parentChildLink.findMany.mockResolvedValue([]);
+      prisma.schedule.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll({}, parentUser);
+
+      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
+      expect(whereArg.childId).toEqual({ in: [] });
+      expect(result).toEqual([]);
+    });
+
+    it('from·to·status 필터가 where 절에 포함된다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+      prisma.parentChildLink.findMany.mockResolvedValue([{ childId: 'c1' }]);
+      prisma.schedule.findMany.mockResolvedValue([]);
+
+      await service.findAll(
+        { from: '2025-06-01', to: '2025-06-30', status: ScheduleStatus.SCHEDULED },
+        parentUser,
+      );
+
+      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
+      expect(whereArg.startAt.gte).toEqual(new Date('2025-06-01'));
+      expect(whereArg.startAt.lte).toEqual(new Date('2025-06-30'));
+      expect(whereArg.status).toBe(ScheduleStatus.SCHEDULED);
     });
   });
 
