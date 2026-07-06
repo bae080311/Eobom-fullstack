@@ -33,6 +33,11 @@ describe('SchedulesController', () => {
     controller = new SchedulesController(service as unknown as SchedulesService);
   });
 
+  it('findAll은 query와 user 전체를 서비스에 전달한다', () => {
+    controller.findAll({}, user);
+    expect(service.findAll).toHaveBeenCalledWith({}, user);
+  });
+
   it('findOne은 id와 user 전체를 서비스에 전달한다', () => {
     controller.findOne('s1', user);
     expect(service.findOne).toHaveBeenCalledWith('s1', user);

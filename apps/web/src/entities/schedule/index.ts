@@ -1,6 +1,6 @@
 export type { Schedule, UpcomingSession, WeekDay, NextSession, SessionStatus } from './model/types';
-export { MOCK_NEXT_SESSION, MOCK_SCHEDULES, MOCK_UPCOMING, MOCK_WEEK } from './model/mock';
 export { SCHEDULE_STATUS_LABEL, SCHEDULE_STATUS_COLOR } from './model/status';
+export { mapScheduleToUpcoming, mapScheduleToNextSession, buildWeekDays } from './model/utils';
 export { ScheduleCard } from './ui/scheduleCard';
 export { fetchSchedules, fetchScheduleDetail } from './api/index';
 export {

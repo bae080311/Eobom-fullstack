@@ -11,6 +11,7 @@ export interface ScheduleResponseDto {
   status: ScheduleStatus;
   title: string;
   notes: string | null;
+  therapistName?: string;
 }
 
 export interface ScheduleDetailResponseDto extends ScheduleResponseDto {

@@ -14,7 +14,7 @@ export class SchedulesController {
 
   @Get()
   findAll(@Query() query: ScheduleQueryDto, @CurrentUser() user: IUser) {
-    return this.schedulesService.findAll(query, user.id);
+    return this.schedulesService.findAll(query, user);
   }
 
   @Get(':id')

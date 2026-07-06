@@ -22,9 +22,69 @@ export class SchedulesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: ScheduleQueryDto, userId: string): Promise<ScheduleResponseDto[]> {
-    this.logger.log(`findAll: userId=${userId}`);
+  async findAll(query: ScheduleQueryDto, user: IUser): Promise<ScheduleResponseDto[]> {
+    this.logger.log(`findAll: userId=${user.id} role=${user.role}`);
 
+    if (user.role === UserRole.PARENT) {
+      return this.findAllForParent(query, user.id);
+    }
+
+    return this.findAllForTherapist(query, user.id);
+  }
+
+  private buildDateAndStatusWhere(query: ScheduleQueryDto) {
+    return {
+      ...(query.from || query.to
+        ? {
+            startAt: {
+              ...(query.from ? { gte: new Date(query.from) } : {}),
+              ...(query.to ? { lte: new Date(query.to) } : {}),
+            },
+          }
+        : {}),
+      ...(query.status ? { status: query.status } : {}),
+    };
+  }
+
+  private async findAllForParent(
+    query: ScheduleQueryDto,
+    userId: string,
+  ): Promise<ScheduleResponseDto[]> {
+    const parentProfile = await this.prisma.parentProfile.findUnique({ where: { userId } });
+    if (!parentProfile) {
+      this.logger.warn(`findAll: parentProfile not found for userId=${userId}`);
+      throw new NotFoundException('학부모 프로필을 찾을 수 없습니다.');
+    }
+
+    const links = await this.prisma.parentChildLink.findMany({
+      where: { parentId: parentProfile.id },
+      select: { childId: true },
+    });
+    const childIds = links.map((l) => l.childId);
+    if (childIds.length === 0) {
+      return [];
+    }
+
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        childId: { in: childIds },
+        ...this.buildDateAndStatusWhere(query),
+      },
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { user: { select: { name: true } } } },
+      },
+      orderBy: { startAt: 'asc' },
+    });
+
+    this.logger.log(`findAll: found ${schedules.length} schedules for parent=${parentProfile.id}`);
+    return schedules.map((s) => ({ ...this.toDto(s), therapistName: s.therapist?.user?.name }));
+  }
+
+  private async findAllForTherapist(
+    query: ScheduleQueryDto,
+    userId: string,
+  ): Promise<ScheduleResponseDto[]> {
     const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
     if (!profile) {
       this.logger.warn(`findAll: therapistProfile not found for userId=${userId}`);
@@ -34,15 +94,7 @@ export class SchedulesService {
     const schedules = await this.prisma.schedule.findMany({
       where: {
         therapistId: profile.id,
-        ...(query.from || query.to
-          ? {
-              startAt: {
-                ...(query.from ? { gte: new Date(query.from) } : {}),
-                ...(query.to ? { lte: new Date(query.to) } : {}),
-              },
-            }
-          : {}),
-        ...(query.status ? { status: query.status } : {}),
+        ...this.buildDateAndStatusWhere(query),
       },
       include: { child: { select: { id: true, name: true } } },
       orderBy: { startAt: 'asc' },

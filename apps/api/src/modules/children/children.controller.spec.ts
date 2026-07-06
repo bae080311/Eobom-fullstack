@@ -31,8 +31,8 @@ describe('ChildrenController', () => {
     controller = new ChildrenController(service as unknown as ChildrenService);
   });
 
-  it('findAll은 현재 사용자 id를 서비스에 전달한다', () => {
+  it('findAll은 현재 사용자 객체 전체를 서비스에 전달한다', () => {
     controller.findAll(user);
-    expect(service.findAll).toHaveBeenCalledWith('u1');
+    expect(service.findAll).toHaveBeenCalledWith(user);
   });
 });

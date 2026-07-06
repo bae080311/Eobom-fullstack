@@ -9,7 +9,7 @@ export interface Schedule {
   dateLabel: string;
   timeLabel: string;
   duration: string;
-  location: string;
+  location?: string;
   room: string;
   status: SessionStatus;
   notes?: string;
@@ -39,6 +39,6 @@ export interface NextSession {
   dateLabel: string;
   timeLabel: string;
   timeUntil: string;
-  location: string;
+  location?: string;
   type: string;
 }

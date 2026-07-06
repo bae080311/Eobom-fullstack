@@ -1,4 +1,6 @@
+import type { ChildResponseDto } from '@eobom/shared';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
+import type { Child } from './types';
 
 // 만 나이: 생일이 지났으면 (올해-출생연도), 아직이면 -1. KST 기준.
 export function formatKoreanAge(birthDate: string | null): string | null {
@@ -18,4 +20,12 @@ export function formatKoreanAge(birthDate: string | null): string | null {
 export function formatNextSessionLabel(nextSessionAt: string | null): string {
   if (!nextSessionAt) return '예정된 일정 없음';
   return `다음 일정 ${formatDateLabel(nextSessionAt)} ${formatTime(nextSessionAt)}`;
+}
+
+export function mapChildToChip(dto: ChildResponseDto): Child {
+  return {
+    id: dto.id,
+    name: dto.name,
+    age: formatKoreanAge(dto.birthDate) ?? '',
+  };
 }
