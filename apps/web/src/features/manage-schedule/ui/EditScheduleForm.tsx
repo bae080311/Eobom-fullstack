@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import type { UpdateScheduleDto } from '@eobom/shared';
 import { useUpdateSchedule } from '@/entities/schedule';
 import { toKSTDateString, formatTime } from '@/shared/lib/date';
+import { ApiError } from '@/lib/api';
 
 const formSchema = z
   .object({
@@ -96,6 +97,10 @@ export function EditScheduleForm({
         onSuccess: () => {
           toast.success('일정이 수정되었습니다');
           onClose();
+        },
+        onError: (err) => {
+          console.error(err);
+          toast.error(err instanceof ApiError ? err.message : '일정 수정에 실패했습니다');
         },
       },
     );
