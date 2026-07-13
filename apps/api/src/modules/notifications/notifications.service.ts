@@ -58,32 +58,39 @@ export class NotificationsService {
     type: NotificationType;
     message: string;
   }): Promise<void> {
-    const links = await this.prisma.parentChildLink.findMany({
-      where: { childId: params.childId },
-      select: { parentId: true },
-    });
+    try {
+      const links = await this.prisma.parentChildLink.findMany({
+        where: { childId: params.childId },
+        select: { parentId: true },
+      });
 
-    if (links.length === 0) {
+      if (links.length === 0) {
+        this.logger.log(
+          `notifyScheduleEvent: no parents linked to child=${params.childId}, skipping (type=${params.type} scheduleId=${params.scheduleId})`,
+        );
+        return;
+      }
+
+      await this.prisma.notification.createMany({
+        data: links.map((l) => ({
+          parentId: l.parentId,
+          type: params.type,
+          scheduleId: params.scheduleId,
+          childId: params.childId,
+          organizationId: params.organizationId,
+          payload: { message: params.message },
+        })),
+      });
+
       this.logger.log(
-        `notifyScheduleEvent: no parents linked to child=${params.childId}, skipping (type=${params.type} scheduleId=${params.scheduleId})`,
+        `notifyScheduleEvent: type=${params.type} scheduleId=${params.scheduleId} count=${links.length}`,
       );
-      return;
+    } catch (error) {
+      this.logger.error(
+        `notifyScheduleEvent failed: type=${params.type} scheduleId=${params.scheduleId}`,
+        error,
+      );
     }
-
-    await this.prisma.notification.createMany({
-      data: links.map((l) => ({
-        parentId: l.parentId,
-        type: params.type,
-        scheduleId: params.scheduleId,
-        childId: params.childId,
-        organizationId: params.organizationId,
-        payload: { message: params.message },
-      })),
-    });
-
-    this.logger.log(
-      `notifyScheduleEvent: type=${params.type} scheduleId=${params.scheduleId} count=${links.length}`,
-    );
   }
 
   private toDto(n: {
