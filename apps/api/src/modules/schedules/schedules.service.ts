@@ -6,7 +6,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
-import { ScheduleStatus, OrgMembershipStatus, UserRole } from '@eobom/shared';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { ScheduleStatus, OrgMembershipStatus, UserRole, NotificationType } from '@eobom/shared';
 import type {
   CreateScheduleDto,
   UpdateScheduleDto,
@@ -20,7 +21,10 @@ import type {
 export class SchedulesService {
   private readonly logger = new Logger(SchedulesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async findAll(query: ScheduleQueryDto, user: IUser): Promise<ScheduleResponseDto[]> {
     this.logger.log(`findAll: userId=${user.id} role=${user.role}`);
@@ -218,7 +222,10 @@ export class SchedulesService {
   async create(dto: CreateScheduleDto, userId: string): Promise<ScheduleResponseDto> {
     this.logger.log(`create: userId=${userId}`);
 
-    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.therapistProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { name: true } } },
+    });
     if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
     const membership = await this.prisma.organizationMembership.findFirst({
@@ -246,13 +253,25 @@ export class SchedulesService {
     });
 
     this.logger.log(`create: schedule=${schedule.id}`);
+
+    await this.notificationsService.notifyScheduleEvent({
+      scheduleId: schedule.id,
+      childId: schedule.childId,
+      organizationId: membership.organizationId,
+      type: NotificationType.SCHEDULE_CREATED,
+      message: `${profile.user.name} 치료사님이 새 일정을 등록했습니다`,
+    });
+
     return this.toDto(schedule);
   }
 
   async update(id: string, dto: UpdateScheduleDto, userId: string): Promise<ScheduleResponseDto> {
     this.logger.log(`update: id=${id} userId=${userId}`);
 
-    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.therapistProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { name: true } } },
+    });
     if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
@@ -280,13 +299,25 @@ export class SchedulesService {
     });
 
     this.logger.log(`update: schedule=${id} timeChanged=${timeChanged}`);
+
+    await this.notificationsService.notifyScheduleEvent({
+      scheduleId: updated.id,
+      childId: updated.childId,
+      organizationId: schedule.organizationId,
+      type: NotificationType.SCHEDULE_UPDATED,
+      message: `${profile.user.name} 치료사님이 일정을 변경했습니다`,
+    });
+
     return this.toDto(updated);
   }
 
   async cancel(id: string, userId: string): Promise<ScheduleResponseDto> {
     this.logger.log(`cancel: id=${id} userId=${userId}`);
 
-    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
+    const profile = await this.prisma.therapistProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { name: true } } },
+    });
     if (!profile) throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
@@ -300,6 +331,15 @@ export class SchedulesService {
     });
 
     this.logger.log(`cancel: schedule=${id}`);
+
+    await this.notificationsService.notifyScheduleEvent({
+      scheduleId: updated.id,
+      childId: updated.childId,
+      organizationId: schedule.organizationId,
+      type: NotificationType.SCHEDULE_CANCELED,
+      message: `${profile.user.name} 치료사님이 일정을 취소했습니다`,
+    });
+
     return this.toDto(updated);
   }
 
