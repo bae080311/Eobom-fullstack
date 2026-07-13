@@ -7,7 +7,17 @@ vi.mock('@/entities/schedule', () => ({
   useUpdateSchedule: () => ({ mutate: mockUpdate, isPending: false }),
 }));
 
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+vi.mock('sonner', () => ({
+  toast: {
+    success: (msg: string) => mockToastSuccess(msg),
+    error: (msg: string) => mockToastError(msg),
+  },
+}));
+
 import { EditScheduleForm } from './EditScheduleForm';
+import { ApiError } from '@/lib/api';
 
 const baseProps = {
   open: true,
@@ -22,6 +32,8 @@ const baseProps = {
 describe('EditScheduleForm', () => {
   beforeEach(() => {
     mockUpdate.mockReset();
+    mockToastSuccess.mockReset();
+    mockToastError.mockReset();
   });
 
   it('제목만 변경해서 제출하면 dto에 startAt/endAt이 포함되지 않는다', async () => {
@@ -66,5 +78,30 @@ describe('EditScheduleForm', () => {
     const dto = mockUpdate.mock.calls[0][0].dto;
     expect(dto.notes).toBe('');
     expect(dto.notes).not.toBeUndefined();
+  });
+
+  it('저장에 실패하면 서버 에러 메시지를 toast로 보여준다', async () => {
+    mockUpdate.mockImplementation((_, { onError }) => {
+      onError(new ApiError('이미 취소된 일정입니다', 409));
+    });
+    const user = userEvent.setup();
+    render(<EditScheduleForm {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(mockToastError).toHaveBeenCalledWith('이미 취소된 일정입니다');
+    expect(baseProps.onClose).not.toHaveBeenCalled();
+  });
+
+  it('ApiError가 아닌 에러는 기본 실패 메시지를 toast로 보여준다', async () => {
+    mockUpdate.mockImplementation((_, { onError }) => {
+      onError(new Error('network down'));
+    });
+    const user = userEvent.setup();
+    render(<EditScheduleForm {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: '저장' }));
+
+    expect(mockToastError).toHaveBeenCalledWith('일정 수정에 실패했습니다');
   });
 });
