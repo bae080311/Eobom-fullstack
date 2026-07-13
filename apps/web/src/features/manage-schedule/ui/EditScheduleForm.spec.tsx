@@ -34,6 +34,7 @@ describe('EditScheduleForm', () => {
     mockUpdate.mockReset();
     mockToastSuccess.mockReset();
     mockToastError.mockReset();
+    baseProps.onClose.mockReset();
   });
 
   it('제목만 변경해서 제출하면 dto에 startAt/endAt이 포함되지 않는다', async () => {

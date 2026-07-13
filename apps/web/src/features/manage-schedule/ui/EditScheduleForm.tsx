@@ -99,6 +99,7 @@ export function EditScheduleForm({
           onClose();
         },
         onError: (err) => {
+          console.error(err);
           toast.error(err instanceof ApiError ? err.message : '일정 수정에 실패했습니다');
         },
       },
