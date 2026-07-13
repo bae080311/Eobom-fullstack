@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ScheduleStatus, OrgMembershipStatus, UserRole } from '@eobom/shared';
+import { ScheduleStatus, OrgMembershipStatus, UserRole, NotificationType } from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
 
 import { SchedulesService } from './schedules.service.js';
 import type { PrismaService } from '../../database/prisma.service.js';
+import type { NotificationsService } from '../notifications/notifications.service.js';
 
 // ---------------------------------------------------------------------------
 // Prisma mock factory
@@ -22,6 +23,15 @@ const makePrisma = () => ({
     create: vi.fn(),
     update: vi.fn(),
   },
+  notification: { createMany: vi.fn() },
+});
+
+// ---------------------------------------------------------------------------
+// NotificationsService mock factory
+// ---------------------------------------------------------------------------
+
+const makeNotifications = () => ({
+  notifyScheduleEvent: vi.fn().mockResolvedValue(undefined),
 });
 
 // ---------------------------------------------------------------------------
@@ -31,6 +41,7 @@ const makePrisma = () => ({
 const makeProfile = (overrides?: object) => ({
   id: 'tp1',
   userId: 'u1',
+  user: { name: '이치료' },
   ...overrides,
 });
 
@@ -99,10 +110,15 @@ const parentUser: IUser = {
 describe('SchedulesService', () => {
   let service: SchedulesService;
   let prisma: ReturnType<typeof makePrisma>;
+  let notifications: ReturnType<typeof makeNotifications>;
 
   beforeEach(() => {
     prisma = makePrisma();
-    service = new SchedulesService(prisma as unknown as PrismaService);
+    notifications = makeNotifications();
+    service = new SchedulesService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -438,6 +454,22 @@ describe('SchedulesService', () => {
 
       await expect(service.create(baseDto, 'u1')).rejects.toThrow(NotFoundException);
     });
+
+    it('생성 성공 시 SCHEDULE_CREATED 타입으로 알림을 전송한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.schedule.create.mockResolvedValue(makeScheduleRow());
+
+      await service.create(baseDto, 'u1');
+
+      expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      expect(arg.type).toBe(NotificationType.SCHEDULE_CREATED);
+      expect(arg.scheduleId).toBe('s1');
+      expect(arg.childId).toBe('c1');
+      expect(arg.organizationId).toBe('org1');
+      expect(arg.message).toContain('이치료');
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -516,6 +548,40 @@ describe('SchedulesService', () => {
         NotFoundException,
       );
     });
+
+    it('시간 변경 시 SCHEDULE_UPDATED 타입으로 알림을 전송한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ status: ScheduleStatus.RESCHEDULED }),
+      );
+
+      await service.update(
+        's1',
+        { startAt: '2025-06-01T09:00:00Z', endAt: '2025-06-01T11:00:00Z' },
+        'u1',
+      );
+
+      expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      expect(arg.type).toBe(NotificationType.SCHEDULE_UPDATED);
+      expect(arg.scheduleId).toBe('s1');
+      expect(arg.childId).toBe('c1');
+      expect(arg.organizationId).toBe('org1');
+    });
+
+    it('시간 미변경(제목만 수정)이어도 SCHEDULE_UPDATED 타입으로 알림을 전송한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.update.mockResolvedValue(makeScheduleRow({ title: '수정된 제목' }));
+
+      await service.update('s1', { title: '수정된 제목' }, 'u1');
+
+      expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
+      expect(notifications.notifyScheduleEvent.mock.calls[0][0].type).toBe(
+        NotificationType.SCHEDULE_UPDATED,
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -549,6 +615,23 @@ describe('SchedulesService', () => {
       prisma.schedule.findUnique.mockResolvedValue(null);
 
       await expect(service.cancel('no-such-id', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('취소 성공 시 SCHEDULE_CANCELED 타입으로 알림을 전송한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ status: ScheduleStatus.CANCELED }),
+      );
+
+      await service.cancel('s1', 'u1');
+
+      expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      expect(arg.type).toBe(NotificationType.SCHEDULE_CANCELED);
+      expect(arg.scheduleId).toBe('s1');
+      expect(arg.childId).toBe('c1');
+      expect(arg.organizationId).toBe('org1');
     });
   });
 
