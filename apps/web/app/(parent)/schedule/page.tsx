@@ -5,6 +5,7 @@ import { ScheduleStatus } from '@eobom/shared';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
 import { SessionRow, fetchSchedules, mapScheduleToUpcoming } from '@/entities/schedule';
 import { ChildChipList, fetchChildren, mapChildToChip } from '@/entities/child';
+import { fetchNotifications } from '@/entities/notification';
 import { PageShell, PageTopBar, SectionHeader, IconButton, IconBell } from '@/shared/ui';
 import { getKSTStartOfDay, formatDateLabel } from '@/shared/lib/date';
 
@@ -21,9 +22,13 @@ export default async function ParentSchedulePage() {
   const from = new Date(todayStart.getTime() - SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000);
   const to = new Date(todayStart.getTime() + SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000 - 1);
 
-  const [schedules, children] = token
-    ? await Promise.all([fetchSchedules(token, from, to), fetchChildren(token)])
-    : [[], []];
+  const [schedules, children, notifications] = token
+    ? await Promise.all([
+        fetchSchedules(token, from, to),
+        fetchChildren(token),
+        fetchNotifications(token),
+      ])
+    : [[], [], []];
 
   const activeSchedules = [...schedules]
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
@@ -35,6 +40,7 @@ export default async function ParentSchedulePage() {
 
   const childChips = children.map(mapChildToChip);
   const todayLabel = formatDateLabel(todayStart.toISOString());
+  const hasUnreadNotifications = notifications.some((n) => !n.isRead);
 
   return (
     <PageShell>
@@ -43,7 +49,7 @@ export default async function ParentSchedulePage() {
         subtitle={todayLabel}
         action={
           <Link href="/notifications" aria-label="알림" className="relative inline-flex">
-            <IconButton label="알림" hasDot>
+            <IconButton label="알림" hasDot={hasUnreadNotifications}>
               <IconBell size={18} />
             </IconButton>
           </Link>

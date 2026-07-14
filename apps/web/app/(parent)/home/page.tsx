@@ -81,6 +81,7 @@ export default async function ParentHomePage() {
     .map((s) => mapScheduleToUpcoming(s, now));
   const childChips = children.map(mapChildToChip);
   const notificationItems = notifications.slice(0, NOTIFICATION_LIMIT).map(mapDtoToNotification);
+  const hasUnreadNotifications = notifications.some((n) => !n.isRead);
 
   const todayLabel = formatDateLabel(todayStart.toISOString());
 
@@ -90,7 +91,7 @@ export default async function ParentHomePage() {
         title={`안녕하세요, ${userProfile?.name ?? ''}님`}
         subtitle={todayLabel}
         action={
-          <IconLink label="알림" hasDot href="/notifications">
+          <IconLink label="알림" hasDot={hasUnreadNotifications} href="/notifications">
             <IconBell size={18} />
           </IconLink>
         }
