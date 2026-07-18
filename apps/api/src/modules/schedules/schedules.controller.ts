@@ -3,9 +3,14 @@ import { SchedulesService } from './schedules.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import { createScheduleSchema } from '@eobom/shared';
+import { createScheduleSchema, createRecurringScheduleSchema } from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
-import type { CreateScheduleDto, UpdateScheduleDto, ScheduleQueryDto } from '@eobom/shared';
+import type {
+  CreateScheduleDto,
+  UpdateScheduleDto,
+  ScheduleQueryDto,
+  CreateRecurringScheduleDto,
+} from '@eobom/shared';
 
 @Controller('schedules')
 @UseGuards(JwtAuthGuard)
@@ -28,6 +33,14 @@ export class SchedulesController {
     @CurrentUser() user: IUser,
   ) {
     return this.schedulesService.create(dto, user.id);
+  }
+
+  @Post('recurring')
+  createRecurring(
+    @Body(new ZodValidationPipe(createRecurringScheduleSchema)) dto: CreateRecurringScheduleDto,
+    @CurrentUser() user: IUser,
+  ) {
+    return this.schedulesService.createRecurring(dto, user.id);
   }
 
   @Put(':id')

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ScheduleStatus, OrgMembershipStatus, UserRole, NotificationType } from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
 
@@ -11,20 +11,28 @@ import type { NotificationsService } from '../notifications/notifications.servic
 // Prisma mock factory
 // ---------------------------------------------------------------------------
 
-const makePrisma = () => ({
-  therapistProfile: { findUnique: vi.fn() },
-  parentProfile: { findUnique: vi.fn() },
-  parentChildLink: { findUnique: vi.fn(), findMany: vi.fn() },
-  organizationMembership: { findFirst: vi.fn() },
-  scheduleAcknowledgement: { upsert: vi.fn() },
-  schedule: {
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-  },
-  notification: { createMany: vi.fn() },
-});
+const makePrisma = () => {
+  const prisma = {
+    therapistProfile: { findUnique: vi.fn() },
+    parentProfile: { findUnique: vi.fn() },
+    parentChildLink: { findUnique: vi.fn(), findMany: vi.fn() },
+    organizationMembership: { findFirst: vi.fn() },
+    scheduleAcknowledgement: { upsert: vi.fn() },
+    schedule: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      createMany: vi.fn(),
+    },
+    recurringRule: { create: vi.fn() },
+    notification: { createMany: vi.fn() },
+    $transaction: vi.fn(),
+  };
+  // 서비스는 $transaction(cb)를 호출하므로, cb에 동일한 mock을 tx로 전달해 그대로 재사용한다.
+  prisma.$transaction.mockImplementation((cb: (tx: typeof prisma) => unknown) => cb(prisma));
+  return prisma;
+};
 
 // ---------------------------------------------------------------------------
 // NotificationsService mock factory
@@ -469,6 +477,141 @@ describe('SchedulesService', () => {
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
       expect(arg.message).toContain('이치료');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // createRecurring
+  // -------------------------------------------------------------------------
+
+  describe('createRecurring', () => {
+    const baseDto = {
+      childId: 'c1',
+      title: '언어 치료',
+      daysOfWeek: [1, 3], // 월, 수
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'Asia/Seoul',
+      startDate: '2025-06-02', // 월요일
+      endDate: '2025-06-08', // 그 주 일요일
+    };
+
+    const makeRule = (overrides?: object) => ({
+      id: 'rule1',
+      childId: 'c1',
+      therapistId: 'tp1',
+      daysOfWeek: [1, 3],
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'Asia/Seoul',
+      startDate: new Date('2025-06-02T00:00:00+09:00'),
+      endDate: new Date('2025-06-08T00:00:00+09:00'),
+      active: true,
+      ...overrides,
+    });
+
+    const setupSuccess = (rows = [makeScheduleRow(), makeScheduleRow({ id: 's2' })]) => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.recurringRule.create.mockResolvedValue(makeRule());
+      prisma.schedule.createMany.mockResolvedValue({ count: rows.length });
+      prisma.schedule.findMany.mockResolvedValue(rows);
+    };
+
+    it('요일에 해당하는 날짜만 골라 RecurringRule과 Schedule을 생성한다', async () => {
+      setupSuccess();
+
+      await service.createRecurring(baseDto, 'u1');
+
+      expect(prisma.recurringRule.create).toHaveBeenCalledOnce();
+      const createManyArg = prisma.schedule.createMany.mock.calls[0][0].data;
+      expect(createManyArg).toHaveLength(2);
+      expect(createManyArg[0].recurringRuleId).toBe('rule1');
+      expect(createManyArg[0].startAt.toISOString()).toBe('2025-06-02T01:00:00.000Z');
+      expect(createManyArg[1].startAt.toISOString()).toBe('2025-06-04T01:00:00.000Z');
+    });
+
+    it('recurringRule과 schedules를 포함한 응답 DTO를 반환한다', async () => {
+      setupSuccess();
+
+      const result = await service.createRecurring(baseDto, 'u1');
+
+      expect(result.recurringRule.id).toBe('rule1');
+      expect(result.recurringRule.daysOfWeek).toEqual([1, 3]);
+      expect(result.schedules).toHaveLength(2);
+      expect(result.schedules[0].id).toBe('s1');
+    });
+
+    it('therapistId 미전달 시 profile.id가 사용된다', async () => {
+      setupSuccess();
+
+      await service.createRecurring(baseDto, 'u1');
+
+      const createManyArg = prisma.schedule.createMany.mock.calls[0][0].data;
+      expect(createManyArg[0].therapistId).toBe('tp1');
+    });
+
+    it('선택한 요일에 해당하는 날짜가 없으면 BadRequestException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+
+      await expect(
+        service.createRecurring(
+          // 범위를 월요일 하루로 좁히고 화요일만 요구 → 해당하는 날짜 없음
+          { ...baseDto, daysOfWeek: [2], startDate: '2025-06-02', endDate: '2025-06-02' },
+          'u1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.recurringRule.create).not.toHaveBeenCalled();
+    });
+
+    it('생성 건수가 상한을 넘으면 BadRequestException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+
+      await expect(
+        service.createRecurring(
+          { ...baseDto, daysOfWeek: [0, 1, 2, 3, 4, 5, 6], endDate: '2026-06-01' },
+          'u1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.recurringRule.create).not.toHaveBeenCalled();
+    });
+
+    it('치료사 프로필이 없으면 NotFoundException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(null);
+
+      await expect(service.createRecurring(baseDto, 'unknown')).rejects.toThrow(NotFoundException);
+    });
+
+    it('활성 멤버십이 없으면 NotFoundException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(null);
+
+      await expect(service.createRecurring(baseDto, 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('생성 성공 시 첫 일정 기준으로 SCHEDULE_CREATED 알림을 1건만 전송한다', async () => {
+      setupSuccess();
+
+      await service.createRecurring(baseDto, 'u1');
+
+      expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      expect(arg.type).toBe(NotificationType.SCHEDULE_CREATED);
+      expect(arg.scheduleId).toBe('s1');
+      expect(arg.childId).toBe('c1');
+      expect(arg.organizationId).toBe('org1');
+      expect(arg.message).toContain('2건');
+    });
+
+    it('endDate 미전달 시 RecurringRule의 endDate는 null로 저장된다', async () => {
+      setupSuccess();
+
+      await service.createRecurring({ ...baseDto, endDate: undefined }, 'u1');
+
+      const ruleData = prisma.recurringRule.create.mock.calls[0][0].data;
+      expect(ruleData.endDate).toBeNull();
     });
   });
 
