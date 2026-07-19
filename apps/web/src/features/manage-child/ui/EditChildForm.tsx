@@ -57,8 +57,8 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
         id: childId,
         dto: {
           name: data.name.trim(),
-          birthDate: data.birthDate || undefined,
-          memo: data.memo?.trim() ?? '',
+          birthDate: data.birthDate || null,
+          memo: data.memo?.trim() || null,
         },
       },
       {

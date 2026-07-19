@@ -155,7 +155,9 @@ export class ChildrenService {
       where: { id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.birthDate !== undefined ? { birthDate: new Date(dto.birthDate) } : {}),
+        ...(dto.birthDate !== undefined
+          ? { birthDate: dto.birthDate ? new Date(dto.birthDate) : null }
+          : {}),
         ...(dto.memo !== undefined ? { memo: dto.memo } : {}),
       },
     });

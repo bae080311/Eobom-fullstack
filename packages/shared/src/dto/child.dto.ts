@@ -2,8 +2,12 @@ import { z } from "zod";
 
 export const createChildSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요"),
-  birthDate: z.string().date("올바른 생년월일 형식이 아닙니다").optional(),
-  memo: z.string().optional(),
+  birthDate: z
+    .string()
+    .date("올바른 생년월일 형식이 아닙니다")
+    .nullable()
+    .optional(),
+  memo: z.string().nullable().optional(),
   primaryTherapistId: z.string().nullable().optional(),
 });
 

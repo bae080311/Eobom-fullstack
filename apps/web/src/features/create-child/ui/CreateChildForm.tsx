@@ -1,6 +1,7 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ export function CreateChildForm({ open, onClose }: Props) {
     defaultValues: { name: '', birthDate: '', memo: '' },
   });
   const { mutate, isPending } = useCreateChild();
+  const router = useRouter();
 
   if (!open) return null;
 
@@ -50,6 +52,7 @@ export function CreateChildForm({ open, onClose }: Props) {
       {
         onSuccess: () => {
           toast.success('아동이 등록되었습니다');
+          router.refresh();
           handleClose();
         },
         onError: (err) => {

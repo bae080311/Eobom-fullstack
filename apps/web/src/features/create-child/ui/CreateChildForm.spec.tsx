@@ -12,6 +12,11 @@ vi.mock('sonner', () => ({
   toast: { success: (msg: string) => mockToastSuccess(msg), error: vi.fn() },
 }));
 
+const mockRefresh = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
+
 import { CreateChildForm } from './CreateChildForm';
 
 const baseProps = { open: true, onClose: vi.fn() };
@@ -20,6 +25,7 @@ describe('CreateChildForm', () => {
   beforeEach(() => {
     mockCreate.mockReset();
     mockToastSuccess.mockReset();
+    mockRefresh.mockReset();
     baseProps.onClose.mockReset();
   });
 
