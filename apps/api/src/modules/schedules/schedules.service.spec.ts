@@ -504,8 +504,8 @@ describe('SchedulesService', () => {
       startTime: '10:00',
       endTime: '11:00',
       timezone: 'Asia/Seoul',
-      startDate: new Date('2025-06-02T00:00:00+09:00'),
-      endDate: new Date('2025-06-08T00:00:00+09:00'),
+      startDate: new Date('2025-06-02T00:00:00Z'),
+      endDate: new Date('2025-06-08T00:00:00Z'),
       active: true,
       ...overrides,
     });

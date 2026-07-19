@@ -22,6 +22,7 @@ import type {
 
 // endDate 없이 무기한 반복을 요청하면 생성량이 발산하므로 상한 윈도우를 둔다.
 const RECURRING_MAX_WINDOW_DAYS = 90;
+const RECURRING_MAX_WINDOW_SPAN_DAYS = 365;
 const RECURRING_MAX_OCCURRENCES = 200;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -291,6 +292,15 @@ export class SchedulesService {
     if (!membership) throw new NotFoundException('소속 기관을 찾을 수 없습니다.');
 
     const windowEndDate = dto.endDate ?? this.addDays(dto.startDate, RECURRING_MAX_WINDOW_DAYS);
+
+    const startMs = Date.parse(`${dto.startDate}T00:00:00Z`);
+    const endMs = Date.parse(`${windowEndDate}T00:00:00Z`);
+    if ((endMs - startMs) / ONE_DAY_MS > RECURRING_MAX_WINDOW_SPAN_DAYS) {
+      throw new BadRequestException(
+        `반복 일정은 최대 ${RECURRING_MAX_WINDOW_SPAN_DAYS}일 기간 내에서만 설정할 수 있습니다.`,
+      );
+    }
+
     const occurrenceDates = this.buildOccurrenceDates(dto.startDate, windowEndDate, dto.daysOfWeek);
     if (occurrenceDates.length === 0) {
       throw new BadRequestException('선택한 요일에 해당하는 날짜가 없습니다.');
@@ -313,8 +323,8 @@ export class SchedulesService {
           startTime: dto.startTime,
           endTime: dto.endTime,
           timezone: dto.timezone,
-          startDate: new Date(`${dto.startDate}T00:00:00+09:00`),
-          endDate: dto.endDate ? new Date(`${dto.endDate}T00:00:00+09:00`) : null,
+          startDate: new Date(`${dto.startDate}T00:00:00Z`),
+          endDate: dto.endDate ? new Date(`${dto.endDate}T00:00:00Z`) : null,
         },
       });
 
