@@ -22,6 +22,18 @@ export function formatNextSessionLabel(nextSessionAt: string | null): string {
   return `다음 일정 ${formatDateLabel(nextSessionAt)} ${formatTime(nextSessionAt)}`;
 }
 
+export function formatBirthDateLabel(birthDate: string | null): string | null {
+  if (!birthDate) return null;
+  const parsed = new Date(birthDate);
+  if (isNaN(parsed.getTime())) return null;
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(parsed);
+}
+
 export function mapChildToChip(dto: ChildResponseDto): Child {
   return {
     id: dto.id,
