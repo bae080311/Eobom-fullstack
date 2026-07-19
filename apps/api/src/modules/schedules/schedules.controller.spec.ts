@@ -9,6 +9,7 @@ const makeService = () => ({
   findAll: vi.fn(),
   findOne: vi.fn(),
   create: vi.fn(),
+  createRecurring: vi.fn(),
   update: vi.fn(),
   cancel: vi.fn(),
   confirm: vi.fn(),
@@ -51,5 +52,21 @@ describe('SchedulesController', () => {
   it('confirm은 id와 user.id를 서비스에 전달한다(완료 처리)', () => {
     controller.confirm('s1', user);
     expect(service.confirm).toHaveBeenCalledWith('s1', user.id);
+  });
+
+  it('createRecurring은 dto와 user.id를 서비스에 전달한다', () => {
+    const dto = {
+      childId: 'c1',
+      title: '언어 치료',
+      daysOfWeek: [1, 3],
+      startTime: '10:00',
+      endTime: '11:00',
+      timezone: 'Asia/Seoul',
+      startDate: '2025-06-02',
+    };
+
+    controller.createRecurring(dto, user);
+
+    expect(service.createRecurring).toHaveBeenCalledWith(dto, user.id);
   });
 });

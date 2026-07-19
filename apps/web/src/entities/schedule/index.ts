@@ -7,6 +7,7 @@ export {
   scheduleKeys,
   useSchedules,
   useCreateSchedule,
+  useCreateRecurringSchedule,
   useUpdateSchedule,
   useCancelSchedule,
   useConfirmSchedule,

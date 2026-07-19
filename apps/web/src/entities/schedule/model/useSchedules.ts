@@ -4,7 +4,13 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { tokenStorage } from '@/features/auth/model/tokenStorage';
 import { fetchSchedules } from '../api/index';
-import type { CreateScheduleDto, UpdateScheduleDto, ScheduleResponseDto } from '@eobom/shared';
+import type {
+  CreateScheduleDto,
+  UpdateScheduleDto,
+  ScheduleResponseDto,
+  CreateRecurringScheduleDto,
+  CreateRecurringScheduleResponseDto,
+} from '@eobom/shared';
 
 export const scheduleKeys = {
   all: ['schedules'] as const,
@@ -33,6 +39,19 @@ export function useCreateSchedule() {
     mutationFn: (dto: CreateScheduleDto) => {
       const token = tokenStorage.getAccess() ?? '';
       return api.post<ScheduleResponseDto>('/schedules', dto, { token });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
+    },
+  });
+}
+
+export function useCreateRecurringSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: CreateRecurringScheduleDto) => {
+      const token = tokenStorage.getAccess() ?? '';
+      return api.post<CreateRecurringScheduleResponseDto>('/schedules/recurring', dto, { token });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scheduleKeys.all });
