@@ -11,6 +11,7 @@ const makeService = () => ({
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  setPrimaryTherapist: vi.fn(),
 });
 
 const user: IUser = {
@@ -34,5 +35,34 @@ describe('ChildrenController', () => {
   it('findAll은 현재 사용자 객체 전체를 서비스에 전달한다', () => {
     controller.findAll(user);
     expect(service.findAll).toHaveBeenCalledWith(user);
+  });
+
+  it('findOne은 id와 사용자 객체를 서비스에 전달한다', () => {
+    controller.findOne('c1', user);
+    expect(service.findOne).toHaveBeenCalledWith('c1', user);
+  });
+
+  it('create는 dto와 userId를 서비스에 전달한다', () => {
+    controller.create({ name: '도윤' }, user);
+    expect(service.create).toHaveBeenCalledWith({ name: '도윤' }, 'u1');
+  });
+
+  it('update는 id·dto·userId를 서비스에 전달한다', () => {
+    controller.update('c1', { name: '수정' }, user);
+    expect(service.update).toHaveBeenCalledWith('c1', { name: '수정' }, 'u1');
+  });
+
+  it('remove는 id와 userId를 서비스에 전달한다', () => {
+    controller.remove('c1', user);
+    expect(service.remove).toHaveBeenCalledWith('c1', 'u1');
+  });
+
+  it('setPrimaryTherapist는 id·dto·userId를 서비스에 전달한다', () => {
+    controller.setPrimaryTherapist('c1', { primaryTherapistId: 'tp2' }, user);
+    expect(service.setPrimaryTherapist).toHaveBeenCalledWith(
+      'c1',
+      { primaryTherapistId: 'tp2' },
+      'u1',
+    );
   });
 });
