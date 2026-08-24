@@ -80,4 +80,15 @@ describe('MyInfoView', () => {
     fireEvent.click(logoutButtons[logoutButtons.length - 1]);
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
+
+  it('isOwner가 true면 "기관 관리" 링크를 보여준다', () => {
+    render(<MyInfoView user={therapistUser} isOwner />);
+    const link = screen.getByRole('link', { name: /기관 관리/ });
+    expect(link).toHaveAttribute('href', '/organization');
+  });
+
+  it('isOwner가 false/undefined면 "기관 관리" 링크를 보여주지 않는다', () => {
+    render(<MyInfoView user={therapistUser} />);
+    expect(screen.queryByRole('link', { name: /기관 관리/ })).toBeNull();
+  });
 });

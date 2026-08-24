@@ -113,6 +113,7 @@ export const config = {
     '/dashboard/:path*',
     '/schedules/:path*',
     '/children/:path*',
+    '/organization/:path*',
     '/home/:path*',
     '/schedule/:path*',
     '/notifications/:path*',

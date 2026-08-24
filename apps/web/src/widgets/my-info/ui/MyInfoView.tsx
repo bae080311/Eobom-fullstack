@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { UserWithProfile } from '@/entities/user';
 import { useLogout } from '@/features/auth';
 import { EditProfileDialog } from '@/features/edit-profile';
-import { ConfirmDialog, IconChevronRight } from '@/shared/ui';
+import { ConfirmDialog, IconChevronRight, IconShield } from '@/shared/ui';
 import { formatDateLabel } from '@/shared/lib/date';
 
 interface Props {
   user: UserWithProfile;
+  isOwner?: boolean;
 }
 
 const CARD = 'rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]';
@@ -24,7 +26,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MyInfoView({ user }: Props) {
+export function MyInfoView({ user, isOwner }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const { mutate: logout, isPending } = useLogout();
@@ -77,6 +79,22 @@ export function MyInfoView({ user }: Props) {
             </span>
           </button>
           <hr className="border-0 border-t border-gray-100 m-0" />
+          {isOwner && (
+            <>
+              <Link
+                href="/organization"
+                className="w-full flex items-center justify-between px-5 py-3.5 no-underline"
+              >
+                <span className="flex items-center gap-2 text-callout text-gray-900 font-semibold">
+                  <IconShield size={16} /> 기관 관리
+                </span>
+                <span className="text-gray-300">
+                  <IconChevronRight size={18} />
+                </span>
+              </Link>
+              <hr className="border-0 border-t border-gray-100 m-0" />
+            </>
+          )}
           <button
             type="button"
             onClick={() => setLogoutOpen(true)}
