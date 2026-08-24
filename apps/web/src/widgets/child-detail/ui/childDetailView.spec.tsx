@@ -17,6 +17,8 @@ function makeChild(overrides: Partial<ChildResponseDto> = {}): ChildResponseDto 
     birthDate: '2019-05-10T00:00:00.000Z',
     memo: null,
     nextSessionAt: null,
+    primaryTherapistId: null,
+    primaryTherapistName: null,
     ...overrides,
   };
 }

@@ -7,7 +7,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
-import { ScheduleStatus, OrgMembershipStatus, UserRole, NotificationType } from '@eobom/shared';
+import {
+  ScheduleStatus,
+  OrgMembershipStatus,
+  UserRole,
+  NotificationType,
+  OrgMemberRole,
+} from '@eobom/shared';
 import type {
   CreateScheduleDto,
   UpdateScheduleDto,
@@ -40,6 +46,16 @@ export class SchedulesService {
 
     if (user.role === UserRole.PARENT) {
       return this.findAllForParent(query, user.id);
+    }
+
+    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId: user.id } });
+    if (profile) {
+      const membership = await this.prisma.organizationMembership.findFirst({
+        where: { therapistProfileId: profile.id, status: OrgMembershipStatus.ACTIVE },
+      });
+      if (membership && membership.role === OrgMemberRole.OWNER) {
+        return this.findAllForOwner(query, membership.organizationId);
+      }
     }
 
     return this.findAllForTherapist(query, user.id);
@@ -91,6 +107,28 @@ export class SchedulesService {
     });
 
     this.logger.log(`findAll: found ${schedules.length} schedules for parent=${parentProfile.id}`);
+    return schedules.map((s) => ({ ...this.toDto(s), therapistName: s.therapist?.user?.name }));
+  }
+
+  private async findAllForOwner(
+    query: ScheduleQueryDto,
+    organizationId: string,
+  ): Promise<ScheduleResponseDto[]> {
+    const schedules = await this.prisma.schedule.findMany({
+      where: {
+        organizationId,
+        ...this.buildDateAndStatusWhere(query),
+      },
+      include: {
+        child: { select: { id: true, name: true } },
+        therapist: { select: { user: { select: { name: true } } } },
+      },
+      orderBy: { startAt: 'asc' },
+    });
+
+    this.logger.log(
+      `findAll: found ${schedules.length} schedules for organization=${organizationId}`,
+    );
     return schedules.map((s) => ({ ...this.toDto(s), therapistName: s.therapist?.user?.name }));
   }
 
@@ -171,7 +209,22 @@ export class SchedulesService {
       },
     });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.therapistId !== profile.id) throw new ForbiddenException();
+    if (schedule.therapistId !== profile.id) {
+      const ownerMembership = await this.prisma.organizationMembership.findFirst({
+        where: {
+          therapistProfileId: profile.id,
+          organizationId: schedule.organizationId,
+          status: OrgMembershipStatus.ACTIVE,
+          role: OrgMemberRole.OWNER,
+        },
+      });
+      if (!ownerMembership) {
+        this.logger.warn(
+          `findOne: therapist=${profile.id} cannot access schedule=${id} organization=${schedule.organizationId}`,
+        );
+        throw new ForbiddenException();
+      }
+    }
 
     return this.toDetailDto(schedule, schedule.acknowledgements[0] ?? null);
   }

@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { ScheduleStatus, OrgMembershipStatus, UserRole, NotificationType } from '@eobom/shared';
+import {
+  ScheduleStatus,
+  OrgMembershipStatus,
+  UserRole,
+  NotificationType,
+  OrgMemberRole,
+} from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
 
 import { SchedulesService } from './schedules.service.js';
@@ -184,6 +190,47 @@ describe('SchedulesService', () => {
     });
   });
 
+  describe('findAll (owner)', () => {
+    it('활성 멤버십 role이 OWNER면 organizationId 기준으로 기관 전체 일정을 조회한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.OWNER }),
+      );
+      prisma.schedule.findMany.mockResolvedValue([
+        {
+          ...makeScheduleRow({ therapistId: 'tp-other' }),
+          therapist: { user: { name: '박치료' } },
+        },
+      ]);
+
+      const result = await service.findAll({}, therapistUser);
+
+      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
+      expect(whereArg).toEqual({ organizationId: 'org1' });
+      expect(whereArg.therapistId).toBeUndefined();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].therapistName).toBe('박치료');
+    });
+
+    it('일반 THERAPIST(비 OWNER) 멤버십이면 기존 findAllForTherapist 경로로 본인 일정만 조회한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.THERAPIST }),
+      );
+      prisma.schedule.findMany.mockResolvedValue([makeScheduleRow()]);
+
+      const result = await service.findAll({}, therapistUser);
+
+      const whereArg = prisma.schedule.findMany.mock.calls[0][0].where;
+      expect(whereArg).toEqual({ therapistId: 'tp1' });
+      expect(whereArg.organizationId).toBeUndefined();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('s1');
+    });
+  });
+
   describe('findAll (parent)', () => {
     it('학부모 프로필이 없으면 NotFoundException을 던진다', async () => {
       prisma.parentProfile.findUnique.mockResolvedValue(null);
@@ -294,8 +341,45 @@ describe('SchedulesService', () => {
     it('다른 치료사의 일정이면 ForbiddenException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
       prisma.schedule.findUnique.mockResolvedValue(makeDetailRow({ therapistId: 'tp-other' }));
+      prisma.organizationMembership.findFirst.mockResolvedValue(null);
 
       await expect(service.findOne('s1', therapistUser)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('같은 기관 OWNER면 다른 치료사의 일정 상세를 조회할 수 있다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeDetailRow({ therapistId: 'tp-other', organizationId: 'org1' }),
+      );
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.OWNER }),
+      );
+
+      const result = await service.findOne('s1', therapistUser);
+
+      expect(prisma.organizationMembership.findFirst).toHaveBeenCalledWith({
+        where: {
+          therapistProfileId: 'tp1',
+          organizationId: 'org1',
+          status: OrgMembershipStatus.ACTIVE,
+          role: OrgMemberRole.OWNER,
+        },
+      });
+      expect(result.id).toBe('s1');
+      expect(result.therapistId).toBe('tp-other');
+    });
+
+    it('다른 기관 OWNER 멤버십으로는 일정 상세를 조회할 수 없다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeDetailRow({ therapistId: 'tp-other', organizationId: 'org2' }),
+      );
+      prisma.organizationMembership.findFirst.mockResolvedValue(null);
+
+      await expect(service.findOne('s1', therapistUser)).rejects.toThrow(ForbiddenException);
+      expect(prisma.organizationMembership.findFirst).toHaveBeenCalledWith({
+        where: expect.objectContaining({ organizationId: 'org2', role: OrgMemberRole.OWNER }),
+      });
     });
   });
 

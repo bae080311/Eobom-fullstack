@@ -31,4 +31,6 @@ export interface ChildResponseDto {
   birthDate: string | null;
   memo: string | null;
   nextSessionAt: string | null;
+  primaryTherapistId: string | null;
+  primaryTherapistName: string | null;
 }
