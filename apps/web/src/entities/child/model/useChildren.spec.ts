@@ -33,6 +33,8 @@ const mockChild: ChildResponseDto = {
   birthDate: '2019-03-01T00:00:00.000Z',
   memo: null,
   nextSessionAt: null,
+  primaryTherapistId: null,
+  primaryTherapistName: null,
 };
 
 function makeWrapper() {

@@ -49,6 +49,7 @@ const makeChildRow = (overrides?: object) => ({
   memo: null,
   organizationId: 'org1',
   primaryTherapistId: 'tp1',
+  primaryTherapist: { id: 'tp1', user: { name: '이치료' } },
   schedules: [{ startAt: new Date('2026-06-20T01:00:00Z') }],
   ...overrides,
 });
@@ -104,6 +105,8 @@ describe('ChildrenService', () => {
         birthDate: '2019-03-01T00:00:00.000Z',
         memo: null,
         nextSessionAt: '2026-06-20T01:00:00.000Z',
+        primaryTherapistId: 'tp1',
+        primaryTherapistName: '이치료',
       });
     });
 
@@ -170,6 +173,8 @@ describe('ChildrenService', () => {
         birthDate: '2019-03-01T00:00:00.000Z',
         memo: null,
         nextSessionAt: '2026-06-20T01:00:00.000Z',
+        primaryTherapistId: 'tp1',
+        primaryTherapistName: '이치료',
       });
     });
 

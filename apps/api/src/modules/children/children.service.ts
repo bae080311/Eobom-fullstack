@@ -51,6 +51,7 @@ export class ChildrenService {
           take: 1,
           select: { startAt: true },
         },
+        primaryTherapist: { select: { id: true, user: { select: { name: true } } } },
       },
       orderBy: { name: 'asc' },
     });
@@ -85,6 +86,7 @@ export class ChildrenService {
           take: 1,
           select: { startAt: true },
         },
+        primaryTherapist: { select: { id: true, user: { select: { name: true } } } },
       },
       orderBy: { name: 'asc' },
     });
@@ -270,6 +272,7 @@ export class ChildrenService {
           take: 1,
           select: { startAt: true },
         },
+        primaryTherapist: { select: { id: true, user: { select: { name: true } } } },
       },
     });
     return this.toDto(child);
@@ -281,6 +284,8 @@ export class ChildrenService {
     birthDate: Date | null;
     memo: string | null;
     schedules: { startAt: Date }[];
+    primaryTherapistId: string | null;
+    primaryTherapist: { id: string; user: { name: string } } | null;
   }): ChildResponseDto {
     return {
       id: child.id,
@@ -288,6 +293,8 @@ export class ChildrenService {
       birthDate: child.birthDate ? child.birthDate.toISOString() : null,
       memo: child.memo,
       nextSessionAt: child.schedules[0] ? child.schedules[0].startAt.toISOString() : null,
+      primaryTherapistId: child.primaryTherapistId,
+      primaryTherapistName: child.primaryTherapist?.user?.name ?? null,
     };
   }
 }
