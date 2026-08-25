@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { OrganizationDashboard } from '@/widgets/organization-dashboard';
@@ -12,7 +13,7 @@ export default async function OrganizationPage() {
   const members =
     organization && token ? await fetchOrganizationMembers(token, organization.id) : [];
 
-  if (!organization) return null;
+  if (!organization) notFound();
 
   return (
     <PageShell>
