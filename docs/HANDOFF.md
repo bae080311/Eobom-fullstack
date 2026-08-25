@@ -6,6 +6,7 @@
 
 - `feat/owner-org-dashboard` 브랜치 — OWNER 기관 관리 웹 대시보드 1차 구현: `(owner)/organization` 라우트(OWNER 멤버십 서버 가드) + 기관 이름 수정·참여 코드 재발급·멤버 역할변경/탈퇴 기능, `/me` 페이지에 조건부 진입 링크(`isOwner`) 추가. 백엔드 `organizations` API는 이미 구현되어 있어 프론트엔드만 추가.
 - 같은 브랜치에서 PR 리뷰로 발견된 버그 수정: `schedules.service.ts`의 `update`/`cancel`/`confirm`이 `findOne`과 달리 OWNER 우회 없이 항상 403을 던지던 것을 공통 헬퍼(`assertCanAccessSchedule`)로 통일해 해결. `findAll`의 중복 프로필 조회도 함께 정리.
+- PR #27(Copilot 리뷰) 2차 반영: `(owner)/organization/page.tsx`에서 조직 조회 실패 시 빈 화면(`return null`) 대신 `notFound()` 호출, `fetchMyOrganization`을 React `cache()`로 감싸 `(owner)/layout.tsx`·`organization/page.tsx` 간 `/organizations/me` 중복 호출 제거.
 
 ## 다음 작업 후보 (우선순위 순)
 
