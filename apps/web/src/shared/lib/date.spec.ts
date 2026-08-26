@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTime, formatDateLabel } from './date';
+import { formatTime, formatDateLabel, getCurrentKSTMonthRange } from './date';
 
 describe('formatTime', () => {
   it('시·분을 HH:mm 형식으로 반환한다', () => {
@@ -47,5 +47,26 @@ describe('formatDateLabel', () => {
   it('월이 1월이면 앞에 0을 붙이지 않는다', () => {
     // 2024-01-05 KST 10:00 = UTC 01:00
     expect(formatDateLabel('2024-01-05T01:00:00Z')).toMatch(/^1월/);
+  });
+});
+
+describe('getCurrentKSTMonthRange', () => {
+  it('from은 해당 KST 월의 1일 00:00이다', () => {
+    // 2024-01-15 KST 13:30 = UTC 04:30
+    const { from } = getCurrentKSTMonthRange(new Date('2024-01-15T04:30:00Z'));
+    expect(from.toISOString()).toBe('2023-12-31T15:00:00.000Z'); // KST 2024-01-01 00:00
+  });
+
+  it('to는 다음 달 말일까지 포함한다(다음 달 1일 00:00 직전)', () => {
+    // 2024-01-15 KST 13:30 = UTC 04:30, 2024년은 윤년(2월 29일)
+    const { to } = getCurrentKSTMonthRange(new Date('2024-01-15T04:30:00Z'));
+    expect(to.toISOString()).toBe('2024-02-29T14:59:59.999Z'); // KST 2024-03-01 00:00 직전
+  });
+
+  it('연말(12월)에도 연도가 올바르게 넘어간다', () => {
+    // 2024-12-10 KST 10:00 = UTC 01:00
+    const { from, to } = getCurrentKSTMonthRange(new Date('2024-12-10T01:00:00Z'));
+    expect(from.toISOString()).toBe('2024-11-30T15:00:00.000Z'); // KST 2024-12-01 00:00
+    expect(to.toISOString()).toBe('2025-01-31T14:59:59.999Z'); // KST 2025-02-01 00:00 직전
   });
 });
