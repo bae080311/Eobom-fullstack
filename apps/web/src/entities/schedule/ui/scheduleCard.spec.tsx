@@ -92,6 +92,18 @@ describe('ScheduleCard', () => {
     });
   });
 
+  describe('therapistName 조건부 렌더링', () => {
+    it('therapistName이 없으면 표시하지 않는다', () => {
+      render(<ScheduleCard schedule={makeSchedule()} />);
+      expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+    });
+
+    it('therapistName이 있으면 치료 제목 옆에 표시한다', () => {
+      render(<ScheduleCard schedule={makeSchedule({ therapistName: '박치료사' })} />);
+      expect(screen.getByText('언어치료 · 박치료사')).toBeInTheDocument();
+    });
+  });
+
   describe('상태별 왼쪽 테두리 색상', () => {
     it('SCHEDULED 상태는 왼쪽 바에 bg-brand 클래스를 갖는다', () => {
       const { container } = render(

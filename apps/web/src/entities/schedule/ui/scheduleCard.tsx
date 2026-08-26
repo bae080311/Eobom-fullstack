@@ -49,7 +49,10 @@ export function ScheduleCard({ schedule, onClick }: Props) {
               {SCHEDULE_STATUS_LABEL[schedule.status]}
             </span>
           </div>
-          <span className="text-label text-gray-500 truncate">{schedule.title}</span>
+          <span className="text-label text-gray-500 truncate">
+            {schedule.title}
+            {schedule.therapistName && ` · ${schedule.therapistName}`}
+          </span>
           {schedule.notes && (
             <span className="text-label text-gray-400 truncate mt-0.5 italic">
               {schedule.notes}
