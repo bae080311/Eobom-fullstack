@@ -1,40 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { useRotateJoinCode } from '@/entities/organization';
 import { ConfirmDialog, IconRefresh } from '@/shared/ui';
-import { ApiError } from '@/lib/api';
+import { useRotateJoinCodeAction } from '../model/useRotateJoinCodeAction';
 
 interface Props {
   orgId: string;
 }
 
 export function RotateJoinCodeButton({ orgId }: Props) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const { mutate, isPending } = useRotateJoinCode(orgId);
-
-  function handleConfirm() {
-    mutate(undefined, {
-      onSuccess: () => {
-        setOpen(false);
-        toast.success('참여 코드가 재발급되었습니다');
-        router.refresh();
-      },
-      onError: (err) => {
-        setOpen(false);
-        toast.error(err instanceof ApiError ? err.message : '참여 코드 재발급에 실패했습니다');
-      },
-    });
-  }
+  const { open, isPending, openDialog, closeDialog, confirm } = useRotateJoinCodeAction(orgId);
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openDialog}
         className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-caption font-semibold text-gray-700 border-0 cursor-pointer font-sans"
       >
         <IconRefresh size={14} /> 재발급
@@ -47,8 +27,8 @@ export function RotateJoinCodeButton({ orgId }: Props) {
         confirmLabel="재발급"
         destructive
         loading={isPending}
-        onConfirm={handleConfirm}
-        onCancel={() => setOpen(false)}
+        onConfirm={confirm}
+        onCancel={closeDialog}
       />
     </>
   );
