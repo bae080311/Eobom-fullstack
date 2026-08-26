@@ -229,6 +229,18 @@ describe('SchedulesService', () => {
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('s1');
     });
+
+    it('THERAPIST 경로에서도 therapistProfile을 한 번만 조회한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.THERAPIST }),
+      );
+      prisma.schedule.findMany.mockResolvedValue([]);
+
+      await service.findAll({}, therapistUser);
+
+      expect(prisma.therapistProfile.findUnique).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('findAll (parent)', () => {
@@ -767,6 +779,31 @@ describe('SchedulesService', () => {
       );
     });
 
+    it('같은 기관 OWNER면 다른 치료사의 일정을 수정할 수 있다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', organizationId: 'org1' }),
+      );
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.OWNER }),
+      );
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', title: '수정' }),
+      );
+
+      const result = await service.update('s1', { title: '수정' }, 'u1');
+
+      expect(prisma.organizationMembership.findFirst).toHaveBeenCalledWith({
+        where: {
+          therapistProfileId: 'tp1',
+          organizationId: 'org1',
+          status: OrgMembershipStatus.ACTIVE,
+          role: OrgMemberRole.OWNER,
+        },
+      });
+      expect(result.title).toBe('수정');
+    });
+
     it('일정이 없으면 NotFoundException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findUnique.mockResolvedValue(null);
@@ -837,6 +874,23 @@ describe('SchedulesService', () => {
       await expect(service.cancel('s1', 'u1')).rejects.toThrow(ForbiddenException);
     });
 
+    it('같은 기관 OWNER면 다른 치료사의 일정을 취소할 수 있다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', organizationId: 'org1' }),
+      );
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.OWNER }),
+      );
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', status: ScheduleStatus.CANCELED }),
+      );
+
+      const result = await service.cancel('s1', 'u1');
+
+      expect(result.status).toBe(ScheduleStatus.CANCELED);
+    });
+
     it('일정이 없으면 NotFoundException을 던진다', async () => {
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.schedule.findUnique.mockResolvedValue(null);
@@ -886,6 +940,23 @@ describe('SchedulesService', () => {
       prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow({ therapistId: 'tp-other' }));
 
       await expect(service.confirm('s1', 'u1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('같은 기관 OWNER면 다른 치료사의 일정을 완료 처리할 수 있다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile({ id: 'tp1' }));
+      prisma.schedule.findUnique.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', organizationId: 'org1' }),
+      );
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.OWNER }),
+      );
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ therapistId: 'tp-other', status: ScheduleStatus.COMPLETED }),
+      );
+
+      const result = await service.confirm('s1', 'u1');
+
+      expect(result.status).toBe(ScheduleStatus.COMPLETED);
     });
 
     it('일정이 없으면 NotFoundException을 던진다', async () => {

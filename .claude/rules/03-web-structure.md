@@ -18,12 +18,12 @@ apps/web/
 
 ## 레이어 책임
 
-| 레이어 | 예시 | 의존 가능 |
-|--------|------|-----------|
-| `widgets` | `ScheduleCalendar`, `NotificationList` | features, entities, shared |
-| `features` | `create-schedule`, `confirm-schedule`, `use-invite-code` | entities, shared |
-| `entities` | `schedule`, `child`, `notification` | shared |
-| `shared` | `ui/`, `api/`, `lib/`, `types/` | 없음 |
+| 레이어     | 예시                                                     | 의존 가능                  |
+| ---------- | -------------------------------------------------------- | -------------------------- |
+| `widgets`  | `ScheduleCalendar`, `NotificationList`                   | features, entities, shared |
+| `features` | `create-schedule`, `confirm-schedule`, `use-invite-code` | entities, shared           |
+| `entities` | `schedule`, `child`, `notification`                      | shared                     |
+| `shared`   | `ui/`, `api/`, `lib/`, `types/`                          | 없음                       |
 
 **상위 레이어는 하위 레이어만 임포트한다. 역방향 의존 금지.**
 
@@ -66,3 +66,5 @@ features/create-schedule/
 - 슬라이스 내부 파일 직접 임포트 (`index.ts` 우회)
 - 클라이언트에서 직접 DB 접근
 - 하드 액션(삭제·취소) 확인 모달 없이 실행
+- 뮤테이션·토스트·라우터 갱신 등 비즈니스 로직을 `ui/` 컴포넌트에 직접 작성 (`model/` 훅으로 분리)
+- `onClick`/`onConfirm`/`onCancel` 등 JSX 콜백 prop에 익명 화살표 함수 직접 전달 (이름 있는 핸들러로 분리)

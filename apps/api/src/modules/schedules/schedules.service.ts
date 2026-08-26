@@ -49,16 +49,19 @@ export class SchedulesService {
     }
 
     const profile = await this.prisma.therapistProfile.findUnique({ where: { userId: user.id } });
-    if (profile) {
-      const membership = await this.prisma.organizationMembership.findFirst({
-        where: { therapistProfileId: profile.id, status: OrgMembershipStatus.ACTIVE },
-      });
-      if (membership && membership.role === OrgMemberRole.OWNER) {
-        return this.findAllForOwner(query, membership.organizationId);
-      }
+    if (!profile) {
+      this.logger.warn(`findAll: therapistProfile not found for userId=${user.id}`);
+      throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
     }
 
-    return this.findAllForTherapist(query, user.id);
+    const membership = await this.prisma.organizationMembership.findFirst({
+      where: { therapistProfileId: profile.id, status: OrgMembershipStatus.ACTIVE },
+    });
+    if (membership && membership.role === OrgMemberRole.OWNER) {
+      return this.findAllForOwner(query, membership.organizationId);
+    }
+
+    return this.findAllForTherapist(query, profile.id);
   }
 
   private buildDateAndStatusWhere(query: ScheduleQueryDto) {
@@ -134,25 +137,42 @@ export class SchedulesService {
 
   private async findAllForTherapist(
     query: ScheduleQueryDto,
-    userId: string,
+    therapistId: string,
   ): Promise<ScheduleResponseDto[]> {
-    const profile = await this.prisma.therapistProfile.findUnique({ where: { userId } });
-    if (!profile) {
-      this.logger.warn(`findAll: therapistProfile not found for userId=${userId}`);
-      throw new NotFoundException('치료사 프로필을 찾을 수 없습니다.');
-    }
-
     const schedules = await this.prisma.schedule.findMany({
       where: {
-        therapistId: profile.id,
+        therapistId,
         ...this.buildDateAndStatusWhere(query),
       },
       include: { child: { select: { id: true, name: true } } },
       orderBy: { startAt: 'asc' },
     });
 
-    this.logger.log(`findAll: found ${schedules.length} schedules for therapist=${profile.id}`);
+    this.logger.log(`findAll: found ${schedules.length} schedules for therapist=${therapistId}`);
     return schedules.map((s) => this.toDto(s));
+  }
+
+  // schedule.therapistId 본인이거나, schedule.organizationId의 ACTIVE OWNER면 조회/변경을 허용한다.
+  private async assertCanAccessSchedule(
+    schedule: { id: string; therapistId: string; organizationId: string },
+    profile: { id: string },
+  ): Promise<void> {
+    if (schedule.therapistId === profile.id) return;
+
+    const ownerMembership = await this.prisma.organizationMembership.findFirst({
+      where: {
+        therapistProfileId: profile.id,
+        organizationId: schedule.organizationId,
+        status: OrgMembershipStatus.ACTIVE,
+        role: OrgMemberRole.OWNER,
+      },
+    });
+    if (!ownerMembership) {
+      this.logger.warn(
+        `assertCanAccessSchedule: therapist=${profile.id} cannot access schedule=${schedule.id} organization=${schedule.organizationId}`,
+      );
+      throw new ForbiddenException();
+    }
   }
 
   async findOne(id: string, user: IUser): Promise<ScheduleDetailResponseDto> {
@@ -209,22 +229,7 @@ export class SchedulesService {
       },
     });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.therapistId !== profile.id) {
-      const ownerMembership = await this.prisma.organizationMembership.findFirst({
-        where: {
-          therapistProfileId: profile.id,
-          organizationId: schedule.organizationId,
-          status: OrgMembershipStatus.ACTIVE,
-          role: OrgMemberRole.OWNER,
-        },
-      });
-      if (!ownerMembership) {
-        this.logger.warn(
-          `findOne: therapist=${profile.id} cannot access schedule=${id} organization=${schedule.organizationId}`,
-        );
-        throw new ForbiddenException();
-      }
-    }
+    await this.assertCanAccessSchedule(schedule, profile);
 
     return this.toDetailDto(schedule, schedule.acknowledgements[0] ?? null);
   }
@@ -478,7 +483,7 @@ export class SchedulesService {
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.therapistId !== profile.id) throw new ForbiddenException();
+    await this.assertCanAccessSchedule(schedule, profile);
 
     const startAt = dto.startAt ? new Date(dto.startAt) : schedule.startAt;
     const endAt = dto.endAt ? new Date(dto.endAt) : schedule.endAt;
@@ -524,7 +529,7 @@ export class SchedulesService {
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.therapistId !== profile.id) throw new ForbiddenException();
+    await this.assertCanAccessSchedule(schedule, profile);
 
     const updated = await this.prisma.schedule.update({
       where: { id },
@@ -553,7 +558,7 @@ export class SchedulesService {
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id } });
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
-    if (schedule.therapistId !== profile.id) throw new ForbiddenException();
+    await this.assertCanAccessSchedule(schedule, profile);
 
     const updated = await this.prisma.schedule.update({
       where: { id },
