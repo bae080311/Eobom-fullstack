@@ -25,7 +25,9 @@ export default async function OrganizationCalendarPage() {
           </IconLink>
         }
       />
-      <ScheduleCalendarView initialData={schedules} />
+      {/* OWNER의 User.role은 THERAPIST이므로 /schedules/[id](치료사 상세 라우트)에
+          접근 가능하고, 백엔드는 OWNER면 다른 치료사의 일정도 조회·수정을 허용한다. */}
+      <ScheduleCalendarView initialData={schedules} detailBasePath="/schedules" />
     </PageShell>
   );
 }

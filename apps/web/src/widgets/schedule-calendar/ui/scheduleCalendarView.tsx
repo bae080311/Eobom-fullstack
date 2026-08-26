@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { ScheduleCard, useSchedules } from '@/entities/schedule';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
@@ -48,11 +48,12 @@ function getMonthGrid(year: number, month: number): Date[] {
 
 interface Props {
   initialData?: ScheduleResponseDto[];
+  /** 일정 카드 클릭 시 이동할 상세 라우트의 베이스 경로 (예: '/schedules', '/schedule') */
+  detailBasePath?: string;
 }
 
-export function ScheduleCalendarView({ initialData }: Props) {
+export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules' }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   const today = startOfDay(new Date());
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -267,18 +268,13 @@ export function ScheduleCalendarView({ initialData }: Props) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {selectedSchedules.map((s) => {
-              // 부모(/schedule/[id])·치료사(/schedules/[id]) 상세 경로가 다르므로
-              // 현재 경로를 기준으로 분기한다.
-              const basePath = pathname.startsWith('/schedules') ? '/schedules' : '/schedule';
-              return (
-                <ScheduleCard
-                  key={s.id}
-                  schedule={s}
-                  onClick={() => router.push(`${basePath}/${s.id}`)}
-                />
-              );
-            })}
+            {selectedSchedules.map((s) => (
+              <ScheduleCard
+                key={s.id}
+                schedule={s}
+                onClick={() => router.push(`${detailBasePath}/${s.id}`)}
+              />
+            ))}
           </div>
         )}
       </div>
