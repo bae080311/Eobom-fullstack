@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { OrgMemberRole, OrgMembershipStatus, type MemberResponseDto } from '@eobom/shared';
 
 const mockDelete = vi.fn();
+const mockSetPrimaryTherapist = vi.fn();
 vi.mock('@/entities/child', () => ({
   useDeleteChild: () => ({ mutate: mockDelete, isPending: false }),
   useUpdateChild: () => ({ mutate: vi.fn(), isPending: false }),
+  useSetPrimaryTherapist: () => ({ mutate: mockSetPrimaryTherapist, isPending: false }),
 }));
 
 const mockPush = vi.fn();
@@ -27,9 +30,29 @@ const baseProps = {
   memo: null,
 };
 
+const members: MemberResponseDto[] = [
+  {
+    id: 'm1',
+    therapistProfileId: 'tp1',
+    role: OrgMemberRole.OWNER,
+    status: OrgMembershipStatus.ACTIVE,
+    joinedAt: '2026-01-01T00:00:00.000Z',
+    user: { id: 'u1', name: '김원장', email: 'owner@eobom.dev' },
+  },
+  {
+    id: 'm2',
+    therapistProfileId: 'tp2',
+    role: OrgMemberRole.THERAPIST,
+    status: OrgMembershipStatus.ACTIVE,
+    joinedAt: '2026-01-02T00:00:00.000Z',
+    user: { id: 'u2', name: '이치료', email: 'therapist@eobom.dev' },
+  },
+];
+
 describe('TherapistChildActions', () => {
   beforeEach(() => {
     mockDelete.mockReset();
+    mockSetPrimaryTherapist.mockReset();
     mockPush.mockReset();
     mockToastSuccess.mockReset();
   });
@@ -69,5 +92,28 @@ describe('TherapistChildActions', () => {
 
     await user.click(screen.getByRole('button', { name: /수정/ }));
     expect(screen.getByText('아동 정보 수정')).toBeInTheDocument();
+  });
+
+  it('기관 멤버가 없으면 담당변경 버튼을 보여주지 않는다', () => {
+    render(<TherapistChildActions {...baseProps} members={[]} />);
+    expect(screen.queryByRole('button', { name: /담당변경/ })).not.toBeInTheDocument();
+  });
+
+  it('담당변경 버튼 클릭 시 멤버 선택 폼이 열리고, 선택 후 제출하면 setPrimaryTherapist.mutate가 호출된다', async () => {
+    const user = userEvent.setup();
+    render(
+      <TherapistChildActions {...baseProps} currentPrimaryTherapistId="tp1" members={members} />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /담당변경/ }));
+    expect(screen.getByText('담당 치료사 변경')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole('combobox'), 'tp2');
+    await user.click(screen.getByRole('button', { name: '변경' }));
+
+    expect(mockSetPrimaryTherapist.mock.calls[0][0]).toEqual({
+      id: 'c1',
+      dto: { primaryTherapistId: 'tp2' },
+    });
   });
 });

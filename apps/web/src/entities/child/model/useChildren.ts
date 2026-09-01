@@ -3,7 +3,12 @@
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { tokenStorage } from '@/features/auth/model/tokenStorage';
-import type { CreateChildDto, UpdateChildDto, ChildResponseDto } from '@eobom/shared';
+import type {
+  CreateChildDto,
+  UpdateChildDto,
+  SetPrimaryTherapistDto,
+  ChildResponseDto,
+} from '@eobom/shared';
 
 export const childKeys = {
   all: ['children'] as const,
@@ -28,6 +33,19 @@ export function useUpdateChild() {
     mutationFn: ({ id, dto }: { id: string; dto: UpdateChildDto }) => {
       const token = tokenStorage.getAccess() ?? '';
       return api.put<ChildResponseDto>(`/children/${id}`, dto, { token });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: childKeys.all });
+    },
+  });
+}
+
+export function useSetPrimaryTherapist() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: SetPrimaryTherapistDto }) => {
+      const token = tokenStorage.getAccess() ?? '';
+      return api.post<ChildResponseDto>(`/children/${id}/primary-therapist`, dto, { token });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: childKeys.all });

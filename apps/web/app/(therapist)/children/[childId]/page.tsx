@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import type { ChildResponseDto } from '@eobom/shared';
 import { fetchChildDetail } from '@/entities/child';
+import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { ChildDetailView } from '@/widgets/child-detail';
 import { TherapistChildActions } from '@/features/manage-child';
 
@@ -23,6 +24,10 @@ export default async function TherapistChildDetailPage({ params }: Props) {
     notFound();
   }
 
+  const organization = token ? await fetchMyOrganization(token) : null;
+  const members =
+    organization && token ? await fetchOrganizationMembers(token, organization.id) : [];
+
   return (
     <ChildDetailView
       child={child}
@@ -33,6 +38,8 @@ export default async function TherapistChildDetailPage({ params }: Props) {
           name={child.name}
           birthDate={child.birthDate}
           memo={child.memo}
+          currentPrimaryTherapistId={child.primaryTherapistId}
+          members={members}
         />
       }
     />

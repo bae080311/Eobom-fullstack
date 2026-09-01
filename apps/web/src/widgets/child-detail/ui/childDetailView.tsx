@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { ChildResponseDto } from '@eobom/shared';
 import { formatKoreanAge, formatNextSessionLabel, formatBirthDateLabel } from '@/entities/child';
 import { DetailRow } from '@/entities/schedule';
-import { IconArrowLeft, IconButton, IconCalendar, IconClock } from '@/shared/ui';
+import { IconArrowLeft, IconButton, IconCalendar, IconClock, IconUser } from '@/shared/ui';
 
 interface Props {
   child: ChildResponseDto;
@@ -41,6 +41,11 @@ export function ChildDetailView({ child, backHref, footer }: Props) {
         <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">아동 정보</h2>
         <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4">
           <DetailRow icon={<IconCalendar size={16} />} label="생년월일" value={birthDateLabel} />
+          <DetailRow
+            icon={<IconUser size={16} />}
+            label="담당 치료사"
+            value={child.primaryTherapistName ?? '지정되지 않음'}
+          />
         </div>
       </section>
 
