@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
+import { PageShell, PageTopBar, IconLink, IconArrowLeft, IconCalendar } from '@/shared/ui';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { OrganizationDashboard } from '@/widgets/organization-dashboard';
 
@@ -23,6 +23,11 @@ export default async function OrganizationPage() {
         back={
           <IconLink label="내 정보로" href="/me">
             <IconArrowLeft size={18} />
+          </IconLink>
+        }
+        action={
+          <IconLink label="기관 캘린더" href="/organization/calendar">
+            <IconCalendar size={20} />
           </IconLink>
         }
       />

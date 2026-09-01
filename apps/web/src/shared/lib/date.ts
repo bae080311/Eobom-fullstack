@@ -64,3 +64,19 @@ export function getKSTWeekStart(date: Date = new Date()): Date {
   const daysFromMonday = utcDay === 0 ? 6 : utcDay - 1;
   return new Date(todayStart.getTime() - daysFromMonday * 24 * 60 * 60 * 1000);
 }
+
+export function getCurrentKSTMonthRange(now: Date = new Date()): { from: Date; to: Date } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: KST_TZ,
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(now);
+  const kstYear = Number(parts.find((p) => p.type === 'year')!.value);
+  const kstMonth = Number(parts.find((p) => p.type === 'month')!.value) - 1; // 0-indexed
+
+  const from = getKSTStartOfDay(new Date(Date.UTC(kstYear, kstMonth, 1, 3)));
+  const to = new Date(
+    getKSTStartOfDay(new Date(Date.UTC(kstYear, kstMonth + 2, 1, 3))).getTime() - 1,
+  );
+  return { from, to };
+}
