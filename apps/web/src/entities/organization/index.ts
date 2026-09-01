@@ -1,4 +1,5 @@
 export { fetchMyOrganization, fetchOrganizationMembers } from './api/index';
+export { assertOrgRole } from './model/guardOrgRole';
 export {
   organizationKeys,
   useUpdateOrganization,
