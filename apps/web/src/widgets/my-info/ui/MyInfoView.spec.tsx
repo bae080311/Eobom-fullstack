@@ -91,4 +91,15 @@ describe('MyInfoView', () => {
     render(<MyInfoView user={therapistUser} />);
     expect(screen.queryByRole('link', { name: /기관 관리/ })).toBeNull();
   });
+
+  it('PARENT 계정이면 "초대코드 입력" 링크를 보여준다', () => {
+    render(<MyInfoView user={parentUser} />);
+    const link = screen.getByRole('link', { name: /초대코드 입력/ });
+    expect(link).toHaveAttribute('href', '/redeem');
+  });
+
+  it('THERAPIST 계정이면 "초대코드 입력" 링크를 보여주지 않는다', () => {
+    render(<MyInfoView user={therapistUser} />);
+    expect(screen.queryByRole('link', { name: /초대코드 입력/ })).toBeNull();
+  });
 });

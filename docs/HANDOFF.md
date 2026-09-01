@@ -4,15 +4,15 @@
 
 ## 최근 완료
 
-- `refactor/role-routing-guard` 브랜치 — 역할별 라우팅 가드 통합. `middleware.ts`의 수동 base64 JWT 디코딩(`decodeRole`/`isTokenExpired`)을 `shared/lib/jwt.ts`(`parseJwt`/`getJwtRole`/`isJwtExpired`) 공통 유틸로 통합하고, `(owner)/layout.tsx`의 인라인 `OrganizationMembership` 가드 로직을 `entities/organization/model/guardOrgRole.ts`의 `requireOrgRole(role, fallbackPath)`로 추출 — 향후 `STAFF` 등 신규 org-role 라우트 그룹도 동일 헬퍼를 재사용 가능.
-- 동일 안티패턴(수동 base64 디코딩)을 중복하던 미사용 `features/auth/ui/AuthGuard.tsx` 삭제(전체 grep으로 미사용 확인 후 제거).
-- Notion 레이어 6(Web 설계) 갱신 — "역할별 라우팅 개선"을 v0.2 예정 목록에서 제거, 경로 그룹/레이아웃 섹션을 새 가드 구조로 갱신.
-- PR: https://github.com/bae080311/Eobom-fullstack/pull/31
+- `feat/invite-code-web-ui` 브랜치 — 초대코드 웹 UI 구현. `entities/invite-code`(fetch/mutation 훅, 상태 배지·행 UI), `features/{issue,revoke,use}-invite-code`, `widgets/invite-code-list` 신규 슬라이스와 `(therapist)/invite-codes`·`(parent)/redeem` 페이지 추가. 진입점은 `/children` 상단바·아동 상세 화면·`/me` 메뉴(학부모).
+- PR 리뷰로 발견·수정: `InviteCode.status`는 redeem 시도 시점에만 EXPIRED로 갱신되어 미사용 상태로 유효기간이 지난 코드가 서버 응답에서도 ACTIVE로 남는 문제 — `getEffectiveInviteCodeStatus`로 프론트에서 `expiresAt` 기준 재판정. 담당 배정이 바뀌어 `findAllForTherapist`에서 빠진 아동의 기존 발급 코드가 화면에서 사라지던 문제 — `items`(현재 담당 아동) ∪ `codes`의 child를 합쳐 그룹핑하되 발급 버튼은 현재 담당 아동에만 노출.
+- 백엔드(`invite-codes` 모듈)는 이미 구현되어 있어 변경 없음.
+- Notion 레이어 6(Web 설계) 갱신 — `/redeem`·`/invite-codes`를 v0.2 예정에서 완료로 반영.
+- PR: https://github.com/bae080311/Eobom-fullstack/pull/32
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. `/redeem`(학부모 초대코드 입력), 치료사 `invite-codes`(발급 코드 목록) 페이지 — 백엔드 API(`POST /invite-codes/parent-link`, `GET /invite-codes`, `DELETE /invite-codes/:id`, `POST /invite-codes/redeem`)는 이미 구현 완료, Web 슬라이스(`entities/invite-code` 등)부터 신규 구현 필요. 착수 전.
-2. WCAG AA 검토, 한국어 i18n 분리 — 착수 전.
+1. WCAG AA 검토, 한국어 i18n 분리 — 착수 전.
 
 ## 참고
 

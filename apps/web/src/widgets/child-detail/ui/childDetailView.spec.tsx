@@ -81,6 +81,18 @@ describe('ChildDetailView', () => {
     expect(screen.getByTestId('footer-slot')).toBeInTheDocument();
   });
 
+  it('inviteCodeAction 노드를 렌더링한다', () => {
+    render(
+      <ChildDetailView
+        child={makeChild()}
+        backHref="/children"
+        footer={null}
+        inviteCodeAction={<div data-testid="invite-code-action">발급</div>}
+      />,
+    );
+    expect(screen.getByTestId('invite-code-action')).toBeInTheDocument();
+  });
+
   it('backHref를 뒤로가기 링크에 적용한다', () => {
     const { container } = render(
       <ChildDetailView child={makeChild()} backHref="/children" footer={null} />,

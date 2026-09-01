@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { UserWithProfile } from '@/entities/user';
 import { useLogout } from '@/features/auth';
 import { EditProfileDialog } from '@/features/edit-profile';
-import { ConfirmDialog, IconChevronRight, IconShield } from '@/shared/ui';
+import { ConfirmDialog, IconChevronRight, IconShield, IconFileText } from '@/shared/ui';
 import { formatDateLabel } from '@/shared/lib/date';
 
 interface Props {
@@ -79,6 +79,22 @@ export function MyInfoView({ user, isOwner }: Props) {
             </span>
           </button>
           <hr className="border-0 border-t border-gray-100 m-0" />
+          {!isTherapist && (
+            <>
+              <Link
+                href="/redeem"
+                className="w-full flex items-center justify-between px-5 py-3.5 no-underline"
+              >
+                <span className="flex items-center gap-2 text-callout text-gray-900 font-semibold">
+                  <IconFileText size={16} /> 초대코드 입력
+                </span>
+                <span className="text-gray-300">
+                  <IconChevronRight size={18} />
+                </span>
+              </Link>
+              <hr className="border-0 border-t border-gray-100 m-0" />
+            </>
+          )}
           {isOwner && (
             <>
               <Link
