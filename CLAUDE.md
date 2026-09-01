@@ -45,7 +45,8 @@ cp .env.example .env && docker compose up -d && pnpm install && pnpm db:migrate 
 3. 파일 추가는 소단위로, 메시지당 한 가지 관심사만.
 4. 검증 근거: `pnpm lint && pnpm typecheck && pnpm build && pnpm test` (Next.js `web` 앱은 `build` 필수 — server/client 경계 위반은 build에서만 드러난다)
 5. 세션에서 배운 것은 Notion 9.8 Flywheel Log에 기록한다.
-6. 반복 실수는 이 파일 또는 Notion 9.7에 원칙으로 추가한다.
+6. 작업 종료 시(`git-ship` 마지막 단계) `docs/HANDOFF.md`를 이번 세션 완료 내용·다음 작업 후보로 덮어써서 다음 세션이 바로 이어받을 수 있게 한다.
+7. 반복 실수는 이 파일 또는 Notion 9.7에 원칙으로 추가한다.
 
 > FSD 슬라이스의 공용 `index.ts`에 서버 전용(`next/headers` 등) 함수를 추가하기 전에, 같은 배럴을 client component가 이미 import하고 있는지 먼저 확인한다 — 필요하면 `cookies()` 호출은 `app/` 레이아웃에 남기고 슬라이스에는 순수 함수만 노출한다 (2026-09-01 사례: Notion 9.8 참조).
 

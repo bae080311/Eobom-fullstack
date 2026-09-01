@@ -88,13 +88,30 @@ EOF
 )"
 ```
 
-### 4단계 — 푸시
+### 4단계 — 핸드오프 문서 갱신
+
+`docs/HANDOFF.md`를 이번 세션 기준으로 **덮어쓴다** (과거 이력 누적 금지 — 항상 최신 상태만 유지):
+
+- **최근 완료**: 이번 세션에서 머지/생성한 PR과 핵심 변경 내용 1~3줄
+- **다음 작업 후보**: 로드맵·메모리·이번 작업 중 발견한 미구현/버그를 우선순위 순으로 정리
+
+```bash
+git add docs/HANDOFF.md
+git commit -m "$(cat <<'EOF'
+docs: 핸드오프 문서 갱신
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
+```
+
+### 5단계 — 푸시
 
 ```bash
 git push -u origin <branch-name>
 ```
 
-### 5단계 — PR 생성
+### 6단계 — PR 생성
 
 다음 형식으로 PR을 생성한다:
 
