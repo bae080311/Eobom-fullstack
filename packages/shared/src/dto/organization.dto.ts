@@ -30,6 +30,7 @@ export interface OrganizationResponseDto {
 
 export interface MemberResponseDto {
   id: string;
+  therapistProfileId: string;
   role: OrgMemberRole;
   status: OrgMembershipStatus;
   joinedAt: string;

@@ -283,10 +283,11 @@ export class OrganizationsService {
     role: string;
     status: string;
     joinedAt: Date;
-    therapistProfile: { user: { id: string; name: string; email: string } };
+    therapistProfile: { id: string; user: { id: string; name: string; email: string } };
   }): MemberResponseDto {
     return {
       id: membership.id,
+      therapistProfileId: membership.therapistProfile.id,
       role: membership.role as OrgMemberRole,
       status: membership.status as OrgMembershipStatus,
       joinedAt: membership.joinedAt.toISOString(),
