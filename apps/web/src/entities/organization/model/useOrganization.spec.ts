@@ -34,6 +34,7 @@ const mockPost = vi.mocked(api.post);
 
 const mockMember: MemberResponseDto = {
   id: 'm1',
+  therapistProfileId: 'tp1',
   role: OrgMemberRole.THERAPIST,
   status: OrgMembershipStatus.ACTIVE,
   joinedAt: '2026-01-01T00:00:00.000Z',

@@ -7,7 +7,13 @@ export {
   mapChildToChip,
 } from './model/utils';
 export { fetchChildren, fetchChildDetail } from './api/index';
-export { childKeys, useCreateChild, useUpdateChild, useDeleteChild } from './model/useChildren';
+export {
+  childKeys,
+  useCreateChild,
+  useUpdateChild,
+  useSetPrimaryTherapist,
+  useDeleteChild,
+} from './model/useChildren';
 export { ChildChipList } from './ui/childChipList';
 export { ChildCard } from './ui/childCard';
 export { ChildList } from './ui/childList';

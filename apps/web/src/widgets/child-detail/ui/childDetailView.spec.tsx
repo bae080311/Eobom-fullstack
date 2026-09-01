@@ -37,6 +37,22 @@ describe('ChildDetailView', () => {
     expect(screen.getByText('등록되지 않음')).toBeInTheDocument();
   });
 
+  it('담당 치료사 이름을 표시한다', () => {
+    render(
+      <ChildDetailView
+        child={makeChild({ primaryTherapistName: '이치료' })}
+        backHref="/children"
+        footer={null}
+      />,
+    );
+    expect(screen.getByText('이치료')).toBeInTheDocument();
+  });
+
+  it('담당 치료사가 없으면 지정되지 않음으로 표시한다', () => {
+    render(<ChildDetailView child={makeChild()} backHref="/children" footer={null} />);
+    expect(screen.getByText('지정되지 않음')).toBeInTheDocument();
+  });
+
   it('memo가 있으면 메모 섹션을 표시한다', () => {
     render(
       <ChildDetailView

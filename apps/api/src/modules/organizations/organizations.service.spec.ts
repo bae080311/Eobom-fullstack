@@ -43,7 +43,7 @@ const makeMembership = (overrides?: object) => ({
   role: OrgMemberRole.OWNER,
   status: OrgMembershipStatus.ACTIVE,
   joinedAt: new Date('2025-01-01T00:00:00Z'),
-  therapistProfile: { user: { id: 'u1', name: '이치료', email: 't@x.com' } },
+  therapistProfile: { id: 'tp1', user: { id: 'u1', name: '이치료', email: 't@x.com' } },
   ...overrides,
 });
 
@@ -189,6 +189,7 @@ describe('OrganizationsService', () => {
       expect(result).toEqual([
         {
           id: 'mem1',
+          therapistProfileId: 'tp1',
           role: OrgMemberRole.OWNER,
           status: OrgMembershipStatus.ACTIVE,
           joinedAt: '2025-01-01T00:00:00.000Z',

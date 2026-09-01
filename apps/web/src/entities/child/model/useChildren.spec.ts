@@ -21,7 +21,13 @@ vi.mock('@/features/auth/model/tokenStorage', () => ({
 }));
 
 import { api } from '@/lib/api';
-import { useCreateChild, useUpdateChild, useDeleteChild, childKeys } from './useChildren';
+import {
+  useCreateChild,
+  useUpdateChild,
+  useSetPrimaryTherapist,
+  useDeleteChild,
+  childKeys,
+} from './useChildren';
 
 const mockPost = vi.mocked(api.post);
 const mockPut = vi.mocked(api.put);
@@ -106,6 +112,44 @@ describe('useUpdateChild', () => {
       '/children/c1',
       { name: '수정된 이름' },
       expect.objectContaining({ token: 'test-token' }),
+    );
+  });
+});
+
+describe('useSetPrimaryTherapist', () => {
+  beforeEach(() => {
+    mockPost.mockReset();
+  });
+
+  it('POST /children/:id/primary-therapist를 호출한다', async () => {
+    mockPost.mockResolvedValue({ ...mockChild, primaryTherapistId: 'tp2' });
+    const { result } = renderHook(() => useSetPrimaryTherapist(), { wrapper: makeWrapper() });
+
+    result.current.mutate({ id: 'c1', dto: { primaryTherapistId: 'tp2' } });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockPost).toHaveBeenCalledWith(
+      '/children/c1/primary-therapist',
+      { primaryTherapistId: 'tp2' },
+      expect.objectContaining({ token: 'test-token' }),
+    );
+  });
+
+  it('성공 시 children 쿼리를 invalidate한다', async () => {
+    mockPost.mockResolvedValue({ ...mockChild, primaryTherapistId: 'tp2' });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children);
+
+    const { result } = renderHook(() => useSetPrimaryTherapist(), { wrapper });
+    result.current.mutate({ id: 'c1', dto: { primaryTherapistId: 'tp2' } });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: childKeys.all }),
     );
   });
 });

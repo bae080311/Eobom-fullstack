@@ -2,23 +2,37 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { MemberResponseDto } from '@eobom/shared';
 import { useDeleteChild } from '@/entities/child';
-import { ConfirmDialog, IconRefresh } from '@/shared/ui';
+import { ConfirmDialog, IconRefresh, IconUser } from '@/shared/ui';
 import { ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 import { EditChildForm } from './EditChildForm';
+import { SetPrimaryTherapistForm } from './SetPrimaryTherapistForm';
 
 interface Props {
   childId: string;
   name: string;
   birthDate: string | null;
   memo: string | null;
+  currentPrimaryTherapistId?: string | null;
+  members?: MemberResponseDto[];
+  canReassignPrimaryTherapist?: boolean;
 }
 
-export function TherapistChildActions({ childId, name, birthDate, memo }: Props) {
+export function TherapistChildActions({
+  childId,
+  name,
+  birthDate,
+  memo,
+  currentPrimaryTherapistId = null,
+  members = [],
+  canReassignPrimaryTherapist = false,
+}: Props) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [primaryTherapistOpen, setPrimaryTherapistOpen] = useState(false);
   const { mutate: deleteChild, isPending: isDeleting } = useDeleteChild();
 
   function handleDelete() {
@@ -34,6 +48,15 @@ export function TherapistChildActions({ childId, name, birthDate, memo }: Props)
     });
   }
 
+  function handleOpenPrimaryTherapist() {
+    setPrimaryTherapistOpen(true);
+  }
+
+  function handleClosePrimaryTherapist() {
+    setPrimaryTherapistOpen(false);
+    router.refresh();
+  }
+
   return (
     <div className="fixed bottom-0 inset-x-0 px-5 py-3 pb-[30px] bg-white/90 backdrop-blur-xl border-t border-gray-200 flex gap-2 z-50">
       <button
@@ -43,6 +66,16 @@ export function TherapistChildActions({ childId, name, birthDate, memo }: Props)
       >
         <IconRefresh size={16} /> 수정
       </button>
+
+      {canReassignPrimaryTherapist && (
+        <button
+          type="button"
+          onClick={handleOpenPrimaryTherapist}
+          className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans"
+        >
+          <IconUser size={16} /> 담당변경
+        </button>
+      )}
 
       <button
         type="button"
@@ -73,6 +106,14 @@ export function TherapistChildActions({ childId, name, birthDate, memo }: Props)
           setEditOpen(false);
           router.refresh();
         }}
+      />
+
+      <SetPrimaryTherapistForm
+        open={primaryTherapistOpen}
+        childId={childId}
+        currentPrimaryTherapistId={currentPrimaryTherapistId}
+        members={members}
+        onClose={handleClosePrimaryTherapist}
       />
     </div>
   );
