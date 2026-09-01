@@ -17,6 +17,7 @@ interface Props {
   memo: string | null;
   currentPrimaryTherapistId?: string | null;
   members?: MemberResponseDto[];
+  canReassignPrimaryTherapist?: boolean;
 }
 
 export function TherapistChildActions({
@@ -26,6 +27,7 @@ export function TherapistChildActions({
   memo,
   currentPrimaryTherapistId = null,
   members = [],
+  canReassignPrimaryTherapist = false,
 }: Props) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -65,7 +67,7 @@ export function TherapistChildActions({
         <IconRefresh size={16} /> 수정
       </button>
 
-      {members.length > 0 && (
+      {canReassignPrimaryTherapist && (
         <button
           type="button"
           onClick={handleOpenPrimaryTherapist}

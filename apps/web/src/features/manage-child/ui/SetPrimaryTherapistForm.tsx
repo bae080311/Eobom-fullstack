@@ -15,6 +15,17 @@ interface Props {
   onClose: () => void;
 }
 
+function resolveInitialSelection(
+  currentPrimaryTherapistId: string | null,
+  members: MemberResponseDto[],
+): string {
+  if (!currentPrimaryTherapistId) return '';
+  const stillActive = members.some(
+    (member) => member.therapistProfileId === currentPrimaryTherapistId,
+  );
+  return stillActive ? currentPrimaryTherapistId : '';
+}
+
 export function SetPrimaryTherapistForm({
   open,
   childId,
@@ -22,14 +33,16 @@ export function SetPrimaryTherapistForm({
   members,
   onClose,
 }: Props) {
-  const [selected, setSelected] = useState(currentPrimaryTherapistId ?? '');
+  const [selected, setSelected] = useState(() =>
+    resolveInitialSelection(currentPrimaryTherapistId, members),
+  );
   const { mutate, isPending } = useSetPrimaryTherapist();
 
   useEffect(() => {
     if (open) {
-      setSelected(currentPrimaryTherapistId ?? '');
+      setSelected(resolveInitialSelection(currentPrimaryTherapistId, members));
     }
-  }, [open, currentPrimaryTherapistId]);
+  }, [open, currentPrimaryTherapistId, members]);
 
   if (!open) return null;
 

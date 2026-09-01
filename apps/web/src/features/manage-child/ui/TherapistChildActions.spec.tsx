@@ -94,15 +94,26 @@ describe('TherapistChildActions', () => {
     expect(screen.getByText('아동 정보 수정')).toBeInTheDocument();
   });
 
-  it('기관 멤버가 없으면 담당변경 버튼을 보여주지 않는다', () => {
-    render(<TherapistChildActions {...baseProps} members={[]} />);
+  it('재지정 권한이 없으면 멤버가 있어도 담당변경 버튼을 보여주지 않는다', () => {
+    render(
+      <TherapistChildActions
+        {...baseProps}
+        members={members}
+        canReassignPrimaryTherapist={false}
+      />,
+    );
     expect(screen.queryByRole('button', { name: /담당변경/ })).not.toBeInTheDocument();
   });
 
   it('담당변경 버튼 클릭 시 멤버 선택 폼이 열리고, 선택 후 제출하면 setPrimaryTherapist.mutate가 호출된다', async () => {
     const user = userEvent.setup();
     render(
-      <TherapistChildActions {...baseProps} currentPrimaryTherapistId="tp1" members={members} />,
+      <TherapistChildActions
+        {...baseProps}
+        currentPrimaryTherapistId="tp1"
+        members={members}
+        canReassignPrimaryTherapist
+      />,
     );
 
     await user.click(screen.getByRole('button', { name: /담당변경/ }));
@@ -115,5 +126,22 @@ describe('TherapistChildActions', () => {
       id: 'c1',
       dto: { primaryTherapistId: 'tp2' },
     });
+  });
+
+  it('현재 담당 치료사가 멤버 목록에 없으면(탈퇴 등) 선택값을 비워 제출을 막는다', async () => {
+    const user = userEvent.setup();
+    render(
+      <TherapistChildActions
+        {...baseProps}
+        currentPrimaryTherapistId="tp-left-org"
+        members={members}
+        canReassignPrimaryTherapist
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /담당변경/ }));
+
+    expect(screen.getByRole('combobox')).toHaveValue('');
+    expect(screen.getByRole('button', { name: '변경' })).toBeDisabled();
   });
 });
