@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useUpdateChild } from '@/entities/child';
+import { FormModal } from '@/shared/ui';
 import { ApiError } from '@/lib/api';
 
 const formSchema = z.object({
@@ -47,8 +48,6 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, name, birthDate, memo]);
 
-  if (!open) return null;
-
   const { errors } = form.formState;
 
   const onSubmit = (data: FormData) => {
@@ -74,54 +73,29 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 px-5 pb-8"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
+    <FormModal
+      open={open}
+      title="아동 정보 수정"
+      isPending={isPending}
+      onSubmit={form.handleSubmit(onSubmit)}
+      onClose={onClose}
     >
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
-      >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">아동 정보 수정</h2>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-label text-gray-500 font-semibold">이름</span>
+        <input {...form.register('name')} className={inputCls} />
+        {errors.name && <span className={errorCls}>{errors.name.message}</span>}
+      </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">이름</span>
-          <input {...form.register('name')} className={inputCls} />
-          {errors.name && <span className={errorCls}>{errors.name.message}</span>}
-        </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-label text-gray-500 font-semibold">생년월일 (선택)</span>
+        <input type="date" {...form.register('birthDate')} className={inputCls} />
+        {errors.birthDate && <span className={errorCls}>{errors.birthDate.message}</span>}
+      </label>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">생년월일 (선택)</span>
-          <input type="date" {...form.register('birthDate')} className={inputCls} />
-          {errors.birthDate && <span className={errorCls}>{errors.birthDate.message}</span>}
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
-          <textarea {...form.register('memo')} rows={2} className={`${inputCls} resize-none`} />
-        </label>
-
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isPending}
-            className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={isPending}
-            className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
-          >
-            {isPending ? '저장 중...' : '저장'}
-          </button>
-        </div>
-      </form>
-    </div>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
+        <textarea {...form.register('memo')} rows={2} className={`${inputCls} resize-none`} />
+      </label>
+    </FormModal>
   );
 }
