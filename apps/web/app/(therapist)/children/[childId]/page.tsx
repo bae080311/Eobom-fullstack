@@ -7,6 +7,7 @@ import { fetchChildDetail } from '@/entities/child';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { ChildDetailView } from '@/widgets/child-detail';
 import { TherapistChildActions } from '@/features/manage-child';
+import { IssueInviteCodeButton } from '@/features/issue-invite-code';
 
 export const metadata: Metadata = { title: '아동 상세' };
 
@@ -44,6 +45,7 @@ export default async function TherapistChildDetailPage({ params }: Props) {
     <ChildDetailView
       child={child}
       backHref="/children"
+      inviteCodeAction={<IssueInviteCodeButton childId={child.id} />}
       footer={
         <TherapistChildActions
           childId={child.id}

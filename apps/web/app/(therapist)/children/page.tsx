@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { PageShell, PageTopBar } from '@/shared/ui';
+import { PageShell, PageTopBar, IconLink, IconFileText } from '@/shared/ui';
 import { fetchChildren, ChildList } from '@/entities/child';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
 import { CreateChildButton } from '@/features/create-child';
@@ -18,7 +18,14 @@ export default async function TherapistChildrenPage() {
       <PageTopBar
         title="담당 아동"
         subtitle={`${children.length}명`}
-        action={<CreateChildButton />}
+        action={
+          <div className="flex items-center gap-2">
+            <IconLink label="발급 코드" href="/invite-codes">
+              <IconFileText size={18} />
+            </IconLink>
+            <CreateChildButton />
+          </div>
+        }
       />
       <ChildList items={children} />
       <TherapistTabBar active="children" />

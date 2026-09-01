@@ -9,9 +9,10 @@ interface Props {
   child: ChildResponseDto;
   backHref: string;
   footer: ReactNode;
+  inviteCodeAction?: ReactNode;
 }
 
-export function ChildDetailView({ child, backHref, footer }: Props) {
+export function ChildDetailView({ child, backHref, footer, inviteCodeAction }: Props) {
   const age = formatKoreanAge(child.birthDate);
   const birthDateLabel = formatBirthDateLabel(child.birthDate) ?? '등록되지 않음';
 
@@ -38,7 +39,10 @@ export function ChildDetailView({ child, backHref, footer }: Props) {
       </section>
 
       <section className="px-5 mt-7">
-        <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">아동 정보</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-title3 font-bold tracking-tighter m-0">아동 정보</h2>
+          {inviteCodeAction}
+        </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4">
           <DetailRow icon={<IconCalendar size={16} />} label="생년월일" value={birthDateLabel} />
           <DetailRow
