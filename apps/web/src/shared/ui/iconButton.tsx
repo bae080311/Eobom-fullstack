@@ -6,7 +6,7 @@ type Props = ComponentPropsWithoutRef<'button'> & {
 };
 
 const CLS =
-  'size-8 rounded-full bg-gray-100 inline-flex items-center justify-center text-gray-500 border-0 cursor-pointer relative';
+  'size-8 rounded-full bg-gray-100 inline-flex items-center justify-center text-gray-700 border-0 cursor-pointer relative focus-visible:outline-none focus-visible:shadow-focus';
 
 export function IconButton({ children, label, hasDot, ...buttonProps }: Props) {
   return (

@@ -56,7 +56,7 @@ interface Props {
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function CreateScheduleForm({ open, childList, childrenLoading, onClose }: Props) {
   const [mode, setMode] = useState<'single' | 'recurring'>('single');
@@ -160,7 +160,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             aria-selected={mode === 'single'}
             onClick={() => setMode('single')}
             className={`flex-1 rounded-lg py-2 text-callout font-bold border-0 cursor-pointer font-sans ${
-              mode === 'single' ? 'bg-white text-gray-900' : 'bg-transparent text-gray-500'
+              mode === 'single' ? 'bg-white text-gray-900' : 'bg-transparent text-gray-700'
             }`}
           >
             단일 일정
@@ -171,7 +171,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             aria-selected={mode === 'recurring'}
             onClick={() => setMode('recurring')}
             className={`flex-1 rounded-lg py-2 text-callout font-bold border-0 cursor-pointer font-sans ${
-              mode === 'recurring' ? 'bg-white text-gray-900' : 'bg-transparent text-gray-500'
+              mode === 'recurring' ? 'bg-white text-gray-900' : 'bg-transparent text-gray-700'
             }`}
           >
             반복 일정
@@ -181,7 +181,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
         {mode === 'single' ? (
           <>
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">아동</span>
+              <span className="text-label text-gray-600 font-semibold">아동</span>
               <select
                 {...singleForm.register('childId')}
                 className={inputCls}
@@ -203,7 +203,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">치료 유형</span>
+              <span className="text-label text-gray-600 font-semibold">치료 유형</span>
               <input
                 {...singleForm.register('title')}
                 placeholder="예: 언어치료"
@@ -213,21 +213,21 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">날짜</span>
+              <span className="text-label text-gray-600 font-semibold">날짜</span>
               <input type="date" {...singleForm.register('date')} className={inputCls} />
               {singleErrors.date && <span className={errorCls}>{singleErrors.date.message}</span>}
             </label>
 
             <div className="flex gap-3">
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">시작 시간</span>
+                <span className="text-label text-gray-600 font-semibold">시작 시간</span>
                 <input type="time" {...singleForm.register('startTime')} className={inputCls} />
                 {singleErrors.startTime && (
                   <span className={errorCls}>{singleErrors.startTime.message}</span>
                 )}
               </label>
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">종료 시간</span>
+                <span className="text-label text-gray-600 font-semibold">종료 시간</span>
                 <input type="time" {...singleForm.register('endTime')} className={inputCls} />
                 {singleErrors.endTime && (
                   <span className={errorCls}>{singleErrors.endTime.message}</span>
@@ -236,7 +236,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
+              <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
               <textarea
                 {...singleForm.register('notes')}
                 rows={2}
@@ -247,7 +247,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
         ) : (
           <>
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">아동</span>
+              <span className="text-label text-gray-600 font-semibold">아동</span>
               <select
                 {...recurringForm.register('childId')}
                 className={inputCls}
@@ -269,7 +269,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">치료 유형</span>
+              <span className="text-label text-gray-600 font-semibold">치료 유형</span>
               <input
                 {...recurringForm.register('title')}
                 placeholder="예: 언어치료"
@@ -281,7 +281,7 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <span className="text-label text-gray-500 font-semibold">반복 요일</span>
+              <span className="text-label text-gray-600 font-semibold">반복 요일</span>
               <div className="flex gap-1.5">
                 {DAY_LABELS.map((label, day) => (
                   <label
@@ -305,14 +305,14 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
 
             <div className="flex gap-3">
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">시작 시간</span>
+                <span className="text-label text-gray-600 font-semibold">시작 시간</span>
                 <input type="time" {...recurringForm.register('startTime')} className={inputCls} />
                 {recurringErrors.startTime && (
                   <span className={errorCls}>{recurringErrors.startTime.message}</span>
                 )}
               </label>
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">종료 시간</span>
+                <span className="text-label text-gray-600 font-semibold">종료 시간</span>
                 <input type="time" {...recurringForm.register('endTime')} className={inputCls} />
                 {recurringErrors.endTime && (
                   <span className={errorCls}>{recurringErrors.endTime.message}</span>
@@ -322,14 +322,14 @@ export function CreateScheduleForm({ open, childList, childrenLoading, onClose }
 
             <div className="flex gap-3">
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">시작일</span>
+                <span className="text-label text-gray-600 font-semibold">시작일</span>
                 <input type="date" {...recurringForm.register('startDate')} className={inputCls} />
                 {recurringErrors.startDate && (
                   <span className={errorCls}>{recurringErrors.startDate.message}</span>
                 )}
               </label>
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="text-label text-gray-500 font-semibold">종료일 (선택)</span>
+                <span className="text-label text-gray-600 font-semibold">종료일 (선택)</span>
                 <input type="date" {...recurringForm.register('endDate')} className={inputCls} />
                 {recurringErrors.endDate && (
                   <span className={errorCls}>{recurringErrors.endDate.message}</span>

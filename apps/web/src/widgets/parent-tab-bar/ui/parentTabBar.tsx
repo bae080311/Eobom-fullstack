@@ -10,12 +10,12 @@ interface Props {
 export function ParentTabBar({ active }: Props) {
   const cls = (tab: ActiveTab) =>
     `flex flex-col items-center gap-1 text-caption font-semibold no-underline transition-colors ${
-      active === tab ? 'text-brand' : 'text-gray-400'
+      active === tab ? 'text-brand' : 'text-gray-600'
     }`;
 
   const btnCls = (tab: ActiveTab) =>
     `flex flex-col items-center gap-1 text-caption font-semibold bg-transparent border-0 cursor-pointer font-sans transition-colors ${
-      active === tab ? 'text-brand' : 'text-gray-400'
+      active === tab ? 'text-brand' : 'text-gray-600'
     }`;
 
   return (

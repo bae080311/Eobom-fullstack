@@ -37,7 +37,7 @@ interface Props {
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function EditScheduleForm({
   open,
@@ -121,32 +121,32 @@ export function EditScheduleForm({
         <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">일정 수정</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">치료 유형</span>
+          <span className="text-label text-gray-600 font-semibold">치료 유형</span>
           <input {...form.register('title')} placeholder="예: 언어치료" className={inputCls} />
           {errors.title && <span className={errorCls}>{errors.title.message}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">날짜</span>
+          <span className="text-label text-gray-600 font-semibold">날짜</span>
           <input type="date" {...form.register('date')} className={inputCls} />
           {errors.date && <span className={errorCls}>{errors.date.message}</span>}
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-label text-gray-500 font-semibold">시작 시간</span>
+            <span className="text-label text-gray-600 font-semibold">시작 시간</span>
             <input type="time" {...form.register('startTime')} className={inputCls} />
             {errors.startTime && <span className={errorCls}>{errors.startTime.message}</span>}
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-label text-gray-500 font-semibold">종료 시간</span>
+            <span className="text-label text-gray-600 font-semibold">종료 시간</span>
             <input type="time" {...form.register('endTime')} className={inputCls} />
             {errors.endTime && <span className={errorCls}>{errors.endTime.message}</span>}
           </label>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
+          <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
           <textarea {...form.register('notes')} rows={2} className={`${inputCls} resize-none`} />
         </label>
 

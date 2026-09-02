@@ -24,7 +24,7 @@ interface Props {
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
   const router = useRouter();
@@ -71,7 +71,7 @@ export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
         <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">기관 이름 수정</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">기관 이름</span>
+          <span className="text-label text-gray-600 font-semibold">기관 이름</span>
           <input {...form.register('name')} className={inputCls} />
           {errors.name && <span className={errorCls}>{errors.name.message}</span>}
         </label>

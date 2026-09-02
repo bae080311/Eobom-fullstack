@@ -49,13 +49,13 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
         <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">프로필 수정</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">이름</span>
+          <span className="text-label text-gray-600 font-semibold">이름</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
         </label>
 
         {isTherapist ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-label text-gray-500 font-semibold">면허번호</span>
+            <span className="text-label text-gray-600 font-semibold">면허번호</span>
             <input
               value={licenseNumber}
               onChange={(e) => setLicenseNumber(e.target.value)}
@@ -64,7 +64,7 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
           </label>
         ) : (
           <label className="flex flex-col gap-1.5">
-            <span className="text-label text-gray-500 font-semibold">전화번호</span>
+            <span className="text-label text-gray-600 font-semibold">전화번호</span>
             <input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
@@ -74,7 +74,7 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
           </label>
         )}
 
-        {error && <p className="text-body2 text-danger m-0">{(error as Error).message}</p>}
+        {error && <p className="text-body2 text-danger-strong m-0">{(error as Error).message}</p>}
 
         <div className="mt-2 flex gap-2">
           <button

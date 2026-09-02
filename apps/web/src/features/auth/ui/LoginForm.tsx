@@ -29,7 +29,7 @@ export function LoginForm() {
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
           placeholder="example@email.com"
         />
-        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+        {errors.email && <p className="mt-1 text-xs text-danger-strong">{errors.email.message}</p>}
       </div>
 
       <div>
@@ -44,11 +44,15 @@ export function LoginForm() {
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
           placeholder="비밀번호를 입력하세요"
         />
-        {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+        {errors.password && (
+          <p className="mt-1 text-xs text-danger-strong">{errors.password.message}</p>
+        )}
       </div>
 
       {error && error.message !== 'EMAIL_NOT_VERIFIED' && (
-        <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">{error.message}</p>
+        <p className="text-sm text-danger-strong bg-danger-soft rounded-xl px-4 py-3">
+          {error.message}
+        </p>
       )}
 
       <button
@@ -59,7 +63,7 @@ export function LoginForm() {
         {isPending ? '로그인 중...' : '로그인'}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-gray-600">
         계정이 없으신가요?{' '}
         <Link href="/register" className="text-[#3D7A6B] font-medium">
           회원가입

@@ -65,7 +65,7 @@ export function NotificationList({ initialData }: Props) {
       })}
 
       {items.length === 0 && (
-        <div className="flex-1 flex items-center justify-center py-20 text-gray-400 text-body">
+        <div className="flex-1 flex items-center justify-center py-20 text-gray-600 text-body">
           새로운 알림이 없어요
         </div>
       )}

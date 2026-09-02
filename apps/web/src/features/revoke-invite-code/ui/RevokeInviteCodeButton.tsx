@@ -15,7 +15,7 @@ export function RevokeInviteCodeButton({ id }: Props) {
       <button
         type="button"
         onClick={openDialog}
-        className="rounded-full bg-danger-soft px-3 py-1.5 text-caption font-semibold text-danger border-0 cursor-pointer font-sans"
+        className="rounded-full bg-danger-soft px-3 py-1.5 text-caption font-semibold text-danger-strong border-0 cursor-pointer font-sans"
       >
         취소
       </button>

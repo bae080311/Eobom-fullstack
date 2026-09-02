@@ -120,7 +120,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
       <div className="px-5 pt-3 pb-1 flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
           aria-label="이전 달"
         >
           <svg
@@ -148,7 +148,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
 
         <button
           onClick={nextMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
           aria-label="다음 달"
         >
           <svg
@@ -172,7 +172,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
           <div
             key={d}
             className={`text-center text-caption font-semibold py-1 ${
-              i === 0 ? 'text-danger/70' : i === 6 ? 'text-brand/70' : 'text-gray-400'
+              i === 0 ? 'text-danger-strong' : i === 6 ? 'text-brand' : 'text-gray-600'
             }`}
           >
             {d}
@@ -205,9 +205,9 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
                       : !inMonth
                         ? 'text-gray-300'
                         : isSun
-                          ? 'text-danger/80'
+                          ? 'text-danger-strong'
                           : isSat
-                            ? 'text-brand/80'
+                            ? 'text-brand'
                             : 'text-gray-900'
                 }`}
               >
@@ -232,7 +232,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
           <h2 className="text-body font-semibold text-gray-800">
             {isToday ? '오늘' : formatDateLabel(selected.toISOString())}
             {isToday && (
-              <span className="text-body font-normal text-gray-400 ml-1.5">
+              <span className="text-body font-normal text-gray-600 ml-1.5">
                 {formatDateLabel(selected.toISOString())}
               </span>
             )}
@@ -256,7 +256,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-400"
+                className="text-gray-700"
               >
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -264,7 +264,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
-            <p className="text-body2 font-medium text-gray-400">예정된 일정이 없어요</p>
+            <p className="text-body2 font-medium text-gray-600">예정된 일정이 없어요</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">

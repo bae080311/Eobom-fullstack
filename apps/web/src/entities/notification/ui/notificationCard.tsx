@@ -18,7 +18,7 @@ export function NotificationCard({ notification: n }: Props) {
         </div>
         <div className="text-label text-gray-600 mt-1 leading-[1.45]">{n.sub}</div>
       </div>
-      <div className="text-caption text-gray-400 font-medium">{n.time}</div>
+      <div className="text-caption text-gray-600 font-medium">{n.time}</div>
     </div>
   );
 }

@@ -50,14 +50,14 @@ export function FormModal({
             type="button"
             onClick={onClose}
             disabled={isPending}
-            className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
+            className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-focus"
           >
             {cancelLabel}
           </button>
           <button
             type="submit"
             disabled={isPending || submitDisabled}
-            className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
+            className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-focus"
           >
             {isPending ? pendingLabel : submitLabel}
           </button>

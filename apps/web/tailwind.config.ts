@@ -11,18 +11,20 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: '#3D7A6B',
-          hover:   '#2F6356',
-          press:   '#244F45',
-          soft:    '#E4EFEB',
-          softer:  '#F1F7F4',
-          ink:     '#1F4A41',
+          hover: '#2F6356',
+          press: '#244F45',
+          soft: '#E4EFEB',
+          softer: '#F1F7F4',
+          ink: '#1F4A41',
         },
         danger: {
           DEFAULT: '#E5544A',
-          soft:    '#FDECEA',
+          soft: '#FDECEA',
+          // 본문 크기 텍스트용 — DEFAULT(#E5544A)는 흰 배경 대비 3.69:1로 WCAG AA(4.5:1) 미달
+          strong: '#C23B32',
         },
         gray: {
-          50:  '#F9FAFB',
+          50: '#F9FAFB',
           100: '#F2F4F6',
           200: '#E5E8EB',
           300: '#D1D6DB',
@@ -35,51 +37,57 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-pretendard)', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: [
+          'var(--font-pretendard)',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'system-ui',
+          'sans-serif',
+        ],
       },
       fontSize: {
         // 10px — 배지·타임스탬프
-        'caption2': ['10px', { lineHeight: '1.4', letterSpacing: '0' }],
+        caption2: ['10px', { lineHeight: '1.4', letterSpacing: '0' }],
         // 11px — 탭 라벨·칩
-        'caption':  ['11px', { lineHeight: '1.45', letterSpacing: '0' }],
+        caption: ['11px', { lineHeight: '1.45', letterSpacing: '0' }],
         // 12px — 보조 레이블
-        'label':    ['12px', { lineHeight: '1.45', letterSpacing: '0' }],
+        label: ['12px', { lineHeight: '1.45', letterSpacing: '0' }],
         // 13px — 보조 본문·날짜
-        'body2':    ['13px', { lineHeight: '1.5', letterSpacing: '0' }],
+        body2: ['13px', { lineHeight: '1.5', letterSpacing: '0' }],
         // 14px — 기본 본문
-        'body':     ['14px', { lineHeight: '1.5', letterSpacing: '0' }],
+        body: ['14px', { lineHeight: '1.5', letterSpacing: '0' }],
         // 15px — 강조 본문·버튼
-        'callout':  ['15px', { lineHeight: '1.55', letterSpacing: '-0.01em' }],
+        callout: ['15px', { lineHeight: '1.55', letterSpacing: '-0.01em' }],
         // 16px — 카드 강조
-        'subhead':  ['16px', { lineHeight: '1.5', letterSpacing: '-0.01em' }],
+        subhead: ['16px', { lineHeight: '1.5', letterSpacing: '-0.01em' }],
         // 18px — 섹션 제목
-        'title3':   ['18px', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
+        title3: ['18px', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
         // 22px — 페이지 제목
-        'title':    ['22px', { lineHeight: '1.3', letterSpacing: '-0.02em' }],
+        title: ['22px', { lineHeight: '1.3', letterSpacing: '-0.02em' }],
         // 32px — 히어로 숫자
-        'hero':     ['32px', { lineHeight: '1.2', letterSpacing: '-0.03em' }],
+        hero: ['32px', { lineHeight: '1.2', letterSpacing: '-0.03em' }],
       },
       fontWeight: {
-        regular:   '400',
-        medium:    '500',
-        semibold:  '600',
-        bold:      '700',
+        regular: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
         extrabold: '800',
       },
       borderRadius: {
-        'sm':   '8px',
-        'md':   '10px',
-        'lg':   '14px',
-        'xl':   '18px',
-        '2xl':  '24px',
-        'pill': '999px',
+        sm: '8px',
+        md: '10px',
+        lg: '14px',
+        xl: '18px',
+        '2xl': '24px',
+        pill: '999px',
       },
       letterSpacing: {
-        'tight':  '-0.015em',
-        'tighter': '-0.02em',
+        tight: '-0.015em',
+        tighter: '-0.02em',
       },
       boxShadow: {
-        'focus': '0 0 0 4px rgba(61, 122, 107, 0.22)',
+        focus: '0 0 0 4px rgba(61, 122, 107, 0.22)',
       },
     },
   },

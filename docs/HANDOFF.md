@@ -4,17 +4,20 @@
 
 ## 최근 완료
 
-- `feat/invite-code-web-ui` 브랜치 — 초대코드 웹 UI 구현. `entities/invite-code`(fetch/mutation 훅, 상태 배지·행 UI), `features/{issue,revoke,use}-invite-code`, `widgets/invite-code-list` 신규 슬라이스와 `(therapist)/invite-codes`·`(parent)/redeem` 페이지 추가. 진입점은 `/children` 상단바·아동 상세 화면·`/me` 메뉴(학부모).
-- PR 리뷰로 발견·수정: `InviteCode.status`는 redeem 시도 시점에만 EXPIRED로 갱신되어 미사용 상태로 유효기간이 지난 코드가 서버 응답에서도 ACTIVE로 남는 문제 — `getEffectiveInviteCodeStatus`로 프론트에서 `expiresAt` 기준 재판정. 담당 배정이 바뀌어 `findAllForTherapist`에서 빠진 아동의 기존 발급 코드가 화면에서 사라지던 문제 — `items`(현재 담당 아동) ∪ `codes`의 child를 합쳐 그룹핑하되 발급 버튼은 현재 담당 아동에만 노출.
-- 백엔드(`invite-codes` 모듈)는 이미 구현되어 있어 변경 없음.
-- Notion 레이어 6(Web 설계) 갱신 — `/redeem`·`/invite-codes`를 v0.2 예정에서 완료로 반영.
-- PR: https://github.com/bae080311/Eobom-fullstack/pull/32
+- `fix/wcag-aa-contrast` 브랜치 — WCAG AA 색상 대비·키보드 포커스 가시성 개선. `text-gray-400`(2.01:1)·`text-gray-500`(3.04:1)·`text-danger`(3.69:1)가 본문 텍스트 기준(4.5:1) 미달이라 43개 파일에서 `gray-600`/`gray-700`, 신규 `danger-strong`(#C23B32) 토큰으로 교체. `LoginForm`/`RegisterForm`의 raw `text-red-500`도 함께 통일.
+- 공용 `IconButton`/`IconLink`/`ConfirmDialog`/`FormModal`에 정의만 되어있던 `shadow-focus` 토큰을 적용해 키보드 포커스 인디케이터 추가.
+- 색상 통일로 `text-gray-400`/`text-gray-500` 값 차이에 의존하던 `scheduleCard.spec.tsx` 테스트가 깨지는 회귀 발견 — `italic` 클래스 기준으로 판별하도록 수정.
+- **후속 필요**: 이번 세션엔 Docker/브라우저 도구가 없어 실제 화면을 시각적으로 확인하지 못함 — lint/typecheck/build/test(317/317)와 계산된 명도 대비 비율로만 검증. 다음 세션에서 dev 서버 띄워 육안 확인 권장.
+- PR: https://github.com/bae080311/Eobom-fullstack/pull/34
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. WCAG AA 검토, 한국어 i18n 분리 — 착수 전.
+1. 위 PR 병합 후 브라우저에서 색상·포커스 링 육안 확인 (착수 전).
+2. 한국어 i18n 분리 — 착수 전.
+3. **로드맵/도메인 문서 갱신 필요**: `SessionReport`(치료 세션 AI 요약, Ollama 연동) 백엔드 API가 2026-06-26에 이미 main에 머지됐는데 (`feat: 세션 리포트 생성·조회 API 구현`) Notion 도메인 모델(레이어 3)·로드맵(레이어 8) 어디에도 이 엔티티가 반영되지 않음. 웹 UI 연동도 전무. 계속 진행할지, 도메인 모델에 정식 반영할지 architect 레벨 결정 필요.
+4. Phase 3 잔여: org 스코프 권한 전용 테스트 묶음, Playwright e2e 시나리오, API 테스트 커버리지 60% 목표 검증 — 전부 미착수.
 
 ## 참고
 
 - 모듈별 상세 구현 이력·알려진 이슈: Claude 메모리(`project_phase2_modules` 등)
-- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. **주의**: Notion 로드맵(레이어 8)이 2026-05-26 기준으로 멈춰 있어 6월 이후 작업을 반영하지 못함 — 다음 작업 파악은 이 문서와 Notion 레이어 6(Web 설계, 최신 유지됨)을 먼저 참고할 것.
+- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. **주의**: Notion 로드맵(레이어 8)이 2026-05-26 기준으로 멈춰 있어 6월 이후 작업(RecurringRule 생성, SessionReport 등)을 반영하지 못함 — 다음 작업 파악은 이 문서와 Notion 레이어 6(Web 설계, 최신 유지됨)을 먼저 참고할 것.

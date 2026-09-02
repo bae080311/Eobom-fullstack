@@ -45,7 +45,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
+            className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-focus"
           >
             {cancelLabel}
           </button>
@@ -53,8 +53,8 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans text-white disabled:opacity-50 ${
-              destructive ? 'bg-danger' : 'bg-brand'
+            className={`flex-1 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans text-white disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-focus ${
+              destructive ? 'bg-danger-strong' : 'bg-brand'
             }`}
           >
             {confirmLabel}

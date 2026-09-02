@@ -8,7 +8,7 @@ interface Props {
 export function ChildList({ items }: Props) {
   if (items.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20 text-gray-400 text-body">
+      <div className="flex-1 flex items-center justify-center py-20 text-gray-600 text-body">
         담당 아동이 없어요
       </div>
     );

@@ -39,7 +39,7 @@ export function MemberActions({ orgId, member, isSelf }: Props) {
       <button
         type="button"
         onClick={openLeaveDialog}
-        className="rounded-full bg-danger-soft px-3 py-1.5 text-caption font-semibold text-danger border-0 cursor-pointer font-sans"
+        className="rounded-full bg-danger-soft px-3 py-1.5 text-caption font-semibold text-danger-strong border-0 cursor-pointer font-sans"
       >
         {leaveActionLabel}
       </button>

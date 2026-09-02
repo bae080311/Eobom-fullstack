@@ -60,7 +60,7 @@ export function SetPrimaryTherapistForm({
       onClose={onClose}
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">담당 치료사</span>
+        <span className="text-label text-gray-600 font-semibold">담당 치료사</span>
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}

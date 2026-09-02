@@ -80,7 +80,7 @@ export function TherapistChildActions({
       <button
         type="button"
         onClick={() => setDeleteOpen(true)}
-        className="flex-1 bg-danger-soft text-danger rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans"
+        className="flex-1 bg-danger-soft text-danger-strong rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans"
       >
         삭제
       </button>

@@ -9,7 +9,7 @@ import { useRedeemInviteCodeAction } from '../model/useRedeemInviteCodeAction';
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function RedeemInviteCodeForm() {
   const form = useForm<RedeemFormData>({
@@ -49,7 +49,7 @@ export function RedeemInviteCodeForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="px-5 mt-5 flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">초대 코드</span>
+        <span className="text-label text-gray-600 font-semibold">초대 코드</span>
         <input
           {...form.register('code')}
           placeholder="예: A1B2-C3D4"
@@ -59,7 +59,7 @@ export function RedeemInviteCodeForm() {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">아동과의 관계</span>
+        <span className="text-label text-gray-600 font-semibold">아동과의 관계</span>
         <select {...form.register('relation')} className={inputCls}>
           {Object.values(ParentRelation).map((relation) => (
             <option key={relation} value={relation}>

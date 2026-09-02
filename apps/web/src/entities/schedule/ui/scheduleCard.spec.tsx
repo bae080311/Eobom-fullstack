@@ -82,12 +82,9 @@ describe('ScheduleCard', () => {
       const { container } = render(
         <ScheduleCard schedule={makeSchedule({ notes: '' as unknown as null })} />,
       );
-      // notes span: text-gray-400 + italic (font-medium 없음)
-      // endTime span: text-gray-400 + font-medium
+      // notes span은 italic 클래스로만 식별 가능하다 (title span과 동일한 text-gray-600을 공유)
       const allSpans = Array.from(container.querySelectorAll('span'));
-      const notesSpan = allSpans.find(
-        (el) => el.classList.contains('text-gray-400') && !el.classList.contains('font-medium'),
-      );
+      const notesSpan = allSpans.find((el) => el.classList.contains('italic'));
       expect(notesSpan).toBeUndefined();
     });
   });
