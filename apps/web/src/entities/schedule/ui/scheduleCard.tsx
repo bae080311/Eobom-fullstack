@@ -32,7 +32,7 @@ export function ScheduleCard({ schedule, onClick }: Props) {
         {/* 시간 블록 */}
         <div className="flex flex-col items-end min-w-[40px] shrink-0 gap-0.5">
           <span className="text-callout font-bold text-brand tabular-nums">{start}</span>
-          <span className="text-label font-medium text-gray-400 tabular-nums">{end}</span>
+          <span className="text-label font-medium text-gray-600 tabular-nums">{end}</span>
         </div>
 
         <div className="w-px self-stretch bg-gray-100 shrink-0" />
@@ -49,12 +49,12 @@ export function ScheduleCard({ schedule, onClick }: Props) {
               {SCHEDULE_STATUS_LABEL[schedule.status]}
             </span>
           </div>
-          <span className="text-label text-gray-500 truncate">
+          <span className="text-label text-gray-600 truncate">
             {schedule.title}
             {schedule.therapistName && ` · ${schedule.therapistName}`}
           </span>
           {schedule.notes && (
-            <span className="text-label text-gray-400 truncate mt-0.5 italic">
+            <span className="text-label text-gray-600 truncate mt-0.5 italic">
               {schedule.notes}
             </span>
           )}

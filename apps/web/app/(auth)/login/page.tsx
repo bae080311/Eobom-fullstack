@@ -9,7 +9,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">로그인</h1>
-          <p className="mt-2 text-gray-500 text-sm">이어봄에 로그인하세요</p>
+          <p className="mt-2 text-gray-600 text-sm">이어봄에 로그인하세요</p>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <LoginForm />

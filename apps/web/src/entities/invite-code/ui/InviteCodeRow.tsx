@@ -13,7 +13,7 @@ export function InviteCodeRow({ code, actions }: Props) {
     <div className="flex items-center justify-between gap-3 py-4">
       <div className="min-w-0">
         <p className="text-body font-bold tracking-wide text-gray-900 m-0 truncate">{code.code}</p>
-        <p className="text-caption text-gray-400 m-0 mt-0.5 truncate">
+        <p className="text-caption text-gray-600 m-0 mt-0.5 truncate">
           {formatInviteCodeMetaLabel(code)}
         </p>
       </div>

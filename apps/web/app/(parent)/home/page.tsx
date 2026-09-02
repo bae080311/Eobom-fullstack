@@ -114,7 +114,7 @@ export default async function ParentHomePage() {
         />
         <div className="flex flex-col gap-2">
           {upcoming.length === 0 ? (
-            <p className="text-body text-gray-400 text-center py-8">예정된 일정이 없습니다</p>
+            <p className="text-body text-gray-600 text-center py-8">예정된 일정이 없습니다</p>
           ) : (
             upcoming.map((s) => <SessionRow key={s.id} session={s} />)
           )}
@@ -135,7 +135,7 @@ export default async function ParentHomePage() {
         />
         <div className="flex flex-col gap-2">
           {notificationItems.length === 0 ? (
-            <p className="text-body text-gray-400 text-center py-8">새로운 알림이 없어요</p>
+            <p className="text-body text-gray-600 text-center py-8">새로운 알림이 없어요</p>
           ) : (
             notificationItems.map((n) => <NotificationCard key={n.id} notification={n} />)
           )}

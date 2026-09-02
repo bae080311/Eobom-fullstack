@@ -38,7 +38,7 @@ export function InviteCodeListView({ items, codes }: Props) {
   const groups = buildChildGroups(items, codes);
 
   if (groups.length === 0) {
-    return <p className="px-5 py-16 text-center text-body text-gray-400">담당 아동이 없어요</p>;
+    return <p className="px-5 py-16 text-center text-body text-gray-600">담당 아동이 없어요</p>;
   }
 
   return (
@@ -53,7 +53,7 @@ export function InviteCodeListView({ items, codes }: Props) {
             />
             <div className={`${CARD} px-5`}>
               {childCodes.length === 0 ? (
-                <p className="py-8 text-center text-body text-gray-400">발급된 코드가 없어요</p>
+                <p className="py-8 text-center text-body text-gray-600">발급된 코드가 없어요</p>
               ) : (
                 childCodes.map((code, index) => (
                   <div key={code.id}>

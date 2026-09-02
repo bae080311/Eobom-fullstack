@@ -52,10 +52,10 @@ describe('SCHEDULE_STATUS_COLOR', () => {
     expect(cls).toContain('text-danger');
   });
 
-  it('COMPLETED 컬러 클래스에 bg-gray-100과 text-gray-500이 포함된다', () => {
+  it('COMPLETED 컬러 클래스에 bg-gray-100과 text-gray-700이 포함된다', () => {
     const cls = SCHEDULE_STATUS_COLOR[ScheduleStatus.COMPLETED];
     expect(cls).toContain('bg-gray-100');
-    expect(cls).toContain('text-gray-500');
+    expect(cls).toContain('text-gray-700');
   });
 
   it('모든 ScheduleStatus 값에 컬러 클래스가 존재한다', () => {

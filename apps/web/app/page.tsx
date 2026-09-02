@@ -6,7 +6,7 @@ export default function HomePage() {
       <div className="max-w-md w-full text-center space-y-8">
         <div>
           <h1 className="text-4xl font-bold text-brand">이어봄</h1>
-          <p className="mt-3 text-gray-500 text-lg">치료 일정을 함께 확인하세요</p>
+          <p className="mt-3 text-gray-600 text-lg">치료 일정을 함께 확인하세요</p>
         </div>
 
         <p className="text-gray-600 text-sm leading-relaxed">

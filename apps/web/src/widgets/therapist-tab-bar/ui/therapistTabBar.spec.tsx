@@ -14,7 +14,7 @@ describe('TherapistTabBar', () => {
     const homeLink = screen.getByRole('link', { name: '홈' });
     const scheduleLink = screen.getByRole('link', { name: '일정' });
     expect(homeLink.className).toContain('text-brand');
-    expect(scheduleLink.className).toContain('text-gray-400');
+    expect(scheduleLink.className).toContain('text-gray-600');
   });
 
   it('active="schedules"이면 일정 링크가 text-brand 클래스를 가진다', () => {
@@ -22,7 +22,7 @@ describe('TherapistTabBar', () => {
     const homeLink = screen.getByRole('link', { name: '홈' });
     const scheduleLink = screen.getByRole('link', { name: '일정' });
     expect(scheduleLink.className).toContain('text-brand');
-    expect(homeLink.className).toContain('text-gray-400');
+    expect(homeLink.className).toContain('text-gray-600');
   });
 
   it('홈 링크가 /dashboard를 가리킨다', () => {
@@ -45,7 +45,7 @@ describe('TherapistTabBar', () => {
     const meLink = screen.getByRole('link', { name: '내 정보' });
     const homeLink = screen.getByRole('link', { name: '홈' });
     expect(meLink.className).toContain('text-brand');
-    expect(homeLink.className).toContain('text-gray-400');
+    expect(homeLink.className).toContain('text-gray-600');
   });
 
   it('담당 아동 탭을 렌더링하고 /children을 가리킨다', () => {
@@ -58,6 +58,6 @@ describe('TherapistTabBar', () => {
     const childrenLink = screen.getByRole('link', { name: '담당 아동' });
     const homeLink = screen.getByRole('link', { name: '홈' });
     expect(childrenLink.className).toContain('text-brand');
-    expect(homeLink.className).toContain('text-gray-400');
+    expect(homeLink.className).toContain('text-gray-600');
   });
 });

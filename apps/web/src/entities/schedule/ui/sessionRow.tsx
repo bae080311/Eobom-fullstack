@@ -11,7 +11,7 @@ export function SessionRow({ session: s }: Props) {
     <Link href={`/schedule/${s.id}`} className="no-underline">
       <div className="bg-white border border-gray-200 rounded-md p-3 grid grid-cols-[56px_1fr_auto] gap-3 items-center">
         <div className="text-callout font-bold tracking-tight text-gray-600 tabular-nums">
-          <span className="text-caption text-gray-400 font-semibold block">{s.day}</span>
+          <span className="text-caption text-gray-600 font-semibold block">{s.day}</span>
           {s.date}일
         </div>
         <div>

@@ -71,7 +71,7 @@ export function TherapistScheduleActions({
         type="button"
         onClick={() => setDialog('cancel')}
         disabled={isTerminal}
-        className="flex-1 bg-danger-soft text-danger rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans disabled:opacity-50"
+        className="flex-1 bg-danger-soft text-danger-strong rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans disabled:opacity-50"
       >
         취소
       </button>

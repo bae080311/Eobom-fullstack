@@ -28,7 +28,7 @@ interface Props {
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 function defaultsFrom(name: string, birthDate: string | null, memo: string | null): FormData {
   return { name, birthDate: birthDate ? birthDate.slice(0, 10) : '', memo: memo ?? '' };
@@ -81,19 +81,19 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
       onClose={onClose}
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">이름</span>
+        <span className="text-label text-gray-600 font-semibold">이름</span>
         <input {...form.register('name')} className={inputCls} />
         {errors.name && <span className={errorCls}>{errors.name.message}</span>}
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">생년월일 (선택)</span>
+        <span className="text-label text-gray-600 font-semibold">생년월일 (선택)</span>
         <input type="date" {...form.register('birthDate')} className={inputCls} />
         {errors.birthDate && <span className={errorCls}>{errors.birthDate.message}</span>}
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
+        <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
         <textarea {...form.register('memo')} rows={2} className={`${inputCls} resize-none`} />
       </label>
     </FormModal>

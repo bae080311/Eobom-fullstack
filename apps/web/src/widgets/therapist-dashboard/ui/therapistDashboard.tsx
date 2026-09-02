@@ -49,13 +49,13 @@ export function TherapistDashboard({
         <p className="text-title3 font-bold text-gray-900 mt-2.5">
           안녕하세요, <span className="text-brand">{userProfile?.name ?? '—'}</span> 치료사님
         </p>
-        <p className="text-body text-gray-400 mt-0.5">소속 센터 없음</p>
+        <p className="text-body text-gray-600 mt-0.5">소속 센터 없음</p>
       </section>
 
       <section className="px-5 mt-6">
         <SectionHeader title={`오늘 일정 · ${todaySchedules.length}건`} right={null} />
         {todaySchedules.length === 0 ? (
-          <p className="text-body text-gray-400 text-center py-10">오늘 예정된 일정이 없습니다</p>
+          <p className="text-body text-gray-600 text-center py-10">오늘 예정된 일정이 없습니다</p>
         ) : (
           <div className="flex flex-col gap-3 mt-3">
             {todaySchedules.map((s) => (
@@ -77,7 +77,7 @@ export function TherapistDashboard({
         <div className="mt-3 flex justify-between">
           {weekDots.map(({ dow, dateStr, hasSession }) => (
             <div key={dateStr} className="flex flex-col items-center gap-1.5">
-              <span className="text-caption text-gray-400">{dow}</span>
+              <span className="text-caption text-gray-600">{dow}</span>
               <span className={`w-2 h-2 rounded-full ${hasSession ? 'bg-brand' : 'bg-gray-200'}`} />
             </div>
           ))}

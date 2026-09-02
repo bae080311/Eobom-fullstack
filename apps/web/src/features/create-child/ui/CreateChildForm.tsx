@@ -23,7 +23,7 @@ interface Props {
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
-const errorCls = 'mt-1 text-xs text-danger';
+const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function CreateChildForm({ open, onClose }: Props) {
   const form = useForm<FormData>({
@@ -77,19 +77,19 @@ export function CreateChildForm({ open, onClose }: Props) {
         <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">아동 등록</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">이름</span>
+          <span className="text-label text-gray-600 font-semibold">이름</span>
           <input {...form.register('name')} placeholder="예: 홍길동" className={inputCls} />
           {errors.name && <span className={errorCls}>{errors.name.message}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">생년월일 (선택)</span>
+          <span className="text-label text-gray-600 font-semibold">생년월일 (선택)</span>
           <input type="date" {...form.register('birthDate')} className={inputCls} />
           {errors.birthDate && <span className={errorCls}>{errors.birthDate.message}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-500 font-semibold">메모 (선택)</span>
+          <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
           <textarea
             {...form.register('memo')}
             rows={2}

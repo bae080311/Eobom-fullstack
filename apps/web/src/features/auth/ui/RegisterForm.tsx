@@ -187,14 +187,14 @@ export function RegisterForm() {
       {/* Step 1: 역할 선택 */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 text-center">어떤 역할로 가입하시나요?</p>
+          <p className="text-sm text-gray-600 text-center">어떤 역할로 가입하시나요?</p>
           <button
             type="button"
             onClick={() => handleRoleSelect(UserRole.THERAPIST)}
             className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-[#3D7A6B] active:scale-[0.98] transition-all text-left"
           >
             <p className="font-semibold text-gray-900">언어치료사</p>
-            <p className="text-sm text-gray-500 mt-0.5">기관을 만들거나 기존 기관에 참여합니다</p>
+            <p className="text-sm text-gray-600 mt-0.5">기관을 만들거나 기존 기관에 참여합니다</p>
           </button>
           <button
             type="button"
@@ -202,7 +202,7 @@ export function RegisterForm() {
             className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-[#3D7A6B] active:scale-[0.98] transition-all text-left"
           >
             <p className="font-semibold text-gray-900">학부모</p>
-            <p className="text-sm text-gray-500 mt-0.5">치료사의 초대 코드로 연결됩니다</p>
+            <p className="text-sm text-gray-600 mt-0.5">치료사의 초대 코드로 연결됩니다</p>
           </button>
         </div>
       )}
@@ -221,14 +221,14 @@ export function RegisterForm() {
               placeholder="example@email.com"
             />
             {step2Form.formState.errors.email && (
-              <p className="mt-1 text-xs text-red-500">
+              <p className="mt-1 text-xs text-danger-strong">
                 {step2Form.formState.errors.email.message}
               </p>
             )}
           </div>
 
           {sendError && (
-            <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">
+            <p className="text-sm text-danger-strong bg-danger-soft rounded-xl px-4 py-3">
               {sendError.message}
             </p>
           )}
@@ -256,7 +256,7 @@ export function RegisterForm() {
       {step === 2.5 && (
         <div className="space-y-6">
           <div className="text-center space-y-1">
-            <p className="text-sm text-gray-500">아래 주소로 인증 코드를 발송했습니다</p>
+            <p className="text-sm text-gray-600">아래 주소로 인증 코드를 발송했습니다</p>
             <p className="text-sm font-medium text-gray-900">{verifiedEmail}</p>
           </div>
 
@@ -280,11 +280,11 @@ export function RegisterForm() {
           </div>
 
           {verifyError && (
-            <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3 text-center">
+            <p className="text-sm text-danger-strong bg-danger-soft rounded-xl px-4 py-3 text-center">
               {verifyError.message}
             </p>
           )}
-          {isVerifying && <p className="text-sm text-center text-gray-400">인증 중...</p>}
+          {isVerifying && <p className="text-sm text-center text-gray-600">인증 중...</p>}
 
           <button
             type="button"
@@ -292,7 +292,7 @@ export function RegisterForm() {
               setStep(2);
               setDigits(['', '', '', '', '', '']);
             }}
-            className="w-full text-sm text-gray-500 text-center"
+            className="w-full text-sm text-gray-600 text-center"
           >
             이메일 다시 입력하기
           </button>
@@ -312,7 +312,9 @@ export function RegisterForm() {
               placeholder="홍길동"
             />
             {step3Form.formState.errors.name && (
-              <p className="mt-1 text-xs text-red-500">{step3Form.formState.errors.name.message}</p>
+              <p className="mt-1 text-xs text-danger-strong">
+                {step3Form.formState.errors.name.message}
+              </p>
             )}
           </div>
 
@@ -326,7 +328,7 @@ export function RegisterForm() {
               placeholder="8자 이상"
             />
             {step3Form.formState.errors.password && (
-              <p className="mt-1 text-xs text-red-500">
+              <p className="mt-1 text-xs text-danger-strong">
                 {step3Form.formState.errors.password.message}
               </p>
             )}
@@ -342,14 +344,14 @@ export function RegisterForm() {
               placeholder="비밀번호를 다시 입력하세요"
             />
             {step3Form.formState.errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-500">
+              <p className="mt-1 text-xs text-danger-strong">
                 {step3Form.formState.errors.confirmPassword.message}
               </p>
             )}
           </div>
 
           {signupError && role === UserRole.PARENT && (
-            <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">
+            <p className="text-sm text-danger-strong bg-danger-soft rounded-xl px-4 py-3">
               {signupError.message}
             </p>
           )}
@@ -376,7 +378,7 @@ export function RegisterForm() {
       {/* Step 4: 기관 설정 (THERAPIST만) */}
       {step === 4 && (
         <form onSubmit={step4Form.handleSubmit(handleStep4)} className="space-y-4">
-          <p className="text-sm text-gray-500 text-center">기관을 설정해주세요</p>
+          <p className="text-sm text-gray-600 text-center">기관을 설정해주세요</p>
 
           <div className="flex gap-2">
             {(['CREATE', 'JOIN'] as const).map((mode) => (
@@ -394,7 +396,7 @@ export function RegisterForm() {
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-colors ${
                   orgMode === mode
                     ? 'border-[#3D7A6B] text-[#3D7A6B] bg-[#3D7A6B]/5'
-                    : 'border-gray-200 text-gray-500'
+                    : 'border-gray-200 text-gray-600'
                 }`}
               >
                 {mode === 'CREATE' ? '새 기관 만들기' : '코드로 참여'}
@@ -412,7 +414,7 @@ export function RegisterForm() {
                 placeholder="예: 행복 언어치료센터"
               />
               {'name' in step4Form.formState.errors && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger-strong">
                   {(step4Form.formState.errors as { name?: { message?: string } }).name?.message}
                 </p>
               )}
@@ -429,7 +431,7 @@ export function RegisterForm() {
                 placeholder="ABCD1234"
               />
               {'joinCode' in step4Form.formState.errors && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger-strong">
                   {
                     (step4Form.formState.errors as { joinCode?: { message?: string } }).joinCode
                       ?.message
@@ -440,7 +442,7 @@ export function RegisterForm() {
           )}
 
           {signupError && (
-            <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-3">
+            <p className="text-sm text-danger-strong bg-danger-soft rounded-xl px-4 py-3">
               {signupError.message}
             </p>
           )}
@@ -464,7 +466,7 @@ export function RegisterForm() {
         </form>
       )}
 
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-gray-600">
         이미 계정이 있으신가요?{' '}
         <Link href="/login" className="text-[#3D7A6B] font-medium">
           로그인

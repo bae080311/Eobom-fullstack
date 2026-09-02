@@ -38,11 +38,11 @@ export function OrganizationDashboard({ organization, members }: Props) {
       <section className="px-5 mt-7">
         <SectionHeader
           title="멤버"
-          right={<span className="text-body2 text-gray-500 font-medium">{members.length}명</span>}
+          right={<span className="text-body2 text-gray-600 font-medium">{members.length}명</span>}
         />
         <div className={`${CARD} px-5`}>
           {members.length === 0 ? (
-            <p className="py-8 text-center text-body text-gray-400">소속된 멤버가 없어요</p>
+            <p className="py-8 text-center text-body text-gray-600">소속된 멤버가 없어요</p>
           ) : (
             members.map((member, index) => (
               <div key={member.id}>

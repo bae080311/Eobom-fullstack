@@ -18,7 +18,7 @@ const CARD = 'rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]';
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 py-4">
-      <span className="text-body text-gray-500 font-medium">{label}</span>
+      <span className="text-body text-gray-600 font-medium">{label}</span>
       <span className="text-body text-gray-900 font-semibold tracking-tight text-right">
         {value}
       </span>
@@ -57,7 +57,7 @@ export function MyInfoView({ user, isOwner }: Props) {
       </section>
 
       <section className="px-5 mt-7">
-        <p className="mb-2 px-1 text-label font-bold text-gray-500 m-0">계정 정보</p>
+        <p className="mb-2 px-1 text-label font-bold text-gray-600 m-0">계정 정보</p>
         <div className={`${CARD} px-5`}>
           <InfoRow label={profileLabel} value={profileValue} />
           <hr className="border-0 border-t border-gray-100 m-0" />
@@ -114,12 +114,12 @@ export function MyInfoView({ user, isOwner }: Props) {
           <button
             type="button"
             onClick={() => setLogoutOpen(true)}
-            className="w-full text-left px-5 py-3.5 text-callout font-bold text-danger cursor-pointer font-sans bg-transparent border-0 transition-colors active:bg-gray-50"
+            className="w-full text-left px-5 py-3.5 text-callout font-bold text-danger-strong cursor-pointer font-sans bg-transparent border-0 transition-colors active:bg-gray-50"
           >
             로그아웃
           </button>
         </div>
-        <p className="mt-5 text-center text-caption text-gray-400 m-0">이어봄 · v1.0.0</p>
+        <p className="mt-5 text-center text-caption text-gray-600 m-0">이어봄 · v1.0.0</p>
       </section>
 
       <EditProfileDialog open={editOpen} user={user} onClose={() => setEditOpen(false)} />
