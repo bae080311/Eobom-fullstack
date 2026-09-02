@@ -23,19 +23,20 @@ export default async function ParentSchedulePage() {
   const from = new Date(todayStart.getTime() - SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000);
   const to = new Date(todayStart.getTime() + SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000 - 1);
 
-  const [schedules, children, notifications] = token
-    ? await Promise.all([
-        fetchSchedules(token, from, to),
-        fetchChildren(token),
-        fetchNotifications(token),
-      ])
-    : [[], [], []];
+  const [[schedules, children, notifications], tSchedule] = await Promise.all([
+    token
+      ? Promise.all([
+          fetchSchedules(token, from, to),
+          fetchChildren(token),
+          fetchNotifications(token),
+        ])
+      : Promise.resolve([[], [], []]),
+    getTranslations('entities.schedule'),
+  ]);
 
   const activeSchedules = [...schedules]
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-
-  const tSchedule = await getTranslations('entities.schedule');
   const sessions = activeSchedules.map((s) => mapScheduleToUpcoming(s, now));
   const upcoming = sessions.filter((s) => s.status !== 'past');
   const past = sessions.filter((s) => s.status === 'past').reverse();

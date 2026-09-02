@@ -10,13 +10,14 @@ export const metadata: Metadata = { title: '기관 관리' };
 
 export default async function OrganizationPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const organization = token ? await fetchMyOrganization(token) : null;
+  const [organization, t] = await Promise.all([
+    token ? fetchMyOrganization(token) : Promise.resolve(null),
+    getTranslations('entities.organization'),
+  ]);
   const members =
     organization && token ? await fetchOrganizationMembers(token, organization.id) : [];
 
   if (!organization) notFound();
-
-  const t = await getTranslations('entities.organization');
 
   return (
     <PageShell>

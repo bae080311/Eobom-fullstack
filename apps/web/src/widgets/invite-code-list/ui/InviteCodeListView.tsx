@@ -4,8 +4,7 @@ import { InviteCodeStatus } from '@eobom/shared';
 import { SectionHeader } from '@/shared/ui';
 import { IssueInviteCodeButton } from '@/features/issue-invite-code';
 import { RevokeInviteCodeButton } from '@/features/revoke-invite-code';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   items: ChildResponseDto[];

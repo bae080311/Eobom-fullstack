@@ -4,8 +4,7 @@ import type { ChildResponseDto } from '@eobom/shared';
 import { formatKoreanAge, formatNextSessionLabel, formatBirthDateLabel } from '@/entities/child';
 import { DetailRow } from '@/entities/schedule';
 import { IconArrowLeft, IconButton, IconCalendar, IconClock, IconUser } from '@/shared/ui';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   child: ChildResponseDto;

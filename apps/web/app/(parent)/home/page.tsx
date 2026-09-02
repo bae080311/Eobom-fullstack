@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { ScheduleStatus } from '@eobom/shared';
+import type { ScheduleResponseDto, ChildResponseDto, NotificationResponseDto } from '@eobom/shared';
+import type { UserWithProfile } from '@/entities/user';
 import { NextSessionHero } from '@/widgets/next-session-hero';
 import { WeekStrip } from '@/widgets/week-strip';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
@@ -56,17 +58,26 @@ export default async function ParentHomePage() {
   const rangeTo = new Date(todayStart.getTime() + HOME_RANGE_DAYS * 24 * 60 * 60 * 1000 - 1);
   const weekStart = getKSTWeekStart(now);
 
-  const [schedules, children, userProfile, notifications] = token
-    ? await Promise.all([
-        fetchSchedules(token, rangeFrom, rangeTo),
-        fetchChildren(token),
-        fetchUserMe(token),
-        fetchNotifications(token),
-      ])
-    : [[], [], null, []];
-
-  const tSchedule = await getTranslations('entities.schedule');
-  const tNotification = await getTranslations('entities.notification');
+  const [[schedules, children, userProfile, notifications], tSchedule, tNotification] =
+    await Promise.all([
+      token
+        ? Promise.all([
+            fetchSchedules(token, rangeFrom, rangeTo),
+            fetchChildren(token),
+            fetchUserMe(token),
+            fetchNotifications(token),
+          ])
+        : Promise.resolve<
+            [
+              ScheduleResponseDto[],
+              ChildResponseDto[],
+              UserWithProfile | null,
+              NotificationResponseDto[],
+            ]
+          >([[], [], null, []]),
+      getTranslations('entities.schedule'),
+      getTranslations('entities.notification'),
+    ]);
 
   const activeSchedules = schedules
     .filter((s) => s.status !== ScheduleStatus.CANCELED)

@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 import type { MemberResponseDto } from '@eobom/shared';
 import { IconUser } from '@/shared/ui';
 import { formatJoinedAtLabel } from '../model/utils';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   member: MemberResponseDto;

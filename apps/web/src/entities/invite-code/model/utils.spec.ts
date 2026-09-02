@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { InviteCodeStatus } from '@eobom/shared';
-import { getEffectiveInviteCodeStatus } from './utils';
-import ko from '../../../../messages/ko.json';
+import { getEffectiveInviteCodeStatus, INVITE_CODE_STATUS_LABELS_KO } from './utils';
 
-describe('entities.inviteCode.status 메시지', () => {
-  it('모든 InviteCodeStatus 값에 번역 라벨이 존재한다', () => {
-    for (const status of Object.values(InviteCodeStatus)) {
-      expect(ko.entities.inviteCode.status[status]).toBeTruthy();
-    }
+describe('INVITE_CODE_STATUS_LABELS_KO', () => {
+  it('ACTIVE는 "사용 가능"이다', () => {
+    expect(INVITE_CODE_STATUS_LABELS_KO[InviteCodeStatus.ACTIVE]).toBe('사용 가능');
+  });
+
+  it('USED는 "사용됨"이다', () => {
+    expect(INVITE_CODE_STATUS_LABELS_KO[InviteCodeStatus.USED]).toBe('사용됨');
+  });
+
+  it('EXPIRED는 "만료됨"이다', () => {
+    expect(INVITE_CODE_STATUS_LABELS_KO[InviteCodeStatus.EXPIRED]).toBe('만료됨');
+  });
+
+  it('REVOKED는 "취소됨"이다', () => {
+    expect(INVITE_CODE_STATUS_LABELS_KO[InviteCodeStatus.REVOKED]).toBe('취소됨');
   });
 });
 

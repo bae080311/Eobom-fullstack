@@ -17,13 +17,14 @@ export default async function ParentScheduleDetailPage({ params }: Props) {
   const { id } = await params;
   const token = (await cookies()).get('eobom_access')?.value ?? '';
 
+  const tPromise = getTranslations('entities.schedule.status');
   let schedule: ScheduleDetailResponseDto;
   try {
     schedule = await fetchScheduleDetail(token, id);
   } catch {
     notFound();
   }
-  const t = await getTranslations('entities.schedule.status');
+  const t = await tPromise;
 
   return (
     <ScheduleDetailView

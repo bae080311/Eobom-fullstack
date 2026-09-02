@@ -6,8 +6,7 @@ import {
   toKSTDateString,
 } from '@/shared/lib/date';
 import type { UpcomingSession, WeekDay, NextSession, SessionStatus } from './types';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 function getKSTDayOfMonth(iso: string | Date): number {
   const dateStr = toKSTDateString(iso);

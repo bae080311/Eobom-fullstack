@@ -61,6 +61,7 @@
       "justNow": "방금 전",
       "minutesAgo": "{count}분 전",
       "hoursAgo": "{count}시간 전",
+      "oneDayAgo": "어제",
       "daysAgo": "{count}일 전"
     },
     "child": {

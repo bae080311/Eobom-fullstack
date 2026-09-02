@@ -4,8 +4,7 @@ import { SectionHeader } from '@/shared/ui';
 import { EditOrganizationButton } from '@/features/edit-organization';
 import { RotateJoinCodeButton } from '@/features/rotate-join-code';
 import { MemberActions } from '@/features/manage-organization-member';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   organization: OrganizationResponseDto;

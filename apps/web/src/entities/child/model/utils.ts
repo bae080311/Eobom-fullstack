@@ -1,8 +1,7 @@
 import type { ChildResponseDto } from '@eobom/shared';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
 import type { Child } from './types';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 // 만 나이: 생일이 지났으면 (올해-출생연도), 아직이면 -1. KST 기준.
 export function formatKoreanAge(birthDate: string | null): string | null {

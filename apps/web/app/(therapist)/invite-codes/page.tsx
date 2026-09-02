@@ -10,10 +10,12 @@ export const metadata: Metadata = { title: '발급 코드' };
 
 export default async function InviteCodesPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [children, codes] = token
-    ? await Promise.all([fetchChildren(token), fetchInviteCodes(token)])
-    : [[], []];
-  const t = await getTranslations('entities.inviteCode');
+  const [[children, codes], t] = await Promise.all([
+    token
+      ? Promise.all([fetchChildren(token), fetchInviteCodes(token)])
+      : Promise.resolve([[], []]),
+    getTranslations('entities.inviteCode'),
+  ]);
 
   return (
     <PageShell>

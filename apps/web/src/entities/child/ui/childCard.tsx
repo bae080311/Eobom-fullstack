@@ -2,8 +2,7 @@ import Link from 'next/link';
 import { IconUser, IconClock } from '@/shared/ui';
 import type { ChildResponseDto } from '@eobom/shared';
 import { formatKoreanAge, formatNextSessionLabel } from '../model/utils';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   child: ChildResponseDto;

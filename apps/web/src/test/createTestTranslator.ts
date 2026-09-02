@@ -17,8 +17,14 @@ export function createTestTranslator(namespaceMessages: object) {
     if (typeof raw !== 'string') {
       throw new Error(`Test message key "${key}" does not resolve to a string`);
     }
-    if (!values) return raw;
-    return raw.replace(/\{(\w+)\}/g, (_, name: string) => String(values[name] ?? ''));
+    return raw.replace(/\{(\w+)\}/g, (_, name: string) => {
+      // next-intl은 ICU 플레이스홀더에 대응하는 값이 없으면 렌더링 에러를 던진다 —
+      // 테스트 더블도 동일하게 실패해야 인자 이름 오타(예: {minuets})를 놓치지 않는다.
+      if (!values || !(name in values)) {
+        throw new Error(`Missing interpolation value "${name}" for key "${key}"`);
+      }
+      return String(values[name]);
+    });
   }
   t.raw = (key: string): unknown => resolveKey(namespaceMessages, key);
   return t;

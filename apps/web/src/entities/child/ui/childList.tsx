@@ -1,7 +1,6 @@
 import type { ChildResponseDto } from '@eobom/shared';
 import { ChildCard } from './childCard';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   items: ChildResponseDto[];

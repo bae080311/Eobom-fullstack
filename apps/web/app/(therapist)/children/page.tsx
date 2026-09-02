@@ -12,8 +12,10 @@ export default async function TherapistChildrenPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('eobom_access')?.value ?? '';
 
-  const children = token ? await fetchChildren(token) : [];
-  const t = await getTranslations('entities.child');
+  const [children, t] = await Promise.all([
+    token ? fetchChildren(token) : Promise.resolve([]),
+    getTranslations('entities.child'),
+  ]);
 
   return (
     <PageShell>

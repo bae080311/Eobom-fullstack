@@ -4,8 +4,7 @@ import type { InviteCodeResponseDto } from '@eobom/shared';
 import { InviteCodeStatusBadge } from './InviteCodeStatusBadge';
 import { getEffectiveInviteCodeStatus } from '../model/utils';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
-
-type Translate = (key: string, values?: Record<string, string | number>) => string;
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   code: InviteCodeResponseDto;
