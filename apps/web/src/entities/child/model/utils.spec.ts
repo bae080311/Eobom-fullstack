@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { formatKoreanAge, formatNextSessionLabel } from './utils';
+import { createTestTranslator } from '@/test/createTestTranslator';
+import ko from '../../../../messages/ko.json';
+
+const t = createTestTranslator(ko.entities.child);
 
 describe('formatKoreanAge', () => {
   afterEach(() => {
@@ -31,12 +35,12 @@ describe('formatKoreanAge', () => {
 
 describe('formatNextSessionLabel', () => {
   it('nextSessionAt이 null이면 "예정된 일정 없음"을 반환한다', () => {
-    expect(formatNextSessionLabel(null)).toBe('예정된 일정 없음');
+    expect(formatNextSessionLabel(null, t)).toBe('예정된 일정 없음');
   });
 
   it('nextSessionAt이 있으면 KST 날짜·시간 라벨을 만든다', () => {
     // 2026-06-20T01:00:00Z → KST 2026-06-20 10:00
-    const label = formatNextSessionLabel('2026-06-20T01:00:00Z');
+    const label = formatNextSessionLabel('2026-06-20T01:00:00Z', t);
     expect(label).toContain('다음 일정');
     expect(label).toContain('6월 20일');
     expect(label).toContain('10:00');

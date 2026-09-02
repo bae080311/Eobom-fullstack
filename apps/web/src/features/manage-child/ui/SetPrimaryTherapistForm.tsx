@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { MemberResponseDto } from '@eobom/shared';
-import { formatOrgMemberRoleLabel } from '@/entities/organization';
 import { FormModal } from '@/shared/ui';
 import { useSetPrimaryTherapistAction } from '../model/useSetPrimaryTherapistAction';
 
@@ -32,6 +32,7 @@ export function SetPrimaryTherapistForm({
   members,
   onClose,
 }: Props) {
+  const t = useTranslations('entities.organization.role');
   const [selected, setSelected] = useState(() =>
     resolveInitialSelection(currentPrimaryTherapistId, members),
   );
@@ -71,7 +72,7 @@ export function SetPrimaryTherapistForm({
           </option>
           {members.map((member) => (
             <option key={member.therapistProfileId} value={member.therapistProfileId}>
-              {member.user.name} ({formatOrgMemberRoleLabel(member.role)})
+              {member.user.name} ({t(member.role)})
             </option>
           ))}
         </select>

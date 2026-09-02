@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ScheduleStatus } from '@eobom/shared';
-import { SCHEDULE_STATUS_LABEL, SCHEDULE_STATUS_COLOR } from './status';
+import { SCHEDULE_STATUS_COLOR, SCHEDULE_STATUS_LABELS_KO } from './status';
 
 const ALL_STATUSES: ScheduleStatus[] = [
   ScheduleStatus.SCHEDULED,
@@ -9,27 +9,21 @@ const ALL_STATUSES: ScheduleStatus[] = [
   ScheduleStatus.COMPLETED,
 ];
 
-describe('SCHEDULE_STATUS_LABEL', () => {
+describe('SCHEDULE_STATUS_LABELS_KO', () => {
   it('SCHEDULED 레이블은 "예정"이다', () => {
-    expect(SCHEDULE_STATUS_LABEL[ScheduleStatus.SCHEDULED]).toBe('예정');
+    expect(SCHEDULE_STATUS_LABELS_KO[ScheduleStatus.SCHEDULED]).toBe('예정');
   });
 
   it('RESCHEDULED 레이블은 "변경됨"이다', () => {
-    expect(SCHEDULE_STATUS_LABEL[ScheduleStatus.RESCHEDULED]).toBe('변경됨');
+    expect(SCHEDULE_STATUS_LABELS_KO[ScheduleStatus.RESCHEDULED]).toBe('변경됨');
   });
 
   it('CANCELED 레이블은 "취소됨"이다', () => {
-    expect(SCHEDULE_STATUS_LABEL[ScheduleStatus.CANCELED]).toBe('취소됨');
+    expect(SCHEDULE_STATUS_LABELS_KO[ScheduleStatus.CANCELED]).toBe('취소됨');
   });
 
   it('COMPLETED 레이블은 "완료"이다', () => {
-    expect(SCHEDULE_STATUS_LABEL[ScheduleStatus.COMPLETED]).toBe('완료');
-  });
-
-  it('모든 ScheduleStatus 값에 레이블이 존재한다', () => {
-    for (const status of ALL_STATUSES) {
-      expect(SCHEDULE_STATUS_LABEL[status]).toBeTruthy();
-    }
+    expect(SCHEDULE_STATUS_LABELS_KO[ScheduleStatus.COMPLETED]).toBe('완료');
   });
 });
 

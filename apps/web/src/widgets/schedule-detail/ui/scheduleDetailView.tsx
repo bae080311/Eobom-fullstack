@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { ScheduleDetailResponseDto } from '@eobom/shared';
-import { DetailRow, SCHEDULE_STATUS_LABEL, SCHEDULE_STATUS_COLOR } from '@/entities/schedule';
+import { DetailRow, SCHEDULE_STATUS_COLOR } from '@/entities/schedule';
 import {
   IconArrowLeft,
   IconButton,
@@ -16,9 +16,11 @@ interface Props {
   schedule: ScheduleDetailResponseDto;
   backHref: string;
   footer: ReactNode;
+  // 페이지(Server Component)에서 getTranslations()로 미리 구한 상태 라벨을 prop으로 받는다.
+  statusLabel: string;
 }
 
-export function ScheduleDetailView({ schedule, backHref, footer }: Props) {
+export function ScheduleDetailView({ schedule, backHref, footer, statusLabel }: Props) {
   const dateLabel = formatDateLabel(schedule.startAt);
   const timeRange = `${formatTime(schedule.startAt)} ~ ${formatTime(schedule.endAt)}`;
 
@@ -41,7 +43,7 @@ export function ScheduleDetailView({ schedule, backHref, footer }: Props) {
           <span
             className={`inline-block text-caption2 font-bold px-2 py-0.5 rounded-pill ${SCHEDULE_STATUS_COLOR[schedule.status]}`}
           >
-            {SCHEDULE_STATUS_LABEL[schedule.status]}
+            {statusLabel}
           </span>
           <h1 className="text-title font-bold tracking-tighter text-gray-900 m-0 mt-3">
             {schedule.childName}

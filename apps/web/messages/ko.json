@@ -1,0 +1,74 @@
+{
+  "shared": {
+    "confirmDialog": {
+      "confirm": "확인",
+      "cancel": "취소"
+    },
+    "formModal": {
+      "save": "저장",
+      "saving": "저장 중...",
+      "cancel": "취소"
+    }
+  },
+  "entities": {
+    "schedule": {
+      "status": {
+        "SCHEDULED": "예정",
+        "RESCHEDULED": "변경됨",
+        "CANCELED": "취소됨",
+        "COMPLETED": "완료"
+      },
+      "dow": ["월", "화", "수", "목", "금", "토", "일"],
+      "today": "오늘",
+      "todayPrefix": "오늘 {date}",
+      "startingSoon": "곧 시작",
+      "minutesLater": "{minutes}분 뒤",
+      "hoursLater": "{hours}시간 뒤",
+      "hoursMinutesLater": "{hours}시간 {minutes}분 뒤"
+    },
+    "inviteCode": {
+      "status": {
+        "ACTIVE": "사용 가능",
+        "USED": "사용됨",
+        "EXPIRED": "만료됨",
+        "REVOKED": "취소됨"
+      },
+      "validUntil": "{date} {time}까지 유효",
+      "issuedAt": "{date} 발급"
+    },
+    "organization": {
+      "role": {
+        "OWNER": "소유자",
+        "THERAPIST": "치료사"
+      },
+      "joinCode": "참여 코드",
+      "self": "(나)",
+      "joinedLabel": "{date} 가입"
+    },
+    "notification": {
+      "group": {
+        "today": "오늘",
+        "yesterday": "어제",
+        "earlier": "이전"
+      },
+      "empty": "새로운 알림이 없어요",
+      "markAllRead": "전체 읽음",
+      "type": {
+        "SCHEDULE_CREATED": "새 일정이 등록되었어요",
+        "SCHEDULE_UPDATED": "일정이 변경되었어요",
+        "SCHEDULE_CANCELED": "일정이 취소되었어요"
+      },
+      "justNow": "방금 전",
+      "minutesAgo": "{count}분 전",
+      "hoursAgo": "{count}시간 전",
+      "oneDayAgo": "어제",
+      "daysAgo": "{count}일 전"
+    },
+    "child": {
+      "empty": "담당 아동이 없어요",
+      "addAriaLabel": "아동 추가",
+      "noUpcomingSession": "예정된 일정 없음",
+      "nextSession": "다음 일정 {date} {time}"
+    }
+  }
+}

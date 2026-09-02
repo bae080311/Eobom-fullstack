@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconFileText } from '@/shared/ui';
 import { fetchChildren, ChildList } from '@/entities/child';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
@@ -11,7 +12,10 @@ export default async function TherapistChildrenPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('eobom_access')?.value ?? '';
 
-  const children = token ? await fetchChildren(token) : [];
+  const [children, t] = await Promise.all([
+    token ? fetchChildren(token) : Promise.resolve([]),
+    getTranslations('entities.child'),
+  ]);
 
   return (
     <PageShell>
@@ -27,7 +31,7 @@ export default async function TherapistChildrenPage() {
           </div>
         }
       />
-      <ChildList items={children} />
+      <ChildList items={children} t={t} />
       <TherapistTabBar active="children" />
     </PageShell>
   );

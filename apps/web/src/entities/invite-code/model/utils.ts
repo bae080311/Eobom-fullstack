@@ -1,17 +1,13 @@
 import { InviteCodeStatus } from '@eobom/shared';
 import type { InviteCodeResponseDto } from '@eobom/shared';
-import { formatDateLabel, formatTime } from '@/shared/lib/date';
+import koMessages from '../../../../messages/ko.json';
 
-const STATUS_LABEL: Record<InviteCodeStatus, string> = {
-  [InviteCodeStatus.ACTIVE]: '사용 가능',
-  [InviteCodeStatus.USED]: '사용됨',
-  [InviteCodeStatus.EXPIRED]: '만료됨',
-  [InviteCodeStatus.REVOKED]: '취소됨',
-};
-
-export function formatInviteCodeStatusLabel(status: InviteCodeStatus): string {
-  return STATUS_LABEL[status];
-}
+// ko.json에 InviteCodeStatus 모든 값에 대응하는 키가 있는지 컴파일 타임에 검증한다.
+// 신규 상태값 추가 시 이 라인이 타입 에러로 알려준다 — 실제 번역은 컴포넌트의 t(`status.${status}`) 호출이 담당.
+export const INVITE_CODE_STATUS_LABELS_KO = koMessages.entities.inviteCode.status satisfies Record<
+  InviteCodeStatus,
+  string
+>;
 
 // InviteCode.status는 redeem 시도 시점에만 EXPIRED로 갱신되므로, 미사용 상태로 유효기간이
 // 지난 코드는 서버 응답에서도 여전히 ACTIVE로 남아있다 — 화면 표시는 expiresAt으로 직접 판별한다.
@@ -21,13 +17,4 @@ export function getEffectiveInviteCodeStatus(
   const isElapsed =
     code.status === InviteCodeStatus.ACTIVE && new Date(code.expiresAt) < new Date();
   return isElapsed ? InviteCodeStatus.EXPIRED : code.status;
-}
-
-export function formatInviteCodeMetaLabel(
-  code: Pick<InviteCodeResponseDto, 'status' | 'expiresAt' | 'createdAt'>,
-): string {
-  if (getEffectiveInviteCodeStatus(code) === InviteCodeStatus.ACTIVE) {
-    return `${formatDateLabel(code.expiresAt)} ${formatTime(code.expiresAt)}까지 유효`;
-  }
-  return `${formatDateLabel(code.createdAt)} 발급`;
 }

@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { ScheduleStatus } from '@eobom/shared';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { mapScheduleToUpcoming, mapScheduleToNextSession, buildWeekDays } from './utils';
+import { createTestTranslator } from '@/test/createTestTranslator';
+import ko from '../../../../messages/ko.json';
+
+const t = createTestTranslator(ko.entities.schedule);
+const DOW = ko.entities.schedule.dow;
 
 // now = 2026-06-19T05:00:00.000Z → KST 2026-06-19 (금) 14:00
 const NOW = new Date('2026-06-19T05:00:00.000Z');
@@ -96,6 +101,7 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-19T08:30:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.dateLabel.startsWith('오늘 ')).toBe(true);
     expect(result.dateLabel).toContain('6월 19일');
@@ -105,13 +111,14 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-20T08:30:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.dateLabel.startsWith('오늘 ')).toBe(false);
     expect(result.dateLabel).toContain('6월 20일');
   });
 
   it('timeLabel은 formatTime 형식이다', () => {
-    const result = mapScheduleToNextSession(makeSchedule(), NOW);
+    const result = mapScheduleToNextSession(makeSchedule(), NOW, t);
     expect(result.timeLabel).toBe('17:30');
   });
 
@@ -120,6 +127,7 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-19T08:30:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.timeUntil).toBe('3시간 30분 뒤');
   });
@@ -129,6 +137,7 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-19T07:00:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.timeUntil).toBe('2시간 뒤');
   });
@@ -138,6 +147,7 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-19T05:20:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.timeUntil).toBe('20분 뒤');
   });
@@ -147,6 +157,7 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-19T05:00:30.000Z' }),
       NOW,
+      t,
     );
     expect(result.timeUntil).toBe('곧 시작');
   });
@@ -155,17 +166,18 @@ describe('mapScheduleToNextSession', () => {
     const result = mapScheduleToNextSession(
       makeSchedule({ startAt: '2026-06-18T08:30:00.000Z' }),
       NOW,
+      t,
     );
     expect(result.timeUntil).toBe('');
   });
 
   it('location 필드는 포함하지 않는다', () => {
-    const result = mapScheduleToNextSession(makeSchedule(), NOW);
+    const result = mapScheduleToNextSession(makeSchedule(), NOW, t);
     expect(result.location).toBeUndefined();
   });
 
   it('therapistName이 없으면 therapistName은 빈 문자열이다', () => {
-    const result = mapScheduleToNextSession(makeSchedule({ therapistName: undefined }), NOW);
+    const result = mapScheduleToNextSession(makeSchedule({ therapistName: undefined }), NOW, t);
     expect(result.therapistName).toBe('');
   });
 });
@@ -175,24 +187,24 @@ describe('buildWeekDays', () => {
   const WEEK_START = new Date('2026-06-14T15:00:00.000Z');
 
   it('7일치를 월~일 순서로 반환한다', () => {
-    const result = buildWeekDays(WEEK_START, [], NOW);
+    const result = buildWeekDays(WEEK_START, [], NOW, DOW);
     expect(result.map((d) => d.dow)).toEqual(['월', '화', '수', '목', '금', '토', '일']);
   });
 
   it('각 날짜의 day-of-month를 올바르게 계산한다', () => {
-    const result = buildWeekDays(WEEK_START, [], NOW);
+    const result = buildWeekDays(WEEK_START, [], NOW, DOW);
     expect(result.map((d) => d.num)).toEqual([15, 16, 17, 18, 19, 20, 21]);
   });
 
   it('now와 같은 KST 날짜인 요일만 today가 true이다', () => {
-    const result = buildWeekDays(WEEK_START, [], NOW);
+    const result = buildWeekDays(WEEK_START, [], NOW, DOW);
     const todayFlags = result.map((d) => d.today);
     expect(todayFlags).toEqual([false, false, false, false, true, false, false]);
   });
 
   it('일정이 있는 날짜는 hasSession이 true이다', () => {
     const schedules = [makeSchedule({ startAt: '2026-06-17T08:30:00.000Z' })]; // 6/17 (수)
-    const result = buildWeekDays(WEEK_START, schedules, NOW);
+    const result = buildWeekDays(WEEK_START, schedules, NOW, DOW);
     const hasSessionFlags = result.map((d) => d.hasSession);
     expect(hasSessionFlags).toEqual([false, false, true, false, false, false, false]);
   });

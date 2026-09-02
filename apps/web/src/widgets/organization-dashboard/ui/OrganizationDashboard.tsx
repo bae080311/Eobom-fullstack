@@ -4,15 +4,18 @@ import { SectionHeader } from '@/shared/ui';
 import { EditOrganizationButton } from '@/features/edit-organization';
 import { RotateJoinCodeButton } from '@/features/rotate-join-code';
 import { MemberActions } from '@/features/manage-organization-member';
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   organization: OrganizationResponseDto;
   members: MemberResponseDto[];
+  // 페이지(Server Component)에서 getTranslations('entities.organization')로 미리 구한 번역기.
+  t: Translate;
 }
 
 const CARD = 'rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]';
 
-export function OrganizationDashboard({ organization, members }: Props) {
+export function OrganizationDashboard({ organization, members, t }: Props) {
   return (
     <>
       <section className="px-5 mt-1">
@@ -31,6 +34,7 @@ export function OrganizationDashboard({ organization, members }: Props) {
         <SectionHeader title="참여 코드" />
         <JoinCodeCard
           joinCode={organization.joinCode}
+          label={t('joinCode')}
           actions={<RotateJoinCodeButton orgId={organization.id} />}
         />
       </section>
@@ -50,6 +54,7 @@ export function OrganizationDashboard({ organization, members }: Props) {
                 <MemberRow
                   member={member}
                   isSelf={member.id === organization.membership.id}
+                  t={t}
                   actions={
                     <MemberActions
                       orgId={organization.id}

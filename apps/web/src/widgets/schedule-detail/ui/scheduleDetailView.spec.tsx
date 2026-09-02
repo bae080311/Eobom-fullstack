@@ -32,19 +32,40 @@ function makeDetail(overrides: Partial<ScheduleDetailResponseDto> = {}): Schedul
 
 describe('ScheduleDetailView', () => {
   it('아동명·치료사명·치료 종류를 표시한다', () => {
-    render(<ScheduleDetailView schedule={makeDetail()} backHref="/schedule" footer={null} />);
+    render(
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedule"
+        footer={null}
+        statusLabel="예정"
+      />,
+    );
     expect(screen.getByText('김아동')).toBeInTheDocument();
     expect(screen.getByText('이치료')).toBeInTheDocument();
     expect(screen.getAllByText('언어치료').length).toBeGreaterThan(0);
   });
 
   it('상태 배지 라벨을 표시한다', () => {
-    render(<ScheduleDetailView schedule={makeDetail()} backHref="/schedule" footer={null} />);
+    render(
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedule"
+        footer={null}
+        statusLabel="예정"
+      />,
+    );
     expect(screen.getByText('예정')).toBeInTheDocument();
   });
 
   it('시간을 KST HH:mm 범위로 표시한다', () => {
-    render(<ScheduleDetailView schedule={makeDetail()} backHref="/schedule" footer={null} />);
+    render(
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedule"
+        footer={null}
+        statusLabel="예정"
+      />,
+    );
     expect(screen.getAllByText(/10:00 ~ 11:00/).length).toBeGreaterThan(0);
   });
 
@@ -54,6 +75,7 @@ describe('ScheduleDetailView', () => {
         schedule={makeDetail({ notes: '받침 발음 연습' })}
         backHref="/schedule"
         footer={null}
+        statusLabel="예정"
       />,
     );
     expect(screen.getByText('받침 발음 연습')).toBeInTheDocument();
@@ -66,6 +88,7 @@ describe('ScheduleDetailView', () => {
         schedule={makeDetail({ notes: null })}
         backHref="/schedule"
         footer={null}
+        statusLabel="예정"
       />,
     );
     expect(screen.queryByText('메모')).not.toBeInTheDocument();
@@ -77,6 +100,7 @@ describe('ScheduleDetailView', () => {
         schedule={makeDetail()}
         backHref="/schedule"
         footer={<div data-testid="footer-slot">FOOTER</div>}
+        statusLabel="예정"
       />,
     );
     expect(screen.getByTestId('footer-slot')).toBeInTheDocument();
@@ -84,7 +108,12 @@ describe('ScheduleDetailView', () => {
 
   it('backHref를 뒤로가기 링크에 적용한다', () => {
     const { container } = render(
-      <ScheduleDetailView schedule={makeDetail()} backHref="/schedules" footer={null} />,
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedules"
+        footer={null}
+        statusLabel="예정"
+      />,
     );
     expect(container.querySelector('a')).toHaveAttribute('href', '/schedules');
   });

@@ -2,12 +2,15 @@ import Link from 'next/link';
 import { IconUser, IconClock } from '@/shared/ui';
 import type { ChildResponseDto } from '@eobom/shared';
 import { formatKoreanAge, formatNextSessionLabel } from '../model/utils';
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   child: ChildResponseDto;
+  // 페이지(Server Component)에서 getTranslations('entities.child')로 미리 구한 번역기.
+  t: Translate;
 }
 
-export function ChildCard({ child }: Props) {
+export function ChildCard({ child, t }: Props) {
   const age = formatKoreanAge(child.birthDate);
   return (
     <Link
@@ -24,7 +27,7 @@ export function ChildCard({ child }: Props) {
         </div>
         <div className="mt-1 flex items-center gap-1 text-caption text-gray-600">
           <IconClock size={12} />
-          {formatNextSessionLabel(child.nextSessionAt)}
+          {formatNextSessionLabel(child.nextSessionAt, t)}
         </div>
       </div>
     </Link>

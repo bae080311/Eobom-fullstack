@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
 import { fetchChildren } from '@/entities/child';
 import { fetchInviteCodes } from '@/entities/invite-code';
@@ -9,9 +10,12 @@ export const metadata: Metadata = { title: '발급 코드' };
 
 export default async function InviteCodesPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [children, codes] = token
-    ? await Promise.all([fetchChildren(token), fetchInviteCodes(token)])
-    : [[], []];
+  const [[children, codes], t] = await Promise.all([
+    token
+      ? Promise.all([fetchChildren(token), fetchInviteCodes(token)])
+      : Promise.resolve([[], []]),
+    getTranslations('entities.inviteCode'),
+  ]);
 
   return (
     <PageShell>
@@ -24,7 +28,7 @@ export default async function InviteCodesPage() {
           </IconLink>
         }
       />
-      <InviteCodeListView items={children} codes={codes} />
+      <InviteCodeListView items={children} codes={codes} t={t} />
     </PageShell>
   );
 }
