@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { ScheduleStatus } from '@eobom/shared';
 import { NextSessionHero } from '@/widgets/next-session-hero';
 import { WeekStrip } from '@/widgets/week-strip';
@@ -64,6 +65,9 @@ export default async function ParentHomePage() {
       ])
     : [[], [], null, []];
 
+  const tSchedule = await getTranslations('entities.schedule');
+  const tNotification = await getTranslations('entities.notification');
+
   const activeSchedules = schedules
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
@@ -73,14 +77,18 @@ export default async function ParentHomePage() {
   );
 
   const nextSessionDto = futureSchedules[0];
-  const nextSession = nextSessionDto ? mapScheduleToNextSession(nextSessionDto, now) : null;
+  const nextSession = nextSessionDto
+    ? mapScheduleToNextSession(nextSessionDto, now, tSchedule)
+    : null;
 
-  const weekDays = buildWeekDays(weekStart, activeSchedules, now);
+  const weekDays = buildWeekDays(weekStart, activeSchedules, now, tSchedule.raw('dow'));
   const upcoming = futureSchedules
     .slice(0, UPCOMING_LIMIT)
     .map((s) => mapScheduleToUpcoming(s, now));
   const childChips = children.map(mapChildToChip);
-  const notificationItems = notifications.slice(0, NOTIFICATION_LIMIT).map(mapDtoToNotification);
+  const notificationItems = notifications
+    .slice(0, NOTIFICATION_LIMIT)
+    .map((dto) => mapDtoToNotification(dto, tNotification));
   const hasUnreadNotifications = notifications.some((n) => !n.isRead);
 
   const todayLabel = formatDateLabel(todayStart.toISOString());
@@ -116,7 +124,9 @@ export default async function ParentHomePage() {
           {upcoming.length === 0 ? (
             <p className="text-body text-gray-600 text-center py-8">예정된 일정이 없습니다</p>
           ) : (
-            upcoming.map((s) => <SessionRow key={s.id} session={s} />)
+            upcoming.map((s) => (
+              <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />
+            ))
           )}
         </div>
       </section>

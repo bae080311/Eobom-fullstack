@@ -5,9 +5,13 @@ import { SectionHeader } from '@/shared/ui';
 import { IssueInviteCodeButton } from '@/features/issue-invite-code';
 import { RevokeInviteCodeButton } from '@/features/revoke-invite-code';
 
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
 interface Props {
   items: ChildResponseDto[];
   codes: InviteCodeResponseDto[];
+  // 페이지(Server Component)에서 getTranslations('entities.inviteCode')로 미리 구한 번역기.
+  t: Translate;
 }
 
 interface ChildGroup {
@@ -34,7 +38,7 @@ function buildChildGroups(items: ChildResponseDto[], codes: InviteCodeResponseDt
   return Array.from(groups.values());
 }
 
-export function InviteCodeListView({ items, codes }: Props) {
+export function InviteCodeListView({ items, codes, t }: Props) {
   const groups = buildChildGroups(items, codes);
 
   if (groups.length === 0) {
@@ -60,6 +64,7 @@ export function InviteCodeListView({ items, codes }: Props) {
                     {index > 0 && <hr className="border-0 border-t border-gray-100 m-0" />}
                     <InviteCodeRow
                       code={code}
+                      t={t}
                       actions={
                         getEffectiveInviteCodeStatus(code) === InviteCodeStatus.ACTIVE ? (
                           <RevokeInviteCodeButton id={code.id} />

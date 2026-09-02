@@ -1,8 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { formatTime } from '@/shared/lib/date';
-import { SCHEDULE_STATUS_LABEL, SCHEDULE_STATUS_COLOR } from '../model/status';
+import { SCHEDULE_STATUS_COLOR } from '../model/status';
 
 const STATUS_BAR: Record<string, string> = {
   SCHEDULED: 'bg-brand',
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function ScheduleCard({ schedule, onClick }: Props) {
+  const t = useTranslations('entities.schedule.status');
   const start = formatTime(schedule.startAt);
   const end = formatTime(schedule.endAt);
 
@@ -46,7 +48,7 @@ export function ScheduleCard({ schedule, onClick }: Props) {
             <span
               className={`shrink-0 text-caption2 font-bold px-2 py-0.5 rounded-pill ${SCHEDULE_STATUS_COLOR[schedule.status]}`}
             >
-              {SCHEDULE_STATUS_LABEL[schedule.status]}
+              {t(schedule.status)}
             </span>
           </div>
           <span className="text-label text-gray-600 truncate">

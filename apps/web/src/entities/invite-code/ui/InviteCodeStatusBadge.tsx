@@ -1,8 +1,9 @@
 import { InviteCodeStatus } from '@eobom/shared';
-import { formatInviteCodeStatusLabel } from '../model/utils';
 
 interface Props {
   status: InviteCodeStatus;
+  // 상위(InviteCodeRow)에서 t(`status.${status}`)로 미리 구한 라벨을 받는다.
+  label: string;
 }
 
 const COLOR_CLS: Record<InviteCodeStatus, string> = {
@@ -12,10 +13,10 @@ const COLOR_CLS: Record<InviteCodeStatus, string> = {
   [InviteCodeStatus.REVOKED]: 'bg-danger-soft text-danger-strong',
 };
 
-export function InviteCodeStatusBadge({ status }: Props) {
+export function InviteCodeStatusBadge({ status, label }: Props) {
   return (
     <span className={`rounded-full px-2.5 py-1 text-caption font-semibold ${COLOR_CLS[status]}`}>
-      {formatInviteCodeStatusLabel(status)}
+      {label}
     </span>
   );
 }

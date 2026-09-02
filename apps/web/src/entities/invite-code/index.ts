@@ -5,10 +5,6 @@ export {
   useRevokeInviteCode,
   useRedeemInviteCode,
 } from './model/useInviteCode';
-export {
-  formatInviteCodeStatusLabel,
-  formatInviteCodeMetaLabel,
-  getEffectiveInviteCodeStatus,
-} from './model/utils';
+export { getEffectiveInviteCodeStatus } from './model/utils';
 export { InviteCodeStatusBadge } from './ui/InviteCodeStatusBadge';
 export { InviteCodeRow } from './ui/InviteCodeRow';

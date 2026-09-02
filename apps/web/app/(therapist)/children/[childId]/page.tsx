@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { OrgMemberRole } from '@eobom/shared';
 import type { ChildResponseDto, OrganizationResponseDto } from '@eobom/shared';
 import { fetchChildDetail } from '@/entities/child';
@@ -40,11 +41,13 @@ export default async function TherapistChildDetailPage({ params }: Props) {
   const isCurrentPrimaryTherapist =
     myMembership !== undefined && myMembership.therapistProfileId === child.primaryTherapistId;
   const canReassignPrimaryTherapist = isOwner || isCurrentPrimaryTherapist;
+  const t = await getTranslations('entities.child');
 
   return (
     <ChildDetailView
       child={child}
       backHref="/children"
+      t={t}
       inviteCodeAction={<IssueInviteCodeButton childId={child.id} />}
       footer={
         <TherapistChildActions

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft, IconCalendar } from '@/shared/ui';
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { OrganizationDashboard } from '@/widgets/organization-dashboard';
@@ -14,6 +15,8 @@ export default async function OrganizationPage() {
     organization && token ? await fetchOrganizationMembers(token, organization.id) : [];
 
   if (!organization) notFound();
+
+  const t = await getTranslations('entities.organization');
 
   return (
     <PageShell>
@@ -31,7 +34,7 @@ export default async function OrganizationPage() {
           </IconLink>
         }
       />
-      <OrganizationDashboard organization={organization} members={members} />
+      <OrganizationDashboard organization={organization} members={members} t={t} />
     </PageShell>
   );
 }

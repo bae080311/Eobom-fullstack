@@ -5,14 +5,18 @@ import { formatKoreanAge, formatNextSessionLabel, formatBirthDateLabel } from '@
 import { DetailRow } from '@/entities/schedule';
 import { IconArrowLeft, IconButton, IconCalendar, IconClock, IconUser } from '@/shared/ui';
 
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
 interface Props {
   child: ChildResponseDto;
   backHref: string;
   footer: ReactNode;
   inviteCodeAction?: ReactNode;
+  // 페이지(Server Component)에서 getTranslations('entities.child')로 미리 구한 번역기.
+  t: Translate;
 }
 
-export function ChildDetailView({ child, backHref, footer, inviteCodeAction }: Props) {
+export function ChildDetailView({ child, backHref, footer, inviteCodeAction, t }: Props) {
   const age = formatKoreanAge(child.birthDate);
   const birthDateLabel = formatBirthDateLabel(child.birthDate) ?? '등록되지 않음';
 
@@ -33,7 +37,7 @@ export function ChildDetailView({ child, backHref, footer, inviteCodeAction }: P
           <h1 className="text-title font-bold tracking-tighter text-gray-900 m-0">{child.name}</h1>
           {age && <p className="text-body text-gray-600 mt-1 m-0">{age}</p>}
           <div className="mt-3 flex items-center gap-1.5 text-callout font-semibold text-gray-900">
-            <IconClock size={15} /> {formatNextSessionLabel(child.nextSessionAt)}
+            <IconClock size={15} /> {formatNextSessionLabel(child.nextSessionAt, t)}
           </div>
         </div>
       </section>

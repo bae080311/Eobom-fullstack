@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { ScheduleStatus } from '@eobom/shared';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
 import { SessionRow, fetchSchedules, mapScheduleToUpcoming } from '@/entities/schedule';
@@ -34,6 +35,7 @@ export default async function ParentSchedulePage() {
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
+  const tSchedule = await getTranslations('entities.schedule');
   const sessions = activeSchedules.map((s) => mapScheduleToUpcoming(s, now));
   const upcoming = sessions.filter((s) => s.status !== 'past');
   const past = sessions.filter((s) => s.status === 'past').reverse();
@@ -70,7 +72,9 @@ export default async function ParentSchedulePage() {
           {upcoming.length === 0 ? (
             <p className="text-body text-gray-600 text-center py-8">예정된 일정이 없습니다</p>
           ) : (
-            upcoming.map((s) => <SessionRow key={s.id} session={s} />)
+            upcoming.map((s) => (
+              <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />
+            ))
           )}
         </div>
       </section>
@@ -84,7 +88,7 @@ export default async function ParentSchedulePage() {
           {past.length === 0 ? (
             <p className="text-body text-gray-600 text-center py-8">지난 일정이 없습니다</p>
           ) : (
-            past.map((s) => <SessionRow key={s.id} session={s} />)
+            past.map((s) => <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />)
           )}
         </div>
       </section>

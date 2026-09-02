@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Child } from '../model/types';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ChildChipList({ items, defaultSelectedId, onSelect }: Props) {
+  const t = useTranslations('entities.child');
   const [selectedId, setSelectedId] = useState(defaultSelectedId ?? items[0]?.id);
 
   const handleSelect = (id: string) => {
@@ -35,7 +37,7 @@ export function ChildChipList({ items, defaultSelectedId, onSelect }: Props) {
       ))}
       <button
         className="bg-white border border-gray-200 rounded-pill px-3 py-2 text-body2 font-semibold text-gray-600"
-        aria-label="아동 추가"
+        aria-label={t('addAriaLabel')}
       >
         +
       </button>

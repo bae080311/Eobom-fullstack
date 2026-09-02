@@ -7,7 +7,7 @@ import {
 } from '@/shared/lib/date';
 import type { UpcomingSession, WeekDay, NextSession, SessionStatus } from './types';
 
-const DOW_KO = ['월', '화', '수', '목', '금', '토', '일'];
+type Translate = (key: string, values?: Record<string, string | number>) => string;
 
 function getKSTDayOfMonth(iso: string | Date): number {
   const dateStr = toKSTDateString(iso);
@@ -22,7 +22,7 @@ function getSessionStatus(startAt: string, now: Date): SessionStatus {
   return new Date(startAt) > now ? 'today' : 'past';
 }
 
-function formatTimeUntil(startAt: string, now: Date): string {
+function formatTimeUntil(startAt: string, now: Date, t: Translate): string {
   const diffMs = new Date(startAt).getTime() - now.getTime();
   if (diffMs <= 0) return '';
 
@@ -30,10 +30,10 @@ function formatTimeUntil(startAt: string, now: Date): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
-  if (totalMinutes === 0) return '곧 시작';
-  if (hours === 0) return `${minutes}분 뒤`;
-  if (minutes === 0) return `${hours}시간 뒤`;
-  return `${hours}시간 ${minutes}분 뒤`;
+  if (totalMinutes === 0) return t('startingSoon');
+  if (hours === 0) return t('minutesLater', { minutes });
+  if (minutes === 0) return t('hoursLater', { hours });
+  return t('hoursMinutesLater', { hours, minutes });
 }
 
 export function mapScheduleToUpcoming(dto: ScheduleResponseDto, now: Date): UpcomingSession {
@@ -49,10 +49,16 @@ export function mapScheduleToUpcoming(dto: ScheduleResponseDto, now: Date): Upco
   };
 }
 
-export function mapScheduleToNextSession(dto: ScheduleResponseDto, now: Date): NextSession {
+export function mapScheduleToNextSession(
+  dto: ScheduleResponseDto,
+  now: Date,
+  t: Translate,
+): NextSession {
   const status = getSessionStatus(dto.startAt, now);
   const dateLabel =
-    status === 'today' ? `오늘 ${formatDateLabel(dto.startAt)}` : formatDateLabel(dto.startAt);
+    status === 'today'
+      ? t('todayPrefix', { date: formatDateLabel(dto.startAt) })
+      : formatDateLabel(dto.startAt);
 
   return {
     childName: dto.childName,
@@ -60,7 +66,7 @@ export function mapScheduleToNextSession(dto: ScheduleResponseDto, now: Date): N
     type: dto.title,
     dateLabel,
     timeLabel: formatTime(dto.startAt),
-    timeUntil: formatTimeUntil(dto.startAt, now),
+    timeUntil: formatTimeUntil(dto.startAt, now, t),
   };
 }
 
@@ -68,11 +74,12 @@ export function buildWeekDays(
   weekStart: Date,
   schedules: ScheduleResponseDto[],
   now: Date,
+  dowLabels: readonly string[],
 ): WeekDay[] {
   const scheduleDates = new Set(schedules.map((s) => toKSTDateString(s.startAt)));
   const todayStr = toKSTDateString(now);
 
-  return DOW_KO.map((dow, i) => {
+  return dowLabels.map((dow, i) => {
     const day = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000);
     const dateStr = toKSTDateString(day);
     return {

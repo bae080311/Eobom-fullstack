@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 interface Props {
   open: boolean;
   title: string;
@@ -16,13 +18,14 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = '확인',
-  cancelLabel = '취소',
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onCancel,
 }: Props) {
+  const t = useTranslations('shared.confirmDialog');
   if (!open) return null;
 
   return (
@@ -47,7 +50,7 @@ export function ConfirmDialog({
             disabled={loading}
             className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50 focus-visible:outline-none focus-visible:shadow-focus"
           >
-            {cancelLabel}
+            {cancelLabel ?? t('cancel')}
           </button>
           <button
             type="button"
@@ -57,7 +60,7 @@ export function ConfirmDialog({
               destructive ? 'bg-danger-strong' : 'bg-brand'
             }`}
           >
-            {confirmLabel}
+            {confirmLabel ?? t('confirm')}
           </button>
         </div>
       </div>

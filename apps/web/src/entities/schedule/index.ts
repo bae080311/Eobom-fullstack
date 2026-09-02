@@ -1,5 +1,5 @@
 export type { Schedule, UpcomingSession, WeekDay, NextSession, SessionStatus } from './model/types';
-export { SCHEDULE_STATUS_LABEL, SCHEDULE_STATUS_COLOR } from './model/status';
+export { SCHEDULE_STATUS_COLOR } from './model/status';
 export { mapScheduleToUpcoming, mapScheduleToNextSession, buildWeekDays } from './model/utils';
 export { ScheduleCard } from './ui/scheduleCard';
 export { fetchSchedules, fetchScheduleDetail } from './api/index';

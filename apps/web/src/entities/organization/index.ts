@@ -7,6 +7,6 @@ export {
   useUpdateMember,
   useLeaveMember,
 } from './model/useOrganization';
-export { formatOrgMemberRoleLabel, formatJoinedAtLabel } from './model/utils';
+export { formatJoinedAtLabel } from './model/utils';
 export { MemberRow } from './ui/MemberRow';
 export { JoinCodeCard } from './ui/JoinCodeCard';

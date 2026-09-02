@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import type { ScheduleDetailResponseDto } from '@eobom/shared';
 import { fetchScheduleDetail } from '@/entities/schedule';
 import { ScheduleDetailView } from '@/widgets/schedule-detail';
@@ -22,11 +23,13 @@ export default async function TherapistScheduleDetailPage({ params }: Props) {
   } catch {
     notFound();
   }
+  const t = await getTranslations('entities.schedule.status');
 
   return (
     <ScheduleDetailView
       schedule={schedule}
       backHref="/schedules"
+      statusLabel={t(schedule.status)}
       footer={
         <TherapistScheduleActions
           scheduleId={schedule.id}
