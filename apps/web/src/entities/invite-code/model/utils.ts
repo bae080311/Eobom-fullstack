@@ -2,17 +2,15 @@ import { InviteCodeStatus } from '@eobom/shared';
 import type { InviteCodeResponseDto } from '@eobom/shared';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
 
+const STATUS_LABEL: Record<InviteCodeStatus, string> = {
+  [InviteCodeStatus.ACTIVE]: '사용 가능',
+  [InviteCodeStatus.USED]: '사용됨',
+  [InviteCodeStatus.EXPIRED]: '만료됨',
+  [InviteCodeStatus.REVOKED]: '취소됨',
+};
+
 export function formatInviteCodeStatusLabel(status: InviteCodeStatus): string {
-  switch (status) {
-    case InviteCodeStatus.ACTIVE:
-      return '사용 가능';
-    case InviteCodeStatus.USED:
-      return '사용됨';
-    case InviteCodeStatus.EXPIRED:
-      return '만료됨';
-    case InviteCodeStatus.REVOKED:
-      return '취소됨';
-  }
+  return STATUS_LABEL[status];
 }
 
 // InviteCode.status는 redeem 시도 시점에만 EXPIRED로 갱신되므로, 미사용 상태로 유효기간이

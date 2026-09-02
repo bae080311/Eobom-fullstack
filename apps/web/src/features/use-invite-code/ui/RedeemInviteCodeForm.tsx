@@ -1,61 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useQueryClient } from '@tanstack/react-query';
 import { ParentRelation } from '@eobom/shared';
-import type { RedeemInviteCodeResponseDto } from '@eobom/shared';
-import { useRedeemInviteCode } from '@/entities/invite-code';
-import { childKeys } from '@/entities/child';
-import { ApiError } from '@/lib/api';
-
-const formSchema = z.object({
-  code: z.string().min(1, '초대 코드를 입력해주세요'),
-  relation: z.nativeEnum(ParentRelation),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-const RELATION_LABEL: Record<ParentRelation, string> = {
-  [ParentRelation.MOTHER]: '어머니',
-  [ParentRelation.FATHER]: '아버지',
-  [ParentRelation.GUARDIAN]: '보호자',
-  [ParentRelation.OTHER]: '기타',
-};
+import { redeemFormSchema, RELATION_LABEL, type RedeemFormData } from '../model/schema';
+import { useRedeemInviteCodeAction } from '../model/useRedeemInviteCodeAction';
 
 const inputCls =
   'rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand';
 const errorCls = 'mt-1 text-xs text-danger';
 
 export function RedeemInviteCodeForm() {
-  const queryClient = useQueryClient();
-  const [result, setResult] = useState<RedeemInviteCodeResponseDto | null>(null);
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<RedeemFormData>({
+    resolver: zodResolver(redeemFormSchema),
     defaultValues: { code: '', relation: ParentRelation.MOTHER },
   });
-  const { mutate, isPending } = useRedeemInviteCode();
+  const { result, isPending, submit } = useRedeemInviteCodeAction();
 
   const { errors } = form.formState;
 
-  const onSubmit = (data: FormData) => {
-    mutate(
-      { code: data.code.trim().toUpperCase(), relation: data.relation },
-      {
-        onSuccess: (res) => {
-          setResult(res);
-          queryClient.invalidateQueries({ queryKey: childKeys.all });
-        },
-        onError: (err) => {
-          form.setError('code', {
-            message: err instanceof ApiError ? err.message : '코드 확인에 실패했습니다',
-          });
-        },
-      },
-    );
+  const onSubmit = (data: RedeemFormData) => {
+    submit({ code: data.code.trim().toUpperCase(), relation: data.relation });
   };
 
   if (result) {
