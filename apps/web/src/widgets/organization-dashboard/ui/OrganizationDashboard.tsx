@@ -11,16 +11,18 @@ interface Props {
   members: MemberResponseDto[];
   // 페이지(Server Component)에서 getTranslations('entities.organization')로 미리 구한 번역기.
   t: Translate;
+  // 페이지(Server Component)에서 getTranslations('widgets.organizationDashboard')로 미리 구한 번역기.
+  tWidget: Translate;
 }
 
 const CARD = 'rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]';
 
-export function OrganizationDashboard({ organization, members, t }: Props) {
+export function OrganizationDashboard({ organization, members, t, tWidget }: Props) {
   return (
     <>
       <section className="px-5 mt-1">
         <SectionHeader
-          title="기관 정보"
+          title={tWidget('orgInfoTitle')}
           right={<EditOrganizationButton orgId={organization.id} name={organization.name} />}
         />
         <div className={`${CARD} p-5`}>
@@ -31,7 +33,7 @@ export function OrganizationDashboard({ organization, members, t }: Props) {
       </section>
 
       <section className="px-5 mt-7">
-        <SectionHeader title="참여 코드" />
+        <SectionHeader title={t('joinCode')} />
         <JoinCodeCard
           joinCode={organization.joinCode}
           label={t('joinCode')}
@@ -41,12 +43,16 @@ export function OrganizationDashboard({ organization, members, t }: Props) {
 
       <section className="px-5 mt-7">
         <SectionHeader
-          title="멤버"
-          right={<span className="text-body2 text-gray-600 font-medium">{members.length}명</span>}
+          title={tWidget('membersTitle')}
+          right={
+            <span className="text-body2 text-gray-600 font-medium">
+              {tWidget('memberCount', { count: members.length })}
+            </span>
+          }
         />
         <div className={`${CARD} px-5`}>
           {members.length === 0 ? (
-            <p className="py-8 text-center text-body text-gray-600">소속된 멤버가 없어요</p>
+            <p className="py-8 text-center text-body text-gray-600">{tWidget('noMembers')}</p>
           ) : (
             members.map((member, index) => (
               <div key={member.id}>
