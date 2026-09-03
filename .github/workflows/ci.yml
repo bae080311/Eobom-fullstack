@@ -109,8 +109,10 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
-      - name: Apply migrations to test database
-        run: pnpm e2e:db:migrate
+      # prisma/migrations는 저장소에 없으므로(.gitignore) migrate deploy를 쓸 수 없다.
+      # 시나리오마다 비우는 일회용 DB라 이력 없이 스키마만 밀어넣으면 충분하다.
+      - name: Push schema to test database
+        run: pnpm e2e:db:push
 
       # api·web은 @eobom/shared의 dist를 임포트하므로 dev 서버 기동 전에 빌드해야 한다.
       - name: Build shared package

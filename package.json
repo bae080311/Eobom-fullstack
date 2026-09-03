@@ -13,7 +13,6 @@
     "test:e2e:ui": "playwright test -c e2e/playwright.config.ts --ui",
     "e2e:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "e2e:db:down": "docker compose -f docker-compose.test.yml down",
-    "e2e:db:migrate": "DATABASE_URL=postgresql://eobom:eobom_password@localhost:5434/eobom_test prisma migrate deploy",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -21,7 +20,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
-    "prepare": "husky"
+    "prepare": "husky",
+    "e2e:db:push": "DATABASE_URL=postgresql://eobom:eobom_password@localhost:5434/eobom_test prisma db push --skip-generate"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
