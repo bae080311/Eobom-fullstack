@@ -78,12 +78,3 @@ export async function signUpParent(
 
   await expect(page).toHaveURL(/\/home$/);
 }
-
-/** 이미 가입된 계정으로 로그인한다. */
-export async function logIn(page: Page, email: string, password: string, expectedPath: RegExp) {
-  await page.goto('/login');
-  await page.getByPlaceholder('example@email.com').fill(email);
-  await page.getByPlaceholder('비밀번호를 입력하세요').fill(password);
-  await page.getByRole('button', { name: '로그인', exact: true }).click();
-  await expect(page).toHaveURL(expectedPath);
-}

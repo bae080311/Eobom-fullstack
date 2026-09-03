@@ -18,7 +18,9 @@ import { signUpTherapist, signUpParent } from './support/actions';
 
 const ORG_NAME = '맑은소리 언어치료센터';
 const CHILD_NAME = '홍길동';
-const SCHEDULE_TITLE = '언어치료';
+// getByText는 부분일치라 기관명('...언어치료센터')에 포함되지 않는 값이어야 한다.
+// 특히 '차단' 시나리오의 toHaveCount(0)이 기관명에 걸려 오탐하는 것을 막는다.
+const SCHEDULE_TITLE = '조음 훈련';
 
 const THERAPIST = {
   email: 'therapist@e2e.test',
@@ -31,11 +33,19 @@ const PARENT = {
   password: 'E2ePassword!1',
 };
 
-/** 일정 폼의 날짜 입력에 넣을 값. 오늘 이후로 두어 '예정된 일정'에 노출되게 한다. */
-function tomorrowISODate(): string {
+/**
+ * 일정 폼의 날짜 입력에 넣을 값. 오늘 이후로 두어 '예정된 일정'에 노출되게 한다.
+ *
+ * `toISOString()`은 UTC로 직렬화하므로 로컬 기준 +1일과 어긋날 수 있다
+ * (예: KST 오전이면 UTC 날짜는 하루 전이라 '오늘'이 나온다).
+ * 폼의 <input type="date">는 로컬 날짜를 받으므로 로컬 구성요소로 조립한다.
+ */
+function tomorrowLocalDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
 }
 
 /** 아동 등록 모달을 열어 아동을 만든다. */
@@ -137,7 +147,7 @@ test('치료사가 등록한 일정이 학부모에게 공유되고, 학부모�
   expect(link?.relation).toBe('MOTHER');
 
   // --- 5단계: 치료사가 일정 등록 ---
-  const scheduleDate = tomorrowISODate();
+  const scheduleDate = tomorrowLocalDate();
   await createSchedule(therapistPage, CHILD_NAME, SCHEDULE_TITLE, scheduleDate);
 
   const schedule = await db.schedule.findFirst({
@@ -199,7 +209,7 @@ test('연결되지 않은 학부모는 다른 아동의 일정을 조회할 수 
     value: ORG_NAME,
   });
   await createChild(therapistPage, CHILD_NAME);
-  await createSchedule(therapistPage, CHILD_NAME, SCHEDULE_TITLE, tomorrowISODate());
+  await createSchedule(therapistPage, CHILD_NAME, SCHEDULE_TITLE, tomorrowLocalDate());
 
   const schedule = await db.schedule.findFirst({
     where: { child: { name: CHILD_NAME } },
