@@ -4,18 +4,19 @@
 
 ## 최근 완료
 
-- `feat/i18n-widgets-layer` 브랜치 — i18n 마이그레이션 3단계: `widgets` 레이어 12개 파일 전수 이관(child-detail, invite-code-list, my-info, next-session-hero, organization-dashboard, parent-tab-bar, schedule-calendar, schedule-detail[View+Skeleton], therapist-dashboard, therapist-tab-bar, week-strip).
-- **패턴 1 — 기존에 엔티티 네임스페이스 `t`만 받던 Server Component**(ChildDetailView, InviteCodeListView, OrganizationDashboard)는 위젯 전용 문자열을 위해 `tWidget: Translate`(`widgets.<slice>` 네임스페이스) prop을 별도로 추가. `ScheduleDetailView`처럼 기존 `t`가 없던 곳은 단일 `t` prop으로 시작.
-- **패턴 2 — 탭바/스켈레톤은 client + `useTranslations()`로 전환**: `TherapistTabBar`/`ParentTabBar`/`ScheduleDetailSkeleton`은 여러 `loading.tsx`(Suspense fallback, 동기 렌더 필요)에서 그대로 재사용되는데, 이들을 Server Component로 유지한 채 `getTranslations()`를 호출하면 async가 되어 loading.tsx의 즉시 표시 목적이 깨진다. 대신 `'use client'` + `useTranslations()` 훅으로 전환해 caller(페이지·loading.tsx) 변경 없이 해결 — Server Component였어도 이런 동기 렌더 제약이 있으면 client 전환이 우선한다.
-- 이미 client component였던 `MyInfoView`/`ScheduleCalendarView`/`TherapistDashboard`는 `useTranslations()` 훅을 그대로 추가(캐러 변경 없음). `TherapistDashboard`는 요일 배열을 위젯 전용 키로 새로 만들지 않고 기존 `entities.schedule.dow`를 `useTranslations('entities.schedule').raw('dow')`로 재사용(홈페이지의 `tSchedule.raw('dow')`와 동일 패턴).
-- 값(개수 등)을 조합하는 문자열(`{count}건`, `{count}명`, `{year}년 {month}`, `{name}의 {type}`)은 ICU 인터폴레이션으로 처리.
-- Notion 레이어 6 §6.9 마이그레이션 범위 표를 `widgets` 완료로 갱신, 위 패턴들을 기록.
-- 검증: `pnpm --filter web lint/typecheck/test/build` 전부 통과 (47 test files / 325 tests, 스펙 없는 5개 위젯은 코드 재검토로 갈음 — 이 환경엔 브라우저 자동화 도구가 없어 육안 확인은 미수행).
+- `feat/i18n-widgets-layer`(widgets 레이어 12개 파일, PR #37)가 이미 main에 병합되어 있었음을 확인 — 이번 세션은 `feat/i18n-app-layer` 새 브랜치에서 시작.
+- i18n 마이그레이션 4단계(마지막 단계): `app` 레이어 24개 파일 전수 이관 — 공통(layout·error·not-found·providers·랜딩·`/me`), `(auth)` 로그인·회원가입, `(owner)` 기관 관리·기관 캘린더, `(parent)` 홈·알림·초대코드입력·일정[목록+상세], `(therapist)` 담당아동[목록+상세]·대시보드·발급코드·일정[목록+상세].
+- **범위 결정**: `page.tsx`의 `metadata.title`도 이번에 함께 이관 — `export const metadata` 정적 리터럴을 `export async function generateMetadata()` + `getTranslations()`로 전환(레이아웃 포함). `LoginPage`/`RegisterPage`/랜딩(`page.tsx`)/`not-found.tsx`처럼 기존에 동기 컴포넌트였던 것도 이 참에 async로 전환(빌드 결과 `/login`·`/register`는 여전히 정적(`○`)으로 프리렌더됨 — 문제 없음).
+- `loading.tsx`(Suspense fallback)는 widgets 단계와 동일한 이유로 `'use client'` + `useTranslations()`로 전환(`organization/calendar/loading`, `notifications/loading`, `children/loading`, `schedules/loading`).
+- 여러 라우트 그룹에서 반복되는 뒤로가기·알림 aria-label은 `app.common.back.*`, `app.common.notificationsAriaLabel`로 공용화(위젯/엔티티 네임스페이스와 달리 라우트 계층은 동일 문구가 자주 반복돼 공용 키가 더 자연스러움).
+- `(parent)/home/page.tsx`의 `formatWeekRangeLabel`("5월 22일" 조합)은 widgets 단계의 `shared/lib/date.ts` 제외 사례와 동일하게 의도적으로 번역 대상에서 제외(로케일별 날짜 포맷팅 로직 별도 필요).
+- Notion 레이어 6 §6.9 마이그레이션 범위 표를 `app` 완료로 갱신, 상단 요약 문구도 "전체 레이어 완료"로 수정.
+- 검증: `pnpm --filter web lint/typecheck/test/build` 전부 통과(47 test files / 325 tests — app 레이어는 기존에도 spec 없음, 브라우저 육안 확인은 미수행).
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. i18n 후속 이관: `app`(25개 파일) 레이어 진행 — 남은 마지막 단계. 페이지의 `metadata.title`(예: `{ title: '아동 상세' }')도 이번에 포함할지 범위 결정 필요(현재까지는 위젯 내부 렌더 문자열만 다루고 metadata는 손대지 않음).
-2. WCAG AA 수정분(PR #34, 이미 병합됨) 브라우저 육안 확인 — 아직 미착수 (Docker/브라우저 도구 필요).
+1. **i18n 마이그레이션 4단계 전체 완료** — 브라우저 육안 확인(다국어 전환 없이 `ko` 렌더가 기존과 동일한지)은 아직 미착수. Docker/브라우저 자동화 도구가 이 환경에 없어 코드 재검토로 갈음해왔음. 실제 두 번째 로케일 도입 여부는 별도 결정 필요.
+2. WCAG AA 수정분(PR #34, 이미 병합됨) 브라우저 육안 확인 — 아직 미착수(Docker/브라우저 도구 필요).
 3. **로드맵/도메인 문서 갱신 필요**: `SessionReport`(치료 세션 AI 요약, Ollama 연동) 백엔드 API가 2026-06-26에 이미 main에 머지됐는데 Notion 도메인 모델(레이어 3)·로드맵(레이어 8) 어디에도 반영 안 됨. 웹 UI 연동도 전무. architect 레벨 결정 필요.
 4. Phase 3 잔여: org 스코프 권한 전용 테스트 묶음, Playwright e2e 시나리오, API 테스트 커버리지 60% 목표 검증 — 전부 미착수.
 5. Phase 5(Ops) 전체 미착수: `ci.yml` 하나만 존재, Sentry/OpenTelemetry·배포 설정(Vercel/컨테이너)·레이트리밋·joinCode 회전 감사 로그 없음.
