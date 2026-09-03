@@ -6,12 +6,17 @@ import { PageShell, PageTopBar, IconLink, IconArrowLeft, IconCalendar } from '@/
 import { fetchMyOrganization, fetchOrganizationMembers } from '@/entities/organization';
 import { OrganizationDashboard } from '@/widgets/organization-dashboard';
 
-export const metadata: Metadata = { title: '기관 관리' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.owner');
+  return { title: t('organizationTitle') };
+}
 
 export default async function OrganizationPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [organization, t, tWidget] = await Promise.all([
+  const [organization, tApp, tAppCommon, t, tWidget] = await Promise.all([
     token ? fetchMyOrganization(token) : Promise.resolve(null),
+    getTranslations('app.owner'),
+    getTranslations('app.common'),
     getTranslations('entities.organization'),
     getTranslations('widgets.organizationDashboard'),
   ]);
@@ -23,15 +28,15 @@ export default async function OrganizationPage() {
   return (
     <PageShell>
       <PageTopBar
-        title="기관 관리"
+        title={tApp('organizationTitle')}
         subtitle={organization.name}
         back={
-          <IconLink label="내 정보로" href="/me">
+          <IconLink label={tAppCommon('back.toMe')} href="/me">
             <IconArrowLeft size={18} />
           </IconLink>
         }
         action={
-          <IconLink label="기관 캘린더" href="/organization/calendar">
+          <IconLink label={tApp('calendarLinkLabel')} href="/organization/calendar">
             <IconCalendar size={20} />
           </IconLink>
         }

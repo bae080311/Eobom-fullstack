@@ -1,15 +1,24 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
 import { fetchSchedules } from '@/entities/schedule';
 import { ScheduleCalendarView } from '@/widgets/schedule-calendar';
 import { getCurrentKSTMonthRange } from '@/shared/lib/date';
 
-export const metadata: Metadata = { title: '기관 캘린더' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.owner');
+  return { title: t('calendarTitle') };
+}
 
 export default async function OrganizationCalendarPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('eobom_access')?.value ?? '';
+
+  const [tApp, tAppCommon] = await Promise.all([
+    getTranslations('app.owner'),
+    getTranslations('app.common'),
+  ]);
 
   const { from, to } = getCurrentKSTMonthRange();
 
@@ -18,9 +27,9 @@ export default async function OrganizationCalendarPage() {
   return (
     <PageShell noPb>
       <PageTopBar
-        title="기관 캘린더"
+        title={tApp('calendarTitle')}
         back={
-          <IconLink label="기관 관리로" href="/organization">
+          <IconLink label={tAppCommon('back.toOrganization')} href="/organization">
             <IconArrowLeft size={18} />
           </IconLink>
         }
