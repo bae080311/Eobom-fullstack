@@ -1,17 +1,26 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
 import { RedeemInviteCodeForm } from '@/features/use-invite-code';
 
-export const metadata: Metadata = { title: '초대코드 입력' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.parent');
+  return { title: t('redeemTitle') };
+}
 
-export default function RedeemPage() {
+export default async function RedeemPage() {
+  const [tApp, tAppCommon] = await Promise.all([
+    getTranslations('app.parent'),
+    getTranslations('app.common'),
+  ]);
+
   return (
     <PageShell>
       <PageTopBar
-        title="초대코드 입력"
-        subtitle="치료사에게 받은 코드를 입력해주세요"
+        title={tApp('redeemTitle')}
+        subtitle={tApp('redeemSubtitle')}
         back={
-          <IconLink label="내 정보로" href="/me">
+          <IconLink label={tAppCommon('back.toMe')} href="/me">
             <IconArrowLeft size={18} />
           </IconLink>
         }
