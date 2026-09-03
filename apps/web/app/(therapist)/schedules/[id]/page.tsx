@@ -7,7 +7,10 @@ import { fetchScheduleDetail } from '@/entities/schedule';
 import { ScheduleDetailView } from '@/widgets/schedule-detail';
 import { TherapistScheduleActions } from '@/features/manage-schedule';
 
-export const metadata: Metadata = { title: '일정 상세' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.therapist');
+  return { title: t('scheduleDetailTitle') };
+}
 
 interface Props {
   params: Promise<{ id: string }>;

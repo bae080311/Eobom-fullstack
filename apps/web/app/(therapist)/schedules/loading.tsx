@@ -1,10 +1,15 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { PageShell, PageTopBar, Skeleton } from '@/shared/ui';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
 
 export default function SchedulesLoading() {
+  const t = useTranslations('app.therapist');
+
   return (
     <PageShell noPb>
-      <PageTopBar title="일정" action={null} />
+      <PageTopBar title={t('scheduleTitle')} action={null} />
 
       <div className="px-5 mt-2">
         <Skeleton className="h-7 w-40" />

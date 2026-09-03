@@ -6,14 +6,19 @@ import { fetchChildren } from '@/entities/child';
 import { fetchInviteCodes } from '@/entities/invite-code';
 import { InviteCodeListView } from '@/widgets/invite-code-list';
 
-export const metadata: Metadata = { title: '발급 코드' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.therapist');
+  return { title: t('inviteCodesTitle') };
+}
 
 export default async function InviteCodesPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [[children, codes], t, tWidget] = await Promise.all([
+  const [[children, codes], tApp, tAppCommon, t, tWidget] = await Promise.all([
     token
       ? Promise.all([fetchChildren(token), fetchInviteCodes(token)])
       : Promise.resolve([[], []]),
+    getTranslations('app.therapist'),
+    getTranslations('app.common'),
     getTranslations('entities.inviteCode'),
     getTranslations('widgets.inviteCodeList'),
   ]);
@@ -21,10 +26,10 @@ export default async function InviteCodesPage() {
   return (
     <PageShell>
       <PageTopBar
-        title="발급 코드"
-        subtitle="아동별 학부모 초대코드"
+        title={tApp('inviteCodesTitle')}
+        subtitle={tApp('inviteCodesSubtitle')}
         back={
-          <IconLink label="담당 아동으로" href="/children">
+          <IconLink label={tAppCommon('back.toChildren')} href="/children">
             <IconArrowLeft size={18} />
           </IconLink>
         }
