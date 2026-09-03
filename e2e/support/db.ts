@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 /**
  * e2e 전용 Prisma 클라이언트.
@@ -11,8 +11,7 @@ import { PrismaClient } from "@prisma/client";
  */
 
 const url =
-  process.env.E2E_DATABASE_URL ??
-  "postgresql://eobom:eobom_password@localhost:5434/eobom_test";
+  process.env.E2E_DATABASE_URL ?? 'postgresql://eobom:eobom_password@localhost:5434/eobom_test';
 
 export const db = new PrismaClient({ datasources: { db: { url } } });
 
@@ -24,16 +23,12 @@ export async function resetDb(): Promise<void> {
   `;
   if (tables.length === 0) return;
 
-  const targets = tables.map((t) => `"public"."${t.tablename}"`).join(", ");
+  const targets = tables.map((t) => `"public"."${t.tablename}"`).join(', ');
   await db.$executeRawUnsafe(`TRUNCATE TABLE ${targets} CASCADE`);
 }
 
 /** 조건이 만족될 때까지 짧게 폴링한다. API 처리가 브라우저 액션보다 늦게 끝나는 구간에 쓴다. */
-async function waitFor<T>(
-  label: string,
-  read: () => Promise<T | null>,
-  timeoutMs = 15_000,
-) {
+async function waitFor<T>(label: string, read: () => Promise<T | null>, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     const found = await read();
@@ -72,7 +67,7 @@ export function readParentInviteCode(childName: string): Promise<string> {
   return waitFor(`학부모 초대 코드(${childName})`, async () => {
     const invite = await db.inviteCode.findFirst({
       where: { child: { name: childName } },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
     return invite?.code ?? null;
   });

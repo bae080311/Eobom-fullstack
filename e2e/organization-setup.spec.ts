@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test";
-import { OrgMemberRole, OrgMembershipStatus } from "@eobom/shared";
-import { db, resetDb, readJoinCode } from "./support/db";
-import { signUpTherapist, passEmailVerification } from "./support/actions";
+import { test, expect } from '@playwright/test';
+import { OrgMemberRole, OrgMembershipStatus } from '@eobom/shared';
+import { db, resetDb, readJoinCode } from './support/db';
+import { signUpTherapist, passEmailVerification } from './support/actions';
 
 /**
  * 🅰️ 기관 셋업 흐름 — 레이어 1 §1.4와 1대일 대응 (레이어 5 §5.12 요구사항).
@@ -12,18 +12,18 @@ import { signUpTherapist, passEmailVerification } from "./support/actions";
  *  4. 이후 가입하는 치료사 B는 참여 코드를 입력해 같은 기관에 THERAPIST로 합류한다.
  */
 
-const ORG_NAME = "맑은소리 언어치료센터";
+const ORG_NAME = '맑은소리 언어치료센터';
 
 const THERAPIST_A = {
-  email: "therapist-a@e2e.test",
-  name: "김치료",
-  password: "E2ePassword!1",
+  email: 'therapist-a@e2e.test',
+  name: '김치료',
+  password: 'E2ePassword!1',
 };
 
 const THERAPIST_B = {
-  email: "therapist-b@e2e.test",
-  name: "박치료",
-  password: "E2ePassword!1",
+  email: 'therapist-b@e2e.test',
+  name: '박치료',
+  password: 'E2ePassword!1',
 };
 
 test.beforeEach(async () => {
@@ -34,7 +34,7 @@ test.afterAll(async () => {
   await db.$disconnect();
 });
 
-test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 코드로 합류한다", async ({
+test('치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 코드로 합류한다', async ({
   browser,
 }) => {
   // --- 1~3단계: 치료사 A 가입 + 신규 기관 생성 ---
@@ -42,7 +42,7 @@ test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 
   const pageA = await contextA.newPage();
 
   await signUpTherapist(pageA, THERAPIST_A, {
-    mode: "CREATE",
+    mode: 'CREATE',
     value: ORG_NAME,
   });
 
@@ -51,7 +51,7 @@ test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 
   expect(joinCode).toMatch(/^[0-9A-F]{8}$/);
 
   // 기관명은 헤더와 본문에 함께 노출돼 여러 번 매칭된다.
-  await pageA.goto("/organization");
+  await pageA.goto('/organization');
   await expect(pageA.getByText(ORG_NAME).first()).toBeVisible();
   await expect(pageA.getByText(joinCode)).toBeVisible();
 
@@ -69,7 +69,7 @@ test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 
   const contextB = await browser.newContext();
   const pageB = await contextB.newPage();
 
-  await signUpTherapist(pageB, THERAPIST_B, { mode: "JOIN", value: joinCode });
+  await signUpTherapist(pageB, THERAPIST_B, { mode: 'JOIN', value: joinCode });
 
   const memberMembership = await db.organizationMembership.findFirst({
     where: { therapistProfile: { user: { email: THERAPIST_B.email } } },
@@ -77,12 +77,10 @@ test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 
   expect(memberMembership?.role).toBe(OrgMemberRole.THERAPIST);
   expect(memberMembership?.status).toBe(OrgMembershipStatus.ACTIVE);
   // 같은 기관에 들어갔는지 — 이 흐름의 핵심 단정.
-  expect(memberMembership?.organizationId).toBe(
-    ownerMembership?.organizationId,
-  );
+  expect(memberMembership?.organizationId).toBe(ownerMembership?.organizationId);
 
   // A의 기관 관리 화면에서 멤버 2명이 보인다.
-  await pageA.goto("/organization");
+  await pageA.goto('/organization');
   await expect(pageA.getByText(THERAPIST_A.name).first()).toBeVisible();
   await expect(pageA.getByText(THERAPIST_B.name).first()).toBeVisible();
 
@@ -90,25 +88,23 @@ test("치료사 A가 기관을 만들고 OWNER가 되며, 치료사 B가 참여 
   await contextB.close();
 });
 
-test("존재하지 않는 참여 코드로는 기관에 합류할 수 없다", async ({ page }) => {
-  await page.goto("/register");
-  await page.getByRole("button", { name: "언어치료사" }).click();
+test('존재하지 않는 참여 코드로는 기관에 합류할 수 없다', async ({ page }) => {
+  await page.goto('/register');
+  await page.getByRole('button', { name: '언어치료사' }).click();
 
   await passEmailVerification(page, THERAPIST_B.email);
 
-  await page.getByPlaceholder("홍길동").fill(THERAPIST_B.name);
-  await page.getByPlaceholder("8자 이상").fill(THERAPIST_B.password);
-  await page
-    .getByPlaceholder("비밀번호를 다시 입력하세요")
-    .fill(THERAPIST_B.password);
-  await page.getByRole("button", { name: "다음" }).click();
+  await page.getByPlaceholder('홍길동').fill(THERAPIST_B.name);
+  await page.getByPlaceholder('8자 이상').fill(THERAPIST_B.password);
+  await page.getByPlaceholder('비밀번호를 다시 입력하세요').fill(THERAPIST_B.password);
+  await page.getByRole('button', { name: '다음' }).click();
 
-  await page.getByRole("button", { name: "코드로 참여" }).click();
-  await page.getByPlaceholder("ABCD1234").fill("DEADBEEF");
-  await page.getByRole("button", { name: "가입 완료" }).click();
+  await page.getByRole('button', { name: '코드로 참여' }).click();
+  await page.getByPlaceholder('ABCD1234').fill('DEADBEEF');
+  await page.getByRole('button', { name: '가입 완료' }).click();
 
   // 가입 단계에 머무르며 에러가 노출되고, 계정은 만들어지지 않는다.
-  await expect(page.getByText("유효하지 않은 참여 코드입니다.")).toBeVisible();
+  await expect(page.getByText('유효하지 않은 참여 코드입니다.')).toBeVisible();
   await expect(page).toHaveURL(/\/register$/);
 
   const created = await db.user.findUnique({
