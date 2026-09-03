@@ -1,19 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useUpdateOrganization } from '@/entities/organization';
 import { ApiError } from '@/lib/api';
+import type { Translate } from '@/shared/lib/i18n';
 
-const formSchema = z.object({
-  name: z.string().min(1, '기관 이름을 입력해주세요'),
-});
+function createFormSchema(t: Translate) {
+  return z.object({
+    name: z.string().min(1, t('orgNameRequired')),
+  });
+}
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface Props {
   open: boolean;
@@ -27,7 +31,9 @@ const inputCls =
 const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
+  const t = useTranslations('features.editOrganization');
   const router = useRouter();
+  const formSchema = useMemo(() => createFormSchema(t), [t]);
   const form = useForm<FormData>({ resolver: zodResolver(formSchema), defaultValues: { name } });
   const { mutate, isPending } = useUpdateOrganization(orgId);
 
@@ -45,12 +51,12 @@ export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
       { name: data.name.trim() },
       {
         onSuccess: () => {
-          toast.success('기관 이름이 수정되었습니다');
+          toast.success(t('updateSuccess'));
           onClose();
           router.refresh();
         },
         onError: (err) => {
-          toast.error(err instanceof ApiError ? err.message : '기관 이름 수정에 실패했습니다');
+          toast.error(err instanceof ApiError ? err.message : t('updateError'));
         },
       },
     );
@@ -68,10 +74,10 @@ export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">기관 이름 수정</h2>
+        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{t('title')}</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-600 font-semibold">기관 이름</span>
+          <span className="text-label text-gray-600 font-semibold">{t('orgNameLabel')}</span>
           <input {...form.register('name')} className={inputCls} />
           {errors.name && <span className={errorCls}>{errors.name.message}</span>}
         </label>
@@ -83,14 +89,14 @@ export function EditOrganizationForm({ open, orgId, name, onClose }: Props) {
             disabled={isPending}
             className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            {isPending ? '저장 중...' : '저장'}
+            {isPending ? t('saving') : t('save')}
           </button>
         </div>
       </form>

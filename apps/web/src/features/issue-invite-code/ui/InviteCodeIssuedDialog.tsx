@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { InviteCodeResponseDto } from '@eobom/shared';
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function InviteCodeIssuedDialog({ code, onClose }: Props) {
+  const t = useTranslations('features.issueInviteCode');
   if (!code) return null;
 
   return (
@@ -22,11 +24,9 @@ export function InviteCodeIssuedDialog({ code, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">
-          초대코드가 발급되었어요
+          {t('issuedTitle')}
         </h2>
-        <p className="text-body text-gray-600 m-0 leading-relaxed">
-          학부모에게 아래 코드를 전달해주세요. 1시간 동안 유효합니다.
-        </p>
+        <p className="text-body text-gray-600 m-0 leading-relaxed">{t('issuedDescription')}</p>
         <p className="text-title3 font-bold tracking-wide text-brand text-center bg-brand-softer rounded-xl py-4 m-0">
           {code.code}
         </p>
@@ -35,7 +35,7 @@ export function InviteCodeIssuedDialog({ code, onClose }: Props) {
           onClick={onClose}
           className="bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans"
         >
-          확인
+          {t('confirmButton')}
         </button>
       </div>
     </div>

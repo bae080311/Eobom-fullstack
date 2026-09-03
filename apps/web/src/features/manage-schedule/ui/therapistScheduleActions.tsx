@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ScheduleStatus } from '@eobom/shared';
 import { useCancelSchedule, useConfirmSchedule } from '@/entities/schedule';
 import { ConfirmDialog, IconCheck, IconRefresh } from '@/shared/ui';
@@ -26,6 +27,7 @@ export function TherapistScheduleActions({
   endAt,
   notes,
 }: Props) {
+  const t = useTranslations('features.manageSchedule.actions');
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -64,7 +66,7 @@ export function TherapistScheduleActions({
         disabled={isTerminal}
         className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans disabled:opacity-50 disabled:cursor-not-allowed disabled:text-gray-400"
       >
-        <IconRefresh size={16} /> 수정
+        <IconRefresh size={16} /> {t('edit')}
       </button>
 
       <button
@@ -73,7 +75,7 @@ export function TherapistScheduleActions({
         disabled={isTerminal}
         className="flex-1 bg-danger-soft text-danger-strong rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans disabled:opacity-50"
       >
-        취소
+        {t('cancel')}
       </button>
 
       <button
@@ -82,14 +84,14 @@ export function TherapistScheduleActions({
         disabled={isTerminal}
         className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans disabled:opacity-50"
       >
-        <IconCheck size={16} /> 완료 처리
+        <IconCheck size={16} /> {t('complete')}
       </button>
 
       <ConfirmDialog
         open={dialog === 'cancel'}
-        title="일정을 취소하시겠어요?"
-        description="취소된 일정은 학부모에게 취소됨으로 표시됩니다."
-        confirmLabel="취소하기"
+        title={t('cancelDialogTitle')}
+        description={t('cancelDialogDescription')}
+        confirmLabel={t('cancelConfirmLabel')}
         destructive
         loading={isCanceling}
         onConfirm={handleCancel}
@@ -98,9 +100,9 @@ export function TherapistScheduleActions({
 
       <ConfirmDialog
         open={dialog === 'complete'}
-        title="치료를 완료 처리할까요?"
-        description="완료 처리하면 일정 상태가 완료로 변경됩니다."
-        confirmLabel="완료"
+        title={t('completeDialogTitle')}
+        description={t('completeDialogDescription')}
+        confirmLabel={t('completeConfirmLabel')}
         loading={isCompleting}
         onConfirm={handleComplete}
         onCancel={close}

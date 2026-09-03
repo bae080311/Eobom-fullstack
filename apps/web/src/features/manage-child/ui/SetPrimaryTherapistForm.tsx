@@ -32,7 +32,8 @@ export function SetPrimaryTherapistForm({
   members,
   onClose,
 }: Props) {
-  const t = useTranslations('entities.organization.role');
+  const tRole = useTranslations('entities.organization.role');
+  const t = useTranslations('features.manageChild.primaryTherapistForm');
   const [selected, setSelected] = useState(() =>
     resolveInitialSelection(currentPrimaryTherapistId, members),
   );
@@ -53,26 +54,26 @@ export function SetPrimaryTherapistForm({
   return (
     <FormModal
       open={open}
-      title="담당 치료사 변경"
+      title={t('title')}
       isPending={isPending}
       submitDisabled={!selected}
-      submitLabel="변경"
+      submitLabel={t('submitLabel')}
       onSubmit={handleSubmit}
       onClose={onClose}
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-600 font-semibold">담당 치료사</span>
+        <span className="text-label text-gray-600 font-semibold">{t('therapistLabel')}</span>
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
           className="rounded-[10px] border border-gray-200 px-4 py-3 text-body text-gray-900 outline-none focus:border-brand"
         >
           <option value="" disabled>
-            선택해주세요
+            {t('selectPlaceholder')}
           </option>
           {members.map((member) => (
             <option key={member.therapistProfileId} value={member.therapistProfileId}>
-              {member.user.name} ({t(member.role)})
+              {member.user.name} ({tRole(member.role)})
             </option>
           ))}
         </select>
