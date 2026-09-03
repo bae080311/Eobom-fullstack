@@ -1,15 +1,20 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { IconArrowLeft, IconButton, IconMoreHorizontal, Skeleton } from '@/shared/ui';
 
 /** ScheduleDetailView 로딩 중 표시되는 스켈레톤. 치료사·학부모 상세 라우트가 공유한다. */
 export function ScheduleDetailSkeleton() {
+  const t = useTranslations('widgets.scheduleDetail');
+
   return (
     <div className="bg-gray-50 min-h-screen font-sans antialiased pb-28">
       <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-gray-200 flex items-center justify-between px-5 py-3 z-10">
-        <IconButton label="뒤로">
+        <IconButton label={t('backAria')}>
           <IconArrowLeft size={18} />
         </IconButton>
-        <span className="text-body font-bold text-gray-900">치료 일정 상세</span>
-        <IconButton label="더보기">
+        <span className="text-body font-bold text-gray-900">{t('pageTitle')}</span>
+        <IconButton label={t('moreAria')}>
           <IconMoreHorizontal size={18} />
         </IconButton>
       </div>

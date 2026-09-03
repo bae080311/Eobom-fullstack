@@ -2,25 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { ScheduleCard, useSchedules } from '@/entities/schedule';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
-
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
-const MONTH_LABELS = [
-  '1월',
-  '2월',
-  '3월',
-  '4월',
-  '5월',
-  '6월',
-  '7월',
-  '8월',
-  '9월',
-  '10월',
-  '11월',
-  '12월',
-] as const;
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -53,6 +38,9 @@ interface Props {
 }
 
 export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules' }: Props) {
+  const t = useTranslations('widgets.scheduleCalendar');
+  const DOW_LABELS = t.raw('dow') as string[];
+  const MONTH_LABELS = t.raw('month') as string[];
   const router = useRouter();
   const today = startOfDay(new Date());
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -95,9 +83,9 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
       {todaySchedules.length > 0 && (
         <div className="mx-4 mb-2 rounded-xl bg-brand px-4 py-3.5">
           <div className="flex items-center justify-between mb-2.5">
-            <span className="text-label font-bold text-white/90">오늘 일정</span>
+            <span className="text-label font-bold text-white/90">{t('todaySchedule')}</span>
             <span className="text-caption2 font-bold bg-white/20 text-white px-2 py-0.5 rounded-pill">
-              {todaySchedules.length}건
+              {t('countSuffix', { count: todaySchedules.length })}
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -121,7 +109,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
         <button
           onClick={prevMonth}
           className="w-8 h-8 flex items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-          aria-label="이전 달"
+          aria-label={t('prevMonthAria')}
         >
           <svg
             width="18"
@@ -139,7 +127,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
 
         <div className="flex items-center gap-2">
           <span className="text-subhead font-bold text-gray-900">
-            {viewYear}년 {MONTH_LABELS[viewMonth]}
+            {t('yearMonth', { year: viewYear, month: MONTH_LABELS[viewMonth] })}
           </span>
           {isFetching && (
             <span className="w-3.5 h-3.5 rounded-full border-2 border-brand border-t-transparent animate-spin" />
@@ -149,7 +137,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
         <button
           onClick={nextMonth}
           className="w-8 h-8 flex items-center justify-center rounded-full text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
-          aria-label="다음 달"
+          aria-label={t('nextMonthAria')}
         >
           <svg
             width="18"
@@ -230,7 +218,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
       <div className="px-4 pb-24">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-body font-semibold text-gray-800">
-            {isToday ? '오늘' : formatDateLabel(selected.toISOString())}
+            {isToday ? t('today') : formatDateLabel(selected.toISOString())}
             {isToday && (
               <span className="text-body font-normal text-gray-600 ml-1.5">
                 {formatDateLabel(selected.toISOString())}
@@ -239,7 +227,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
           </h2>
           {selectedSchedules.length > 0 && (
             <span className="text-caption2 font-bold bg-brand text-white px-2.5 py-0.5 rounded-pill">
-              {selectedSchedules.length}건
+              {t('countSuffix', { count: selectedSchedules.length })}
             </span>
           )}
         </div>
@@ -264,7 +252,7 @@ export function ScheduleCalendarView({ initialData, detailBasePath = '/schedules
                 <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
-            <p className="text-body2 font-medium text-gray-600">예정된 일정이 없어요</p>
+            <p className="text-body2 font-medium text-gray-600">{t('noSchedule')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">

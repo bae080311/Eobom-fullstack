@@ -4,6 +4,10 @@ import { ScheduleStatus } from '@eobom/shared';
 import type { ScheduleDetailResponseDto } from '@eobom/shared';
 
 import { ScheduleDetailView } from './scheduleDetailView';
+import { createTestTranslator } from '@/test/createTestTranslator';
+import ko from '../../../../messages/ko.json';
+
+const t = createTestTranslator(ko.widgets.scheduleDetail);
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -38,6 +42,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.getByText('김아동')).toBeInTheDocument();
@@ -52,6 +57,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.getByText('예정')).toBeInTheDocument();
@@ -64,6 +70,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.getAllByText(/10:00 ~ 11:00/).length).toBeGreaterThan(0);
@@ -76,6 +83,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.getByText('받침 발음 연습')).toBeInTheDocument();
@@ -89,6 +97,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.queryByText('메모')).not.toBeInTheDocument();
@@ -101,6 +110,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedule"
         footer={<div data-testid="footer-slot">FOOTER</div>}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(screen.getByTestId('footer-slot')).toBeInTheDocument();
@@ -113,6 +123,7 @@ describe('ScheduleDetailView', () => {
         backHref="/schedules"
         footer={null}
         statusLabel="예정"
+        t={t}
       />,
     );
     expect(container.querySelector('a')).toHaveAttribute('href', '/schedules');
