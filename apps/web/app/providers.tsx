@@ -2,10 +2,12 @@
 
 import { QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Toaster, toast } from 'sonner';
 import { ApiError } from '@/lib/api';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('app.common');
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -16,7 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         mutationCache: new MutationCache({
           onError(error) {
             if (error instanceof ApiError && error.status < 500) return;
-            toast.error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            toast.error(t('genericServerError'));
           },
         }),
       }),
