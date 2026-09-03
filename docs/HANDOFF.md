@@ -4,24 +4,25 @@
 
 ## 최근 완료
 
-- `feat/i18n-widgets-layer`(widgets 레이어 12개 파일, PR #37)가 이미 main에 병합되어 있었음을 확인 — 이번 세션은 `feat/i18n-app-layer` 새 브랜치에서 시작.
-- i18n 마이그레이션 4단계(마지막 단계): `app` 레이어 24개 파일 전수 이관 — 공통(layout·error·not-found·providers·랜딩·`/me`), `(auth)` 로그인·회원가입, `(owner)` 기관 관리·기관 캘린더, `(parent)` 홈·알림·초대코드입력·일정[목록+상세], `(therapist)` 담당아동[목록+상세]·대시보드·발급코드·일정[목록+상세].
-- **범위 결정**: `page.tsx`의 `metadata.title`도 이번에 함께 이관 — `export const metadata` 정적 리터럴을 `export async function generateMetadata()` + `getTranslations()`로 전환(레이아웃 포함). `LoginPage`/`RegisterPage`/랜딩(`page.tsx`)/`not-found.tsx`처럼 기존에 동기 컴포넌트였던 것도 이 참에 async로 전환(빌드 결과 `/login`·`/register`는 여전히 정적(`○`)으로 프리렌더됨 — 문제 없음).
-- `loading.tsx`(Suspense fallback)는 widgets 단계와 동일한 이유로 `'use client'` + `useTranslations()`로 전환(`organization/calendar/loading`, `notifications/loading`, `children/loading`, `schedules/loading`).
-- 여러 라우트 그룹에서 반복되는 뒤로가기·알림 aria-label은 `app.common.back.*`, `app.common.notificationsAriaLabel`로 공용화(위젯/엔티티 네임스페이스와 달리 라우트 계층은 동일 문구가 자주 반복돼 공용 키가 더 자연스러움).
-- `(parent)/home/page.tsx`의 `formatWeekRangeLabel`("5월 22일" 조합)은 widgets 단계의 `shared/lib/date.ts` 제외 사례와 동일하게 의도적으로 번역 대상에서 제외(로케일별 날짜 포맷팅 로직 별도 필요).
-- Notion 레이어 6 §6.9 마이그레이션 범위 표를 `app` 완료로 갱신, 상단 요약 문구도 "전체 레이어 완료"로 수정.
-- 검증: `pnpm --filter web lint/typecheck/test/build` 전부 통과(47 test files / 325 tests — app 레이어는 기존에도 spec 없음, 브라우저 육안 확인은 미수행).
+- `feat/i18n-app-layer`가 main에 병합 완료(i18n 마이그레이션 4단계 전체 완료 — shared/entities → features → widgets → app).
+- Notion 로드맵(레이어 8)이 2026-05-26 이후 갱신되지 않아 코드 대비 크게 낡아 있던 문제를 발견 — architect 에이전트로 레이어 3(도메인 모델)·레이어 8(로드맵)에 `SessionReport`(2026-06-26 머지된 AI 세션 리포트, Ollama 연동)를 뒤늦게 반영. Phase 1~4 상태를 "완료"로, Phase 4.5(계획 외 추가)를 신설.
+- Phase 3 잔여 중 **권한·org 스코프 전용 테스트 묶음**을 `test/api-org-scope-guards` 브랜치에서 작성:
+  - `invite-codes`·`report` 서비스는 스펙 파일이 아예 없었음(0 test) — 신규 작성(발급/조회/취소/redeem 전체 케이스, THERAPIST 전용 권한, 담당 치료사 무관 org 멤버십 기반 접근 등)
+  - `schedules` 서비스의 `update`/`cancel`/`confirm`에 "다른 기관 OWNER 멤버십으로는 접근할 수 없다" 케이스 보강(기존에는 `findOne`에만 있었음 — 세 메서드가 공유하는 `assertCanAccessSchedule` private 헬퍼가 회귀 없이 org-scope를 지키는지 엔드포인트별로 확인)
+  - `pnpm --filter api test:coverage` 기준 전체 커버리지 78.7%로 60% 목표 달성 확인
+  - Notion 레이어 8 §8.4(Phase 3)를 이 완료 상태로 갱신(e2e만 잔여로 표시)
+  - PR #39에 CodeRabbit이 남긴 리뷰 코멘트 4건(모두 "mock이 실제 쿼리 인자를 검증하지 않아 회귀를 못 잡을 수 있다" 계열) 전부 반영 — `updateMany`/`findFirst`/`findUnique` 호출 인자 assertion 추가, "다른 기관 OWNER" 케이스 3건은 org1 실제 멤버십 + org2 조건부 null을 반환하는 `mockImplementation`으로 교체
+- 세션 시작 시 `.claude/skills/git-ship/SKILL.md`에 커밋되지 않은 변경(같은 레이어 내 대규모 작업의 슬라이스 그룹 분리 원칙 추가)이 남아있던 것을 발견 — 이번 작업과 무관해 stash로 보존만 해두고 건드리지 않음(`git stash list`에서 확인 가능, 다음 세션에서 처리 필요).
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **i18n 마이그레이션 4단계 전체 완료** — 브라우저 육안 확인(다국어 전환 없이 `ko` 렌더가 기존과 동일한지)은 아직 미착수. Docker/브라우저 자동화 도구가 이 환경에 없어 코드 재검토로 갈음해왔음. 실제 두 번째 로케일 도입 여부는 별도 결정 필요.
-2. WCAG AA 수정분(PR #34, 이미 병합됨) 브라우저 육안 확인 — 아직 미착수(Docker/브라우저 도구 필요).
-3. **로드맵/도메인 문서 갱신 필요**: `SessionReport`(치료 세션 AI 요약, Ollama 연동) 백엔드 API가 2026-06-26에 이미 main에 머지됐는데 Notion 도메인 모델(레이어 3)·로드맵(레이어 8) 어디에도 반영 안 됨. 웹 UI 연동도 전무. architect 레벨 결정 필요.
-4. Phase 3 잔여: org 스코프 권한 전용 테스트 묶음, Playwright e2e 시나리오, API 테스트 커버리지 60% 목표 검증 — 전부 미착수.
+1. **Playwright e2e 시나리오 (Phase 3 마지막 잔여)** — 저장소에 Playwright 자체가 설치돼 있지 않음. 🅰️ 기관 셋업, 🅱️ 일정 공유 두 시나리오(레이어 5 §5.12) 구성 필요. 브라우저 자동화 도구가 없는 환경이면 설치·설정만이라도 우선 진행 검토.
+2. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경 처리** — `git stash list`에 보존된 커밋 분리 원칙 추가분(메모리 `feedback_commit_splitting`과 동일 내용)을 별도 chore 커밋으로 정리할지 확인 필요.
+3. **Phase 4.5 SessionReport 웹 UI 연동** — 백엔드(`POST/GET /schedules/:scheduleId/report*`, Ollama 연동)는 완료됐으나 `features`/`widgets`에 대응 슬라이스가 전무. 치료사 작성 화면·학부모 열람 화면·알림 연동 여부 범위 결정부터 필요(architect 판단 권장, Notion 8.7 Decision Log 리스크 항목 참고).
+4. i18n 브라우저 육안 확인, WCAG AA 육안 확인 — Docker/브라우저 자동화 도구가 이 환경에 없어 계속 미착수. 실제 두 번째 로케일 도입 여부도 별도 결정 필요.
 5. Phase 5(Ops) 전체 미착수: `ci.yml` 하나만 존재, Sentry/OpenTelemetry·배포 설정(Vercel/컨테이너)·레이트리밋·joinCode 회전 감사 로그 없음.
 
 ## 참고
 
 - 모듈별 상세 구현 이력·알려진 이슈: Claude 메모리(`project_phase2_modules` 등)
-- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. **주의**: Notion 로드맵(레이어 8)이 2026-05-26 기준으로 멈춰 있어 6월 이후 작업(RecurringRule 생성, SessionReport, i18n 등)을 반영하지 못함 — 다음 작업 파악은 이 문서와 Notion 레이어 6(Web 설계, 최신 유지됨)을 먼저 참고할 것.
+- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. Notion 로드맵(레이어 8)은 이번 세션에 최신 상태로 갱신됨 — 다음 세션은 이 문서와 함께 로드맵을 바로 참고해도 됨.
