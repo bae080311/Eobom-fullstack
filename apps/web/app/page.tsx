@@ -1,31 +1,34 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [t, tLanding] = await Promise.all([
+    getTranslations('app.common'),
+    getTranslations('app.landing'),
+  ]);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 bg-white">
       <div className="max-w-md w-full text-center space-y-8">
         <div>
-          <h1 className="text-4xl font-bold text-brand">이어봄</h1>
-          <p className="mt-3 text-gray-600 text-lg">치료 일정을 함께 확인하세요</p>
+          <h1 className="text-4xl font-bold text-brand">{t('siteName')}</h1>
+          <p className="mt-3 text-gray-600 text-lg">{tLanding('tagline')}</p>
         </div>
 
-        <p className="text-gray-600 text-sm leading-relaxed">
-          언어치료사와 학부모가 치료 일정을 실시간으로 공유하고, 일정 변경을 빠르게 확인할 수 있는
-          서비스입니다.
-        </p>
+        <p className="text-gray-600 text-sm leading-relaxed">{tLanding('description')}</p>
 
         <div className="space-y-3">
           <Link
             href="/login"
             className="block w-full py-3 px-6 bg-brand text-white rounded-xl font-medium hover:bg-brand-hover transition-colors"
           >
-            로그인
+            {tLanding('loginButton')}
           </Link>
           <Link
             href="/register"
             className="block w-full py-3 px-6 border border-brand text-brand rounded-xl font-medium hover:bg-brand-softer transition-colors"
           >
-            회원가입
+            {tLanding('signupButton')}
           </Link>
         </div>
       </div>

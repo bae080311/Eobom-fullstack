@@ -30,7 +30,10 @@ import {
   toKSTDateString,
 } from '@/shared/lib/date';
 
-export const metadata: Metadata = { title: '홈' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.parent');
+  return { title: t('homeTitle') };
+}
 
 const HOME_RANGE_DAYS = 30;
 const NOTIFICATION_LIMIT = 3;
@@ -60,6 +63,8 @@ export default async function ParentHomePage() {
 
   const [
     [schedules, children, userProfile, notifications],
+    tApp,
+    tAppCommon,
     tSchedule,
     tNotification,
     tHero,
@@ -80,6 +85,8 @@ export default async function ParentHomePage() {
             NotificationResponseDto[],
           ]
         >([[], [], null, []]),
+    getTranslations('app.parent'),
+    getTranslations('app.common'),
     getTranslations('entities.schedule'),
     getTranslations('entities.notification'),
     getTranslations('widgets.nextSessionHero'),
@@ -114,10 +121,14 @@ export default async function ParentHomePage() {
   return (
     <PageShell>
       <PageTopBar
-        title={`안녕하세요, ${userProfile?.name ?? ''}님`}
+        title={tApp('greeting', { name: userProfile?.name ?? '' })}
         subtitle={todayLabel}
         action={
-          <IconLink label="알림" hasDot={hasUnreadNotifications} href="/notifications">
+          <IconLink
+            label={tAppCommon('notificationsAriaLabel')}
+            hasDot={hasUnreadNotifications}
+            href="/notifications"
+          >
             <IconBell size={18} />
           </IconLink>
         }
@@ -145,16 +156,16 @@ export default async function ParentHomePage() {
 
       <section className="px-5 mt-7">
         <SectionHeader
-          title="다음 일정"
+          title={tApp('upcomingSectionTitle')}
           right={
             <Link href="/schedule" className="text-body2 text-gray-600 font-semibold no-underline">
-              전체 보기
+              {tApp('viewAllUpcoming')}
             </Link>
           }
         />
         <div className="flex flex-col gap-2">
           {upcoming.length === 0 ? (
-            <p className="text-body text-gray-600 text-center py-8">예정된 일정이 없습니다</p>
+            <p className="text-body text-gray-600 text-center py-8">{tApp('noUpcoming')}</p>
           ) : (
             upcoming.map((s) => (
               <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />
@@ -165,19 +176,19 @@ export default async function ParentHomePage() {
 
       <section className="px-5 mt-7">
         <SectionHeader
-          title="최근 알림"
+          title={tApp('recentNotificationsTitle')}
           right={
             <Link
               href="/notifications"
               className="text-body2 text-gray-600 font-semibold no-underline"
             >
-              전체
+              {tApp('viewAllNotifications')}
             </Link>
           }
         />
         <div className="flex flex-col gap-2">
           {notificationItems.length === 0 ? (
-            <p className="text-body text-gray-600 text-center py-8">새로운 알림이 없어요</p>
+            <p className="text-body text-gray-600 text-center py-8">{tApp('noNotifications')}</p>
           ) : (
             notificationItems.map((n) => <NotificationCard key={n.id} notification={n} />)
           )}

@@ -10,7 +10,10 @@ import { ChildDetailView } from '@/widgets/child-detail';
 import { TherapistChildActions } from '@/features/manage-child';
 import { IssueInviteCodeButton } from '@/features/issue-invite-code';
 
-export const metadata: Metadata = { title: '아동 상세' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.therapist');
+  return { title: t('childDetailTitle') };
+}
 
 interface Props {
   params: Promise<{ childId: string }>;

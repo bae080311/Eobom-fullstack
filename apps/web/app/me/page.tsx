@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { OrgMemberRole } from '@eobom/shared';
 import { PageShell } from '@/shared/ui';
 import { fetchUserMe } from '@/entities/user';
@@ -9,7 +10,10 @@ import { MyInfoView } from '@/widgets/my-info';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
 
-export const metadata: Metadata = { title: '내 정보' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.common');
+  return { title: t('myInfoTitle') };
+}
 
 export default async function MyInfoPage() {
   const cookieStore = await cookies();

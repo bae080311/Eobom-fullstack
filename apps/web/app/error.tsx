@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   error: Error & { digest?: string };
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export default function RootError({ error, reset }: Props) {
+  const t = useTranslations('app.common');
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -16,16 +19,14 @@ export default function RootError({ error, reset }: Props) {
     <div className="bg-gray-50 min-h-screen font-sans antialiased flex flex-col items-center justify-center px-8 text-center">
       <div className="text-5xl">⚠️</div>
       <h1 className="text-title font-bold tracking-tighter text-gray-900 mt-5">
-        문제가 발생했어요
+        {t('errorTitle')}
       </h1>
-      <p className="text-body text-gray-600 mt-2">
-        잠시 후 다시 시도해 주세요. 계속 발생하면 새로고침해 주세요.
-      </p>
+      <p className="text-body text-gray-600 mt-2">{t('errorDescription')}</p>
       <button
         onClick={reset}
         className="mt-8 inline-flex items-center justify-center rounded-xl bg-brand px-6 py-3 text-body font-semibold text-white"
       >
-        다시 시도
+        {t('retryButton')}
       </button>
     </div>
   );

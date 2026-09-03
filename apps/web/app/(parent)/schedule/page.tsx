@@ -10,7 +10,10 @@ import { fetchNotifications } from '@/entities/notification';
 import { PageShell, PageTopBar, SectionHeader, IconButton, IconBell } from '@/shared/ui';
 import { getKSTStartOfDay, formatDateLabel } from '@/shared/lib/date';
 
-export const metadata: Metadata = { title: '일정' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.parent');
+  return { title: t('scheduleTitle') };
+}
 
 const SCHEDULE_RANGE_DAYS = 180;
 
@@ -23,7 +26,7 @@ export default async function ParentSchedulePage() {
   const from = new Date(todayStart.getTime() - SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000);
   const to = new Date(todayStart.getTime() + SCHEDULE_RANGE_DAYS * 24 * 60 * 60 * 1000 - 1);
 
-  const [[schedules, children, notifications], tSchedule] = await Promise.all([
+  const [[schedules, children, notifications], tApp, tAppCommon, tSchedule] = await Promise.all([
     token
       ? Promise.all([
           fetchSchedules(token, from, to),
@@ -31,6 +34,8 @@ export default async function ParentSchedulePage() {
           fetchNotifications(token),
         ])
       : Promise.resolve([[], [], []]),
+    getTranslations('app.parent'),
+    getTranslations('app.common'),
     getTranslations('entities.schedule'),
   ]);
 
@@ -48,11 +53,18 @@ export default async function ParentSchedulePage() {
   return (
     <PageShell>
       <PageTopBar
-        title="일정"
+        title={tApp('scheduleTitle')}
         subtitle={todayLabel}
         action={
-          <Link href="/notifications" aria-label="알림" className="relative inline-flex">
-            <IconButton label="알림" hasDot={hasUnreadNotifications}>
+          <Link
+            href="/notifications"
+            aria-label={tAppCommon('notificationsAriaLabel')}
+            className="relative inline-flex"
+          >
+            <IconButton
+              label={tAppCommon('notificationsAriaLabel')}
+              hasDot={hasUnreadNotifications}
+            >
               <IconBell size={18} />
             </IconButton>
           </Link>
@@ -60,18 +72,22 @@ export default async function ParentSchedulePage() {
       />
 
       <ChildChipList
-        items={[{ id: 'all', name: '전체', age: '' }, ...childChips]}
+        items={[{ id: 'all', name: tApp('allChildrenChip'), age: '' }, ...childChips]}
         defaultSelectedId="all"
       />
 
       <section className="px-5 mt-2">
         <SectionHeader
-          title="예정된 일정"
-          right={<span className="text-body2 text-gray-600 font-medium">{upcoming.length}건</span>}
+          title={tApp('upcomingSection')}
+          right={
+            <span className="text-body2 text-gray-600 font-medium">
+              {tApp('countUnit', { count: upcoming.length })}
+            </span>
+          }
         />
         <div className="flex flex-col gap-2">
           {upcoming.length === 0 ? (
-            <p className="text-body text-gray-600 text-center py-8">예정된 일정이 없습니다</p>
+            <p className="text-body text-gray-600 text-center py-8">{tApp('noUpcoming')}</p>
           ) : (
             upcoming.map((s) => (
               <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />
@@ -82,12 +98,16 @@ export default async function ParentSchedulePage() {
 
       <section className="px-5 mt-7">
         <SectionHeader
-          title="지난 일정"
-          right={<span className="text-body2 text-gray-600 font-medium">{past.length}건</span>}
+          title={tApp('pastSection')}
+          right={
+            <span className="text-body2 text-gray-600 font-medium">
+              {tApp('countUnit', { count: past.length })}
+            </span>
+          }
         />
         <div className="flex flex-col gap-2 opacity-60">
           {past.length === 0 ? (
-            <p className="text-body text-gray-600 text-center py-8">지난 일정이 없습니다</p>
+            <p className="text-body text-gray-600 text-center py-8">{tApp('noPastSchedule')}</p>
           ) : (
             past.map((s) => <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />)
           )}

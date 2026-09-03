@@ -1,13 +1,19 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { PageShell, PageTopBar, Skeleton, IconLink, IconArrowLeft } from '@/shared/ui';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
 
 export default function NotificationsLoading() {
+  const tApp = useTranslations('app.parent');
+  const tAppCommon = useTranslations('app.common');
+
   return (
     <PageShell>
       <PageTopBar
-        title="알림"
+        title={tApp('notificationsTitle')}
         back={
-          <IconLink label="홈으로" href="/home">
+          <IconLink label={tAppCommon('back.toHome')} href="/home">
             <IconArrowLeft size={18} />
           </IconLink>
         }

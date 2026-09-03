@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -12,22 +12,25 @@ const pretendard = localFont({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: '이어봄',
-    template: '%s | 이어봄',
-  },
-  description: '치료사와 학부모가 치료 일정을 함께 관리하는 서비스',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: '이어봄',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.common');
+  return {
+    title: {
+      default: t('siteName'),
+      template: t('titleTemplate'),
+    },
+    description: t('siteDescription'),
+    manifest: '/manifest.json',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: t('siteName'),
+    },
+    formatDetection: {
+      telephone: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: '#3D7A6B',

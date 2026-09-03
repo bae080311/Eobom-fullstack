@@ -1,14 +1,23 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { ParentTabBar } from '@/widgets/parent-tab-bar';
 import { NotificationList, fetchNotifications } from '@/entities/notification';
 import { PageShell, PageTopBar, IconLink, IconArrowLeft } from '@/shared/ui';
 
-export const metadata: Metadata = { title: '알림' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app.parent');
+  return { title: t('notificationsTitle') };
+}
 
 export default async function ParentNotificationsPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('eobom_access')?.value ?? '';
+
+  const [tApp, tAppCommon] = await Promise.all([
+    getTranslations('app.parent'),
+    getTranslations('app.common'),
+  ]);
 
   const notifications = token ? await fetchNotifications(token) : [];
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -16,10 +25,10 @@ export default async function ParentNotificationsPage() {
   return (
     <PageShell>
       <PageTopBar
-        title="알림"
-        subtitle={unreadCount > 0 ? `읽지 않은 알림 ${unreadCount}건` : undefined}
+        title={tApp('notificationsTitle')}
+        subtitle={unreadCount > 0 ? tApp('unreadCount', { count: unreadCount }) : undefined}
         back={
-          <IconLink label="홈으로" href="/home">
+          <IconLink label={tAppCommon('back.toHome')} href="/home">
             <IconArrowLeft size={18} />
           </IconLink>
         }
