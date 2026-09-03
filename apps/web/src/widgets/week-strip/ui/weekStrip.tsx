@@ -26,13 +26,15 @@ function WeekDayCell({ day }: { day: WeekDay }) {
 interface Props {
   days: WeekDay[];
   rangeLabel?: string;
+  // 페이지(Server Component)에서 getTranslations('widgets.weekStrip')로 미리 구한 제목.
+  title: string;
 }
 
-export function WeekStrip({ days, rangeLabel }: Props) {
+export function WeekStrip({ days, rangeLabel, title }: Props) {
   return (
     <section className="px-5 mt-7">
       <SectionHeader
-        title="이번 주"
+        title={title}
         right={
           rangeLabel && <span className="text-body2 text-gray-600 font-medium">{rangeLabel}</span>
         }
