@@ -64,7 +64,7 @@ const errorCls = 'mt-1 text-xs text-danger-strong';
 
 export function CreateScheduleForm({ open, childList, childrenLoading, onClose }: Props) {
   const t = useTranslations('features.createSchedule');
-  const dayLabels = t.raw('dayLabels') as string[];
+  const dayLabels = useMemo(() => t.raw('dayLabels') as string[], [t]);
   const [mode, setMode] = useState<'single' | 'recurring'>('single');
 
   const singleFormSchema = useMemo(() => createSingleFormSchema(t), [t]);
