@@ -417,5 +417,77 @@
     "weekStrip": {
       "title": "이번 주"
     }
+  },
+  "app": {
+    "common": {
+      "siteName": "이어봄",
+      "titleTemplate": "%s | 이어봄",
+      "siteDescription": "치료사와 학부모가 치료 일정을 함께 관리하는 서비스",
+      "myInfoTitle": "내 정보",
+      "notificationsAriaLabel": "알림",
+      "genericServerError": "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      "errorTitle": "문제가 발생했어요",
+      "errorDescription": "잠시 후 다시 시도해 주세요. 계속 발생하면 새로고침해 주세요.",
+      "retryButton": "다시 시도",
+      "notFoundTitle": "찾을 수 없는 페이지예요",
+      "notFoundDescription": "주소가 바뀌었거나 삭제된 일정일 수 있어요.",
+      "goHomeButton": "홈으로 가기",
+      "back": {
+        "toMe": "내 정보로",
+        "toHome": "홈으로",
+        "toOrganization": "기관 관리로",
+        "toChildren": "담당 아동으로"
+      }
+    },
+    "landing": {
+      "tagline": "치료 일정을 함께 확인하세요",
+      "description": "언어치료사와 학부모가 치료 일정을 실시간으로 공유하고, 일정 변경을 빠르게 확인할 수 있는 서비스입니다.",
+      "loginButton": "로그인",
+      "signupButton": "회원가입"
+    },
+    "auth": {
+      "loginTitle": "로그인",
+      "loginSubtitle": "이어봄에 로그인하세요",
+      "registerTitle": "회원가입",
+      "registerSubtitle": "치료사 또는 학부모로 가입하세요"
+    },
+    "owner": {
+      "organizationTitle": "기관 관리",
+      "calendarLinkLabel": "기관 캘린더",
+      "calendarTitle": "기관 캘린더"
+    },
+    "parent": {
+      "homeTitle": "홈",
+      "greeting": "안녕하세요, {name}님",
+      "upcomingSectionTitle": "다음 일정",
+      "viewAllUpcoming": "전체 보기",
+      "recentNotificationsTitle": "최근 알림",
+      "viewAllNotifications": "전체",
+      "noUpcoming": "예정된 일정이 없습니다",
+      "noNotifications": "새로운 알림이 없어요",
+      "notificationsTitle": "알림",
+      "unreadCount": "읽지 않은 알림 {count}건",
+      "redeemTitle": "초대코드 입력",
+      "redeemSubtitle": "치료사에게 받은 코드를 입력해주세요",
+      "scheduleTitle": "일정",
+      "allChildrenChip": "전체",
+      "upcomingSection": "예정된 일정",
+      "pastSection": "지난 일정",
+      "countUnit": "{count}건",
+      "noPastSchedule": "지난 일정이 없습니다",
+      "scheduleDetailTitle": "일정 상세"
+    },
+    "therapist": {
+      "childrenTitle": "담당 아동",
+      "childrenCount": "{count}명",
+      "inviteCodesLinkLabel": "발급 코드",
+      "loadingLabel": "불러오는 중…",
+      "childDetailTitle": "아동 상세",
+      "dashboardTitle": "대시보드",
+      "inviteCodesTitle": "발급 코드",
+      "inviteCodesSubtitle": "아동별 학부모 초대코드",
+      "scheduleTitle": "일정",
+      "scheduleDetailTitle": "일정 상세"
+    }
   }
 }
