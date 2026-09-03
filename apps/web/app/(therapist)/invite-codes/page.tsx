@@ -10,11 +10,12 @@ export const metadata: Metadata = { title: '발급 코드' };
 
 export default async function InviteCodesPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [[children, codes], t] = await Promise.all([
+  const [[children, codes], t, tWidget] = await Promise.all([
     token
       ? Promise.all([fetchChildren(token), fetchInviteCodes(token)])
       : Promise.resolve([[], []]),
     getTranslations('entities.inviteCode'),
+    getTranslations('widgets.inviteCodeList'),
   ]);
 
   return (
@@ -28,7 +29,7 @@ export default async function InviteCodesPage() {
           </IconLink>
         }
       />
-      <InviteCodeListView items={children} codes={codes} t={t} />
+      <InviteCodeListView items={children} codes={codes} t={t} tWidget={tWidget} />
     </PageShell>
   );
 }

@@ -58,26 +58,33 @@ export default async function ParentHomePage() {
   const rangeTo = new Date(todayStart.getTime() + HOME_RANGE_DAYS * 24 * 60 * 60 * 1000 - 1);
   const weekStart = getKSTWeekStart(now);
 
-  const [[schedules, children, userProfile, notifications], tSchedule, tNotification] =
-    await Promise.all([
-      token
-        ? Promise.all([
-            fetchSchedules(token, rangeFrom, rangeTo),
-            fetchChildren(token),
-            fetchUserMe(token),
-            fetchNotifications(token),
-          ])
-        : Promise.resolve<
-            [
-              ScheduleResponseDto[],
-              ChildResponseDto[],
-              UserWithProfile | null,
-              NotificationResponseDto[],
-            ]
-          >([[], [], null, []]),
-      getTranslations('entities.schedule'),
-      getTranslations('entities.notification'),
-    ]);
+  const [
+    [schedules, children, userProfile, notifications],
+    tSchedule,
+    tNotification,
+    tHero,
+    tWeekStrip,
+  ] = await Promise.all([
+    token
+      ? Promise.all([
+          fetchSchedules(token, rangeFrom, rangeTo),
+          fetchChildren(token),
+          fetchUserMe(token),
+          fetchNotifications(token),
+        ])
+      : Promise.resolve<
+          [
+            ScheduleResponseDto[],
+            ChildResponseDto[],
+            UserWithProfile | null,
+            NotificationResponseDto[],
+          ]
+        >([[], [], null, []]),
+    getTranslations('entities.schedule'),
+    getTranslations('entities.notification'),
+    getTranslations('widgets.nextSessionHero'),
+    getTranslations('widgets.weekStrip'),
+  ]);
 
   const activeSchedules = schedules
     .filter((s) => s.status !== ScheduleStatus.CANCELED)
@@ -118,9 +125,23 @@ export default async function ParentHomePage() {
 
       <ChildChipList items={childChips} defaultSelectedId={childChips[0]?.id} />
 
-      {nextSession && <NextSessionHero session={nextSession} />}
+      {nextSession && (
+        <NextSessionHero
+          session={nextSession}
+          sessionLabel={tHero('sessionLabel', {
+            name: nextSession.childName,
+            type: nextSession.type,
+          })}
+          acknowledgeLabel={tHero('acknowledgeButton')}
+          changeRequestLabel={tHero('changeRequestButton')}
+        />
+      )}
 
-      <WeekStrip days={weekDays} rangeLabel={formatWeekRangeLabel(weekStart)} />
+      <WeekStrip
+        days={weekDays}
+        rangeLabel={formatWeekRangeLabel(weekStart)}
+        title={tWeekStrip('title')}
+      />
 
       <section className="px-5 mt-7">
         <SectionHeader

@@ -10,9 +10,10 @@ export const metadata: Metadata = { title: '기관 관리' };
 
 export default async function OrganizationPage() {
   const token = (await cookies()).get('eobom_access')?.value ?? '';
-  const [organization, t] = await Promise.all([
+  const [organization, t, tWidget] = await Promise.all([
     token ? fetchMyOrganization(token) : Promise.resolve(null),
     getTranslations('entities.organization'),
+    getTranslations('widgets.organizationDashboard'),
   ]);
   const members =
     organization && token ? await fetchOrganizationMembers(token, organization.id) : [];
@@ -35,7 +36,12 @@ export default async function OrganizationPage() {
           </IconLink>
         }
       />
-      <OrganizationDashboard organization={organization} members={members} t={t} />
+      <OrganizationDashboard
+        organization={organization}
+        members={members}
+        t={t}
+        tWidget={tWidget}
+      />
     </PageShell>
   );
 }

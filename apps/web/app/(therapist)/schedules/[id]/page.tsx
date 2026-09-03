@@ -17,20 +17,22 @@ export default async function TherapistScheduleDetailPage({ params }: Props) {
   const { id } = await params;
   const token = (await cookies()).get('eobom_access')?.value ?? '';
 
-  const tPromise = getTranslations('entities.schedule.status');
+  const tStatusPromise = getTranslations('entities.schedule.status');
+  const tWidgetPromise = getTranslations('widgets.scheduleDetail');
   let schedule: ScheduleDetailResponseDto;
   try {
     schedule = await fetchScheduleDetail(token, id);
   } catch {
     notFound();
   }
-  const t = await tPromise;
+  const [tStatus, tWidget] = await Promise.all([tStatusPromise, tWidgetPromise]);
 
   return (
     <ScheduleDetailView
       schedule={schedule}
       backHref="/schedules"
-      statusLabel={t(schedule.status)}
+      statusLabel={tStatus(schedule.status)}
+      t={tWidget}
       footer={
         <TherapistScheduleActions
           scheduleId={schedule.id}

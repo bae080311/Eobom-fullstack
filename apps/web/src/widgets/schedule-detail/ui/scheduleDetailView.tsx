@@ -11,6 +11,7 @@ import {
   IconUser,
 } from '@/shared/ui';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
+import type { Translate } from '@/shared/lib/i18n';
 
 interface Props {
   schedule: ScheduleDetailResponseDto;
@@ -18,22 +19,24 @@ interface Props {
   footer: ReactNode;
   // 페이지(Server Component)에서 getTranslations()로 미리 구한 상태 라벨을 prop으로 받는다.
   statusLabel: string;
+  // 페이지(Server Component)에서 getTranslations('widgets.scheduleDetail')로 미리 구한 번역기.
+  t: Translate;
 }
 
-export function ScheduleDetailView({ schedule, backHref, footer, statusLabel }: Props) {
+export function ScheduleDetailView({ schedule, backHref, footer, statusLabel, t }: Props) {
   const dateLabel = formatDateLabel(schedule.startAt);
   const timeRange = `${formatTime(schedule.startAt)} ~ ${formatTime(schedule.endAt)}`;
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans antialiased pb-28">
       <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-gray-200 flex items-center justify-between px-5 py-3 z-10">
-        <Link href={backHref} className="inline-flex" aria-label="뒤로">
-          <IconButton label="뒤로">
+        <Link href={backHref} className="inline-flex" aria-label={t('backAria')}>
+          <IconButton label={t('backAria')}>
             <IconArrowLeft size={18} />
           </IconButton>
         </Link>
-        <span className="text-body font-bold text-gray-900">치료 일정 상세</span>
-        <IconButton label="더보기">
+        <span className="text-body font-bold text-gray-900">{t('pageTitle')}</span>
+        <IconButton label={t('moreAria')}>
           <IconMoreHorizontal size={18} />
         </IconButton>
       </div>
@@ -56,23 +59,29 @@ export function ScheduleDetailView({ schedule, backHref, footer, statusLabel }: 
       </section>
 
       <section className="px-5 mt-7">
-        <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">치료 정보</h2>
+        <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">{t('infoSectionTitle')}</h2>
         <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4">
           <DetailRow
             icon={<IconUser size={16} />}
-            label="담당 치료사"
+            label={t('primaryTherapistLabel')}
             value={schedule.therapistName}
           />
           <hr className="border-0 border-t border-gray-100 m-0" />
-          <DetailRow icon={<IconClock size={16} />} label="치료 시간" value={timeRange} />
+          <DetailRow icon={<IconClock size={16} />} label={t('durationLabel')} value={timeRange} />
           <hr className="border-0 border-t border-gray-100 m-0" />
-          <DetailRow icon={<IconFileText size={16} />} label="치료 종류" value={schedule.title} />
+          <DetailRow
+            icon={<IconFileText size={16} />}
+            label={t('typeLabel')}
+            value={schedule.title}
+          />
         </div>
       </section>
 
       {schedule.notes && (
         <section className="px-5 mt-7">
-          <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">메모</h2>
+          <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">
+            {t('memoSectionTitle')}
+          </h2>
           <div className="bg-brand-softer border border-brand-soft rounded-lg p-5 text-body leading-relaxed text-gray-700">
             {schedule.notes}
           </div>
