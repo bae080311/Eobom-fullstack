@@ -1,21 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useUpdateChild } from '@/entities/child';
 import { FormModal } from '@/shared/ui';
 import { ApiError } from '@/lib/api';
+import type { Translate } from '@/shared/lib/i18n';
 
-const formSchema = z.object({
-  name: z.string().min(1, '이름을 입력해주세요'),
-  birthDate: z.string().optional(),
-  memo: z.string().optional(),
-});
+function createFormSchema(t: Translate) {
+  return z.object({
+    name: z.string().min(1, t('nameRequired')),
+    birthDate: z.string().optional(),
+    memo: z.string().optional(),
+  });
+}
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface Props {
   open: boolean;
@@ -35,6 +39,8 @@ function defaultsFrom(name: string, birthDate: string | null, memo: string | nul
 }
 
 export function EditChildForm({ open, childId, name, birthDate, memo, onClose }: Props) {
+  const t = useTranslations('features.manageChild.editForm');
+  const formSchema = useMemo(() => createFormSchema(t), [t]);
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: defaultsFrom(name, birthDate, memo),
@@ -62,11 +68,11 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
       },
       {
         onSuccess: () => {
-          toast.success('아동 정보가 수정되었습니다');
+          toast.success(t('updateSuccess'));
           onClose();
         },
         onError: (err) => {
-          toast.error(err instanceof ApiError ? err.message : '아동 정보 수정에 실패했습니다');
+          toast.error(err instanceof ApiError ? err.message : t('updateError'));
         },
       },
     );
@@ -75,25 +81,25 @@ export function EditChildForm({ open, childId, name, birthDate, memo, onClose }:
   return (
     <FormModal
       open={open}
-      title="아동 정보 수정"
+      title={t('title')}
       isPending={isPending}
       onSubmit={form.handleSubmit(onSubmit)}
       onClose={onClose}
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-600 font-semibold">이름</span>
+        <span className="text-label text-gray-600 font-semibold">{t('nameLabel')}</span>
         <input {...form.register('name')} className={inputCls} />
         {errors.name && <span className={errorCls}>{errors.name.message}</span>}
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-600 font-semibold">생년월일 (선택)</span>
+        <span className="text-label text-gray-600 font-semibold">{t('birthDateLabel')}</span>
         <input type="date" {...form.register('birthDate')} className={inputCls} />
         {errors.birthDate && <span className={errorCls}>{errors.birthDate.message}</span>}
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
+        <span className="text-label text-gray-600 font-semibold">{t('memoLabel')}</span>
         <textarea {...form.register('memo')} rows={2} className={`${inputCls} resize-none`} />
       </label>
     </FormModal>

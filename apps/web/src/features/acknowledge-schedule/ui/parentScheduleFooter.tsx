@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ConfirmDialog, IconCheck, IconRefresh } from '@/shared/ui';
 import { formatDateLabel, formatTime } from '@/shared/lib/date';
 import { useAcknowledgeSchedule } from '../model/useAcknowledgeSchedule';
@@ -16,6 +17,7 @@ export function ParentScheduleFooter({
   initialAcknowledged,
   initialAcknowledgedAt,
 }: Props) {
+  const t = useTranslations('features.acknowledgeSchedule');
   const [dialogOpen, setDialogOpen] = useState(false);
   const { mutate, isPending } = useAcknowledgeSchedule();
 
@@ -30,7 +32,7 @@ export function ParentScheduleFooter({
         disabled
         className="flex-1 bg-gray-100 text-gray-400 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 font-sans disabled:opacity-60"
       >
-        <IconRefresh size={16} /> 변경 요청
+        <IconRefresh size={16} /> {t('changeRequest')}
       </button>
 
       {initialAcknowledged ? (
@@ -39,7 +41,7 @@ export function ParentScheduleFooter({
           disabled
           className="flex-[2] bg-gray-100 text-gray-500 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 font-sans"
         >
-          <IconCheck size={16} /> 확인 완료
+          <IconCheck size={16} /> {t('acknowledged')}
           {initialAcknowledgedAt && (
             <span className="font-medium text-gray-400">
               · {formatDateLabel(initialAcknowledgedAt)} {formatTime(initialAcknowledgedAt)}
@@ -52,15 +54,14 @@ export function ParentScheduleFooter({
           onClick={() => setDialogOpen(true)}
           className="flex-[2] bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans"
         >
-          <IconCheck size={16} /> 일정 확인
+          <IconCheck size={16} /> {t('acknowledgeButton')}
         </button>
       )}
 
       <ConfirmDialog
         open={dialogOpen}
-        title="일정을 확인하시겠어요?"
-        description="확인하면 담당 치료사에게 일정을 확인했다는 것이 표시됩니다."
-        confirmLabel="확인"
+        title={t('confirmTitle')}
+        description={t('confirmDescription')}
         loading={isPending}
         onConfirm={handleConfirm}
         onCancel={() => setDialogOpen(false)}

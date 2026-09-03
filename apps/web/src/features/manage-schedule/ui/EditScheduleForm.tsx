@@ -1,29 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import type { UpdateScheduleDto } from '@eobom/shared';
 import { useUpdateSchedule } from '@/entities/schedule';
 import { toKSTDateString, formatTime } from '@/shared/lib/date';
 import { ApiError } from '@/lib/api';
+import type { Translate } from '@/shared/lib/i18n';
 
-const formSchema = z
-  .object({
-    title: z.string().min(1, '치료 유형을 입력해주세요'),
-    date: z.string().min(1, '날짜를 선택해주세요'),
-    startTime: z.string().min(1, '시작 시간을 선택해주세요'),
-    endTime: z.string().min(1, '종료 시간을 선택해주세요'),
-    notes: z.string().optional(),
-  })
-  .refine((d) => d.startTime < d.endTime, {
-    message: '종료 시간은 시작 시간보다 늦어야 합니다',
-    path: ['endTime'],
-  });
+function createFormSchema(t: Translate) {
+  return z
+    .object({
+      title: z.string().min(1, t('titleRequired')),
+      date: z.string().min(1, t('dateRequired')),
+      startTime: z.string().min(1, t('startTimeRequired')),
+      endTime: z.string().min(1, t('endTimeRequired')),
+      notes: z.string().optional(),
+    })
+    .refine((d) => d.startTime < d.endTime, {
+      message: t('endTimeAfterStart'),
+      path: ['endTime'],
+    });
+}
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 interface Props {
   open: boolean;
@@ -48,6 +52,8 @@ export function EditScheduleForm({
   notes,
   onClose,
 }: Props) {
+  const t = useTranslations('features.manageSchedule.editForm');
+  const formSchema = useMemo(() => createFormSchema(t), [t]);
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,12 +101,12 @@ export function EditScheduleForm({
       { id: scheduleId, dto },
       {
         onSuccess: () => {
-          toast.success('일정이 수정되었습니다');
+          toast.success(t('updateSuccess'));
           onClose();
         },
         onError: (err) => {
           console.error(err);
-          toast.error(err instanceof ApiError ? err.message : '일정 수정에 실패했습니다');
+          toast.error(err instanceof ApiError ? err.message : t('updateError'));
         },
       },
     );
@@ -118,35 +124,39 @@ export function EditScheduleForm({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">일정 수정</h2>
+        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{t('title')}</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-600 font-semibold">치료 유형</span>
-          <input {...form.register('title')} placeholder="예: 언어치료" className={inputCls} />
+          <span className="text-label text-gray-600 font-semibold">{t('titleLabel')}</span>
+          <input
+            {...form.register('title')}
+            placeholder={t('titlePlaceholder')}
+            className={inputCls}
+          />
           {errors.title && <span className={errorCls}>{errors.title.message}</span>}
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-600 font-semibold">날짜</span>
+          <span className="text-label text-gray-600 font-semibold">{t('dateLabel')}</span>
           <input type="date" {...form.register('date')} className={inputCls} />
           {errors.date && <span className={errorCls}>{errors.date.message}</span>}
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-label text-gray-600 font-semibold">시작 시간</span>
+            <span className="text-label text-gray-600 font-semibold">{t('startTimeLabel')}</span>
             <input type="time" {...form.register('startTime')} className={inputCls} />
             {errors.startTime && <span className={errorCls}>{errors.startTime.message}</span>}
           </label>
           <label className="flex flex-1 flex-col gap-1.5">
-            <span className="text-label text-gray-600 font-semibold">종료 시간</span>
+            <span className="text-label text-gray-600 font-semibold">{t('endTimeLabel')}</span>
             <input type="time" {...form.register('endTime')} className={inputCls} />
             {errors.endTime && <span className={errorCls}>{errors.endTime.message}</span>}
           </label>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-600 font-semibold">메모 (선택)</span>
+          <span className="text-label text-gray-600 font-semibold">{t('memoLabel')}</span>
           <textarea {...form.register('notes')} rows={2} className={`${inputCls} resize-none`} />
         </label>
 
@@ -157,14 +167,14 @@ export function EditScheduleForm({
             disabled={isPending}
             className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            {isPending ? '수정 중...' : '저장'}
+            {isPending ? t('saving') : t('save')}
           </button>
         </div>
       </form>

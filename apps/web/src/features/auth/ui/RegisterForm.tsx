@@ -1,40 +1,49 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { signupSchema, type SignupDto, UserRole } from '@eobom/shared';
 import { useSendVerificationCode, useVerifyCode, useSignup } from '../model/useAuth';
 import { ApiError } from '@/lib/api';
+import type { Translate } from '@/shared/lib/i18n';
 
-const step2Schema = z.object({
-  email: z.email('올바른 이메일을 입력해주세요'),
-});
-type Step2Data = z.infer<typeof step2Schema>;
-
-const step3Schema = z
-  .object({
-    name: z.string().min(1, '이름을 입력해주세요'),
-    password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다'),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: '비밀번호가 일치하지 않습니다',
-    path: ['confirmPassword'],
+function createStep2Schema(t: Translate) {
+  return z.object({
+    email: z.email(t('invalidEmail')),
   });
-type Step3Data = z.infer<typeof step3Schema>;
+}
+type Step2Data = z.infer<ReturnType<typeof createStep2Schema>>;
 
-const step4Schema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('CREATE'), name: z.string().min(1, '기관 이름을 입력해주세요') }),
-  z.object({ mode: z.literal('JOIN'), joinCode: z.string().min(1, '참여 코드를 입력해주세요') }),
-]);
-type Step4Data = z.infer<typeof step4Schema>;
+function createStep3Schema(t: Translate) {
+  return z
+    .object({
+      name: z.string().min(1, t('nameRequired')),
+      password: z.string().min(8, t('passwordMinLength')),
+      confirmPassword: z.string(),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+      message: t('passwordMismatch'),
+      path: ['confirmPassword'],
+    });
+}
+type Step3Data = z.infer<ReturnType<typeof createStep3Schema>>;
+
+function createStep4Schema(t: Translate) {
+  return z.discriminatedUnion('mode', [
+    z.object({ mode: z.literal('CREATE'), name: z.string().min(1, t('orgNameRequired')) }),
+    z.object({ mode: z.literal('JOIN'), joinCode: z.string().min(1, t('joinCodeRequired')) }),
+  ]);
+}
+type Step4Data = z.infer<ReturnType<typeof createStep4Schema>>;
 
 const TOTAL_STEPS = 4;
 
 export function RegisterForm() {
+  const t = useTranslations('features.auth');
   const [step, setStep] = useState<1 | 2 | 2.5 | 3 | 4>(1);
   const [role, setRole] = useState<UserRole | null>(null);
   const [verifiedEmail, setVerifiedEmail] = useState('');
@@ -46,6 +55,10 @@ export function RegisterForm() {
   const { mutate: sendCode, isPending: isSending, error: sendError } = useSendVerificationCode();
   const { mutate: verifyCode, isPending: isVerifying, error: verifyError } = useVerifyCode();
   const { mutate: signup, isPending: isSigningUp, error: signupError } = useSignup();
+
+  const step2Schema = useMemo(() => createStep2Schema(t), [t]);
+  const step3Schema = useMemo(() => createStep3Schema(t), [t]);
+  const step4Schema = useMemo(() => createStep4Schema(t), [t]);
 
   const step2Form = useForm<Step2Data>({ resolver: zodResolver(step2Schema) });
   const step3Form = useForm<Step3Data>({ resolver: zodResolver(step3Schema) });
@@ -72,7 +85,7 @@ export function RegisterForm() {
         },
         onError(err) {
           if (err instanceof ApiError && err.status === 409) {
-            step2Form.setError('email', { message: '이미 사용 중인 이메일입니다.' });
+            step2Form.setError('email', { message: t('emailAlreadyInUse') });
           }
         },
       },
@@ -161,7 +174,7 @@ export function RegisterForm() {
     signup(parsed.data, {
       onError(err) {
         if (err instanceof ApiError && err.status === 409) {
-          step2Form.setError('email', { message: '이미 사용 중인 이메일입니다.' });
+          step2Form.setError('email', { message: t('emailAlreadyInUse') });
           setStep(2);
         }
       },
@@ -187,22 +200,22 @@ export function RegisterForm() {
       {/* Step 1: 역할 선택 */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">어떤 역할로 가입하시나요?</p>
+          <p className="text-sm text-gray-600 text-center">{t('roleQuestion')}</p>
           <button
             type="button"
             onClick={() => handleRoleSelect(UserRole.THERAPIST)}
             className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-[#3D7A6B] active:scale-[0.98] transition-all text-left"
           >
-            <p className="font-semibold text-gray-900">언어치료사</p>
-            <p className="text-sm text-gray-600 mt-0.5">기관을 만들거나 기존 기관에 참여합니다</p>
+            <p className="font-semibold text-gray-900">{t('roleTherapist')}</p>
+            <p className="text-sm text-gray-600 mt-0.5">{t('roleTherapistDesc')}</p>
           </button>
           <button
             type="button"
             onClick={() => handleRoleSelect(UserRole.PARENT)}
             className="w-full p-4 rounded-xl border-2 border-gray-200 hover:border-[#3D7A6B] active:scale-[0.98] transition-all text-left"
           >
-            <p className="font-semibold text-gray-900">학부모</p>
-            <p className="text-sm text-gray-600 mt-0.5">치료사의 초대 코드로 연결됩니다</p>
+            <p className="font-semibold text-gray-900">{t('roleParent')}</p>
+            <p className="text-sm text-gray-600 mt-0.5">{t('roleParentDesc')}</p>
           </button>
         </div>
       )}
@@ -211,7 +224,9 @@ export function RegisterForm() {
       {step === 2 && (
         <form onSubmit={step2Form.handleSubmit(handleStep2)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('emailLabel')}
+            </label>
             <input
               type="email"
               autoComplete="email"
@@ -239,14 +254,14 @@ export function RegisterForm() {
               onClick={() => setStep(1)}
               className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium"
             >
-              이전
+              {t('back')}
             </button>
             <button
               type="submit"
               disabled={isSending}
               className="flex-[2] py-3 bg-[#3D7A6B] text-white rounded-xl font-medium text-sm disabled:opacity-60 active:scale-[0.98] transition-transform"
             >
-              {isSending ? '발송 중...' : '인증 코드 받기'}
+              {isSending ? t('sendingCode') : t('sendCodeButton')}
             </button>
           </div>
         </form>
@@ -256,7 +271,7 @@ export function RegisterForm() {
       {step === 2.5 && (
         <div className="space-y-6">
           <div className="text-center space-y-1">
-            <p className="text-sm text-gray-600">아래 주소로 인증 코드를 발송했습니다</p>
+            <p className="text-sm text-gray-600">{t('otpSentTo')}</p>
             <p className="text-sm font-medium text-gray-900">{verifiedEmail}</p>
           </div>
 
@@ -284,7 +299,7 @@ export function RegisterForm() {
               {verifyError.message}
             </p>
           )}
-          {isVerifying && <p className="text-sm text-center text-gray-600">인증 중...</p>}
+          {isVerifying && <p className="text-sm text-center text-gray-600">{t('verifying')}</p>}
 
           <button
             type="button"
@@ -294,7 +309,7 @@ export function RegisterForm() {
             }}
             className="w-full text-sm text-gray-600 text-center"
           >
-            이메일 다시 입력하기
+            {t('reenterEmail')}
           </button>
         </div>
       )}
@@ -303,13 +318,13 @@ export function RegisterForm() {
       {step === 3 && (
         <form onSubmit={step3Form.handleSubmit(handleStep3)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('nameLabel')}</label>
             <input
               type="text"
               autoComplete="name"
               {...step3Form.register('name')}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
-              placeholder="홍길동"
+              placeholder={t('namePlaceholder')}
             />
             {step3Form.formState.errors.name && (
               <p className="mt-1 text-xs text-danger-strong">
@@ -319,13 +334,15 @@ export function RegisterForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('passwordLabel')}
+            </label>
             <input
               type="password"
               autoComplete="new-password"
               {...step3Form.register('password')}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
-              placeholder="8자 이상"
+              placeholder={t('passwordPlaceholderHint')}
             />
             {step3Form.formState.errors.password && (
               <p className="mt-1 text-xs text-danger-strong">
@@ -335,13 +352,15 @@ export function RegisterForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('confirmPasswordLabel')}
+            </label>
             <input
               type="password"
               autoComplete="new-password"
               {...step3Form.register('confirmPassword')}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
-              placeholder="비밀번호를 다시 입력하세요"
+              placeholder={t('confirmPasswordPlaceholder')}
             />
             {step3Form.formState.errors.confirmPassword && (
               <p className="mt-1 text-xs text-danger-strong">
@@ -362,14 +381,18 @@ export function RegisterForm() {
               onClick={() => setStep(2)}
               className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium"
             >
-              이전
+              {t('back')}
             </button>
             <button
               type="submit"
               disabled={isSigningUp}
               className="flex-[2] py-3 bg-[#3D7A6B] text-white rounded-xl font-medium text-sm disabled:opacity-60 active:scale-[0.98] transition-transform"
             >
-              {isSigningUp ? '처리 중...' : role === UserRole.THERAPIST ? '다음' : '가입 완료'}
+              {isSigningUp
+                ? t('processing')
+                : role === UserRole.THERAPIST
+                  ? t('next')
+                  : t('completeSignup')}
             </button>
           </div>
         </form>
@@ -378,7 +401,7 @@ export function RegisterForm() {
       {/* Step 4: 기관 설정 (THERAPIST만) */}
       {step === 4 && (
         <form onSubmit={step4Form.handleSubmit(handleStep4)} className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">기관을 설정해주세요</p>
+          <p className="text-sm text-gray-600 text-center">{t('setupOrgPrompt')}</p>
 
           <div className="flex gap-2">
             {(['CREATE', 'JOIN'] as const).map((mode) => (
@@ -399,19 +422,21 @@ export function RegisterForm() {
                     : 'border-gray-200 text-gray-600'
                 }`}
               >
-                {mode === 'CREATE' ? '새 기관 만들기' : '코드로 참여'}
+                {mode === 'CREATE' ? t('createOrgMode') : t('joinOrgMode')}
               </button>
             ))}
           </div>
 
           {orgMode === 'CREATE' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">기관 이름</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('orgNameLabel')}
+              </label>
               <input
                 type="text"
                 {...step4Form.register('name' as 'mode')}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
-                placeholder="예: 행복 언어치료센터"
+                placeholder={t('orgNamePlaceholder')}
               />
               {'name' in step4Form.formState.errors && (
                 <p className="mt-1 text-xs text-danger-strong">
@@ -423,7 +448,9 @@ export function RegisterForm() {
 
           {orgMode === 'JOIN' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">참여 코드</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('joinCodeLabel')}
+              </label>
               <input
                 type="text"
                 {...step4Form.register('joinCode' as 'mode')}
@@ -453,23 +480,23 @@ export function RegisterForm() {
               onClick={() => setStep(3)}
               className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium"
             >
-              이전
+              {t('back')}
             </button>
             <button
               type="submit"
               disabled={isSigningUp}
               className="flex-[2] py-3 bg-[#3D7A6B] text-white rounded-xl font-medium text-sm disabled:opacity-60 active:scale-[0.98] transition-transform"
             >
-              {isSigningUp ? '가입 중...' : '가입 완료'}
+              {isSigningUp ? t('signingUp') : t('completeSignup')}
             </button>
           </div>
         </form>
       )}
 
       <p className="text-center text-sm text-gray-600">
-        이미 계정이 있으신가요?{' '}
+        {t('haveAccount')}{' '}
         <Link href="/login" className="text-[#3D7A6B] font-medium">
-          로그인
+          {t('loginLink')}
         </Link>
       </p>
     </div>

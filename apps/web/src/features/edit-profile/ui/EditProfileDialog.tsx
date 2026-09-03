@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { UpdateProfileDto } from '@eobom/shared';
 import type { UserWithProfile } from '@/entities/user';
 import { useUpdateProfile } from '../model/useUpdateProfile';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function EditProfileDialog({ open, user, onClose }: Props) {
+  const t = useTranslations('features.editProfile');
   const isTherapist = user.role === 'THERAPIST';
   const [name, setName] = useState(user.name);
   const [phoneNumber, setPhoneNumber] = useState(user.parentProfile?.phoneNumber ?? '');
@@ -46,16 +48,18 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">프로필 수정</h2>
+        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{t('title')}</h2>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-label text-gray-600 font-semibold">이름</span>
+          <span className="text-label text-gray-600 font-semibold">{t('nameLabel')}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
         </label>
 
         {isTherapist ? (
           <label className="flex flex-col gap-1.5">
-            <span className="text-label text-gray-600 font-semibold">면허번호</span>
+            <span className="text-label text-gray-600 font-semibold">
+              {t('licenseNumberLabel')}
+            </span>
             <input
               value={licenseNumber}
               onChange={(e) => setLicenseNumber(e.target.value)}
@@ -64,7 +68,7 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
           </label>
         ) : (
           <label className="flex flex-col gap-1.5">
-            <span className="text-label text-gray-600 font-semibold">전화번호</span>
+            <span className="text-label text-gray-600 font-semibold">{t('phoneNumberLabel')}</span>
             <input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
@@ -83,14 +87,14 @@ export function EditProfileDialog({ open, user, onClose }: Props) {
             disabled={isPending}
             className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="flex-1 bg-brand text-white rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans disabled:opacity-50"
           >
-            {isPending ? '저장 중...' : '저장'}
+            {isPending ? t('saving') : t('save')}
           </button>
         </div>
       </form>

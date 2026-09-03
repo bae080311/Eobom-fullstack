@@ -3,10 +3,12 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { loginSchema, type LoginDto } from '@eobom/shared';
 import { useLogin } from '../model/useAuth';
 
 export function LoginForm() {
+  const t = useTranslations('features.auth');
   const { mutate: login, isPending, error } = useLogin();
 
   const {
@@ -19,7 +21,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit((data) => login(data))} className="space-y-4">
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          이메일
+          {t('emailLabel')}
         </label>
         <input
           id="email"
@@ -34,7 +36,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          비밀번호
+          {t('passwordLabel')}
         </label>
         <input
           id="password"
@@ -42,7 +44,7 @@ export function LoginForm() {
           autoComplete="current-password"
           {...register('password')}
           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#3D7A6B] text-sm"
-          placeholder="비밀번호를 입력하세요"
+          placeholder={t('passwordPlaceholder')}
         />
         {errors.password && (
           <p className="mt-1 text-xs text-danger-strong">{errors.password.message}</p>
@@ -60,13 +62,13 @@ export function LoginForm() {
         disabled={isPending}
         className="w-full py-3 bg-[#3D7A6B] text-white rounded-xl font-medium text-sm disabled:opacity-60 active:scale-[0.98] transition-transform"
       >
-        {isPending ? '로그인 중...' : '로그인'}
+        {isPending ? t('loggingIn') : t('loginButton')}
       </button>
 
       <p className="text-center text-sm text-gray-600">
-        계정이 없으신가요?{' '}
+        {t('noAccount')}{' '}
         <Link href="/register" className="text-[#3D7A6B] font-medium">
-          회원가입
+          {t('signupLink')}
         </Link>
       </p>
     </form>

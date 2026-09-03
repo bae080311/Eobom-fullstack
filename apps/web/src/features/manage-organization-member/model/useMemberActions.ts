@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { OrgMemberRole, type MemberResponseDto } from '@eobom/shared';
 import { useUpdateMember, useLeaveMember } from '@/entities/organization';
 import { ApiError } from '@/lib/api';
 
 export function useMemberActions(orgId: string, member: MemberResponseDto, isSelf: boolean) {
+  const t = useTranslations('features.manageOrganizationMember');
   const router = useRouter();
   const [roleOpen, setRoleOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
@@ -16,8 +18,8 @@ export function useMemberActions(orgId: string, member: MemberResponseDto, isSel
 
   const isOwner = member.role === OrgMemberRole.OWNER;
   const nextRole = isOwner ? OrgMemberRole.THERAPIST : OrgMemberRole.OWNER;
-  const roleActionLabel = isOwner ? '치료사로 변경' : '소유자로 지정';
-  const leaveActionLabel = isSelf ? '탈퇴' : '내보내기';
+  const roleActionLabel = isOwner ? t('roleActionRevokeOwner') : t('roleActionGrantOwner');
+  const leaveActionLabel = isSelf ? t('leaveActionSelf') : t('leaveActionOther');
 
   function openRoleDialog() {
     setRoleOpen(true);
@@ -41,12 +43,12 @@ export function useMemberActions(orgId: string, member: MemberResponseDto, isSel
       {
         onSuccess: () => {
           closeRoleDialog();
-          toast.success('멤버 역할이 변경되었습니다');
+          toast.success(t('roleUpdateSuccess'));
           router.refresh();
         },
         onError: (err) => {
           closeRoleDialog();
-          toast.error(err instanceof ApiError ? err.message : '역할 변경에 실패했습니다');
+          toast.error(err instanceof ApiError ? err.message : t('roleUpdateError'));
         },
       },
     );
@@ -56,12 +58,12 @@ export function useMemberActions(orgId: string, member: MemberResponseDto, isSel
     leaveMember(member.id, {
       onSuccess: () => {
         closeLeaveDialog();
-        toast.success(isSelf ? '기관에서 탈퇴했습니다' : '멤버를 내보냈습니다');
+        toast.success(isSelf ? t('leaveSuccessSelf') : t('leaveSuccessOther'));
         router.refresh();
       },
       onError: (err) => {
         closeLeaveDialog();
-        toast.error(err instanceof ApiError ? err.message : '처리에 실패했습니다');
+        toast.error(err instanceof ApiError ? err.message : t('leaveError'));
       },
     });
   }

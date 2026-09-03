@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { MemberResponseDto } from '@eobom/shared';
 import { useDeleteChild } from '@/entities/child';
 import { ConfirmDialog, IconRefresh, IconUser } from '@/shared/ui';
@@ -29,6 +30,7 @@ export function TherapistChildActions({
   members = [],
   canReassignPrimaryTherapist = false,
 }: Props) {
+  const t = useTranslations('features.manageChild.actions');
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -38,12 +40,12 @@ export function TherapistChildActions({
   function handleDelete() {
     deleteChild(childId, {
       onSuccess: () => {
-        toast.success('아동이 삭제되었습니다');
+        toast.success(t('deleteSuccess'));
         router.push('/children');
       },
       onError: (err) => {
         setDeleteOpen(false);
-        toast.error(err instanceof ApiError ? err.message : '아동 삭제에 실패했습니다');
+        toast.error(err instanceof ApiError ? err.message : t('deleteError'));
       },
     });
   }
@@ -64,7 +66,7 @@ export function TherapistChildActions({
         onClick={() => setEditOpen(true)}
         className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans"
       >
-        <IconRefresh size={16} /> 수정
+        <IconRefresh size={16} /> {t('edit')}
       </button>
 
       {canReassignPrimaryTherapist && (
@@ -73,7 +75,7 @@ export function TherapistChildActions({
           onClick={handleOpenPrimaryTherapist}
           className="flex-1 bg-gray-100 text-gray-900 rounded-[10px] py-3 px-4 font-bold text-callout inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-sans"
         >
-          <IconUser size={16} /> 담당변경
+          <IconUser size={16} /> {t('reassign')}
         </button>
       )}
 
@@ -82,14 +84,14 @@ export function TherapistChildActions({
         onClick={() => setDeleteOpen(true)}
         className="flex-1 bg-danger-soft text-danger-strong rounded-[10px] py-3 px-4 font-bold text-callout border-0 cursor-pointer font-sans"
       >
-        삭제
+        {t('delete')}
       </button>
 
       <ConfirmDialog
         open={deleteOpen}
-        title="아동을 삭제하시겠어요?"
-        description="연결된 일정·초대코드가 모두 함께 삭제되며 되돌릴 수 없습니다."
-        confirmLabel="삭제하기"
+        title={t('deleteConfirmTitle')}
+        description={t('deleteConfirmDescription')}
+        confirmLabel={t('deleteConfirmLabel')}
         destructive
         loading={isDeleting}
         onConfirm={handleDelete}

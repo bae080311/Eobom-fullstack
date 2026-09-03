@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { MemberResponseDto } from '@eobom/shared';
 import { ConfirmDialog } from '@/shared/ui';
 import { useMemberActions } from '../model/useMemberActions';
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function MemberActions({ orgId, member, isSelf }: Props) {
+  const t = useTranslations('features.manageOrganizationMember');
   const {
     isOwner,
     roleActionLabel,
@@ -46,12 +48,8 @@ export function MemberActions({ orgId, member, isSelf }: Props) {
 
       <ConfirmDialog
         open={roleOpen}
-        title={isOwner ? '소유자 권한을 해제하시겠어요?' : '소유자로 지정하시겠어요?'}
-        description={
-          isOwner
-            ? '이 멤버는 더 이상 기관 정보·멤버를 관리할 수 없게 됩니다.'
-            : '이 멤버가 기관 정보·멤버를 관리할 수 있게 됩니다.'
-        }
+        title={isOwner ? t('revokeDialogTitle') : t('grantDialogTitle')}
+        description={isOwner ? t('revokeDialogDescription') : t('grantDialogDescription')}
         confirmLabel={roleActionLabel}
         destructive={isOwner}
         loading={isUpdating}
@@ -61,12 +59,8 @@ export function MemberActions({ orgId, member, isSelf }: Props) {
 
       <ConfirmDialog
         open={leaveOpen}
-        title={isSelf ? '기관에서 탈퇴하시겠어요?' : '이 멤버를 내보내시겠어요?'}
-        description={
-          isSelf
-            ? '탈퇴 후에는 다시 참여 코드로 가입해야 합니다.'
-            : '내보낸 멤버는 참여 코드로 다시 가입할 수 있습니다.'
-        }
+        title={isSelf ? t('leaveDialogTitleSelf') : t('leaveDialogTitleOther')}
+        description={isSelf ? t('leaveDialogDescriptionSelf') : t('leaveDialogDescriptionOther')}
         confirmLabel={leaveActionLabel}
         destructive
         loading={isLeaving}
