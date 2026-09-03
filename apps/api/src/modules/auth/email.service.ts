@@ -2,6 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 
+/** 접속 즉시 TLS를 쓰는 SMTP 포트. 미설정 시 기본값으로도 쓴다. */
+const IMPLICIT_TLS_PORT = 465;
+
+/**
+ * ConfigService는 환경변수를 문자열 그대로 돌려주므로 숫자로 정규화한다.
+ * 값이 없거나 유효한 포트가 아니면 기본값(465)을 쓴다.
+ */
+function resolveSmtpPort(raw: unknown): number {
+  const parsed = Number(raw);
+  const isValidPort = Number.isInteger(parsed) && parsed > 0 && parsed <= 65535;
+  return isValidPort ? parsed : IMPLICIT_TLS_PORT;
+}
+
 @Injectable()
 export class EmailService {
   private readonly transporter: Transporter;
@@ -9,13 +22,13 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private readonly config: ConfigService) {
-    const port = config.get<number>('SMTP_PORT') ?? 465;
+    const port = resolveSmtpPort(config.get('SMTP_PORT'));
     this.transporter = createTransport({
       host: config.get<string>('SMTP_HOST') ?? 'smtp.gmail.com',
       port,
       // nodemailer 관례: 465는 접속 즉시 TLS, 그 외(587·1025 등)는 평문/STARTTLS.
       // 하드코딩된 true는 e2e용 로컬 SMTP 캐처(mailpit:1025) 연결을 불가능하게 만든다.
-      secure: port === 465,
+      secure: port === IMPLICIT_TLS_PORT,
       auth: {
         user: config.get<string>('SMTP_USER'),
         pass: config.get<string>('SMTP_PASS'),
