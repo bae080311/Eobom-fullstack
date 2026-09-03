@@ -9,10 +9,13 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private readonly config: ConfigService) {
+    const port = config.get<number>('SMTP_PORT') ?? 465;
     this.transporter = createTransport({
       host: config.get<string>('SMTP_HOST') ?? 'smtp.gmail.com',
-      port: config.get<number>('SMTP_PORT') ?? 465,
-      secure: true,
+      port,
+      // nodemailer 관례: 465는 접속 즉시 TLS, 그 외(587·1025 등)는 평문/STARTTLS.
+      // 하드코딩된 true는 e2e용 로컬 SMTP 캐처(mailpit:1025) 연결을 불가능하게 만든다.
+      secure: port === 465,
       auth: {
         user: config.get<string>('SMTP_USER'),
         pass: config.get<string>('SMTP_PASS'),
