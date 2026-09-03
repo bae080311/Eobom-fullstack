@@ -1,0 +1,35 @@
+# e2e·통합 테스트 전용 PostgreSQL.
+# 개발용 docker-compose.yml(5432, 볼륨 영속)과 포트·컨테이너명이 겹치지 않게 분리했다.
+# 5433은 다른 컨테이너가 점유하는 경우가 있어 5434를 쓴다.
+# 데이터는 tmpfs에 두어 컨테이너를 내리면 사라진다 — 테스트 간 격리를 위해 의도한 동작.
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: eobom_postgres_test
+    environment:
+      POSTGRES_DB: eobom_test
+      POSTGRES_USER: eobom
+      POSTGRES_PASSWORD: eobom_password
+    ports:
+      - '5434:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U eobom -d eobom_test']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 3s
+
+  # 회원가입 e2e는 이메일 인증 코드 발송을 통과해야 한다.
+  # 실제 SMTP 대신 로컬 캐처로 받아 API가 500을 내지 않게 한다.
+  # (e2e는 메일 본문 대신 DB의 EmailVerificationRequest.code를 읽어 OTP를 입력한다.)
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: eobom_mailpit_test
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # 웹 UI (디버깅용)
