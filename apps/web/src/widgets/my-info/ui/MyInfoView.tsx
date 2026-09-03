@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type { UserWithProfile } from '@/entities/user';
 import { useLogout } from '@/features/auth';
 import { EditProfileDialog } from '@/features/edit-profile';
@@ -27,16 +28,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export function MyInfoView({ user, isOwner }: Props) {
+  const t = useTranslations('widgets.myInfo');
   const [editOpen, setEditOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const { mutate: logout, isPending } = useLogout();
 
   const isTherapist = user.role === 'THERAPIST';
-  const roleLabel = isTherapist ? '치료사' : '학부모';
-  const profileLabel = isTherapist ? '면허번호' : '전화번호';
+  const roleLabel = isTherapist ? t('roleTherapist') : t('roleParent');
+  const profileLabel = isTherapist ? t('licenseNumberLabel') : t('phoneNumberLabel');
   const profileValue = isTherapist
-    ? (user.therapistProfile?.licenseNumber ?? '미등록')
-    : (user.parentProfile?.phoneNumber ?? '미등록');
+    ? (user.therapistProfile?.licenseNumber ?? t('unregistered'))
+    : (user.parentProfile?.phoneNumber ?? t('unregistered'));
 
   return (
     <>
@@ -46,22 +48,22 @@ export function MyInfoView({ user, isOwner }: Props) {
             aria-hidden
             className="pointer-events-none absolute -top-12 -right-10 h-44 w-44 rounded-full bg-white/[0.06]"
           />
-          <p className="relative text-body2 text-white/70 m-0">안녕하세요</p>
+          <p className="relative text-body2 text-white/70 m-0">{t('greeting')}</p>
           <h2 className="relative mt-1 text-title font-bold tracking-tight text-white m-0 truncate">
             <span>{user.name}</span>{' '}
             <span className="text-subhead font-semibold text-white/65">{roleLabel}</span>
-            <span className="text-subhead font-semibold text-white/65">님</span>
+            <span className="text-subhead font-semibold text-white/65">{t('nameSuffix')}</span>
           </h2>
           <p className="relative mt-2 text-body2 text-white/70 truncate m-0">{user.email}</p>
         </div>
       </section>
 
       <section className="px-5 mt-7">
-        <p className="mb-2 px-1 text-label font-bold text-gray-600 m-0">계정 정보</p>
+        <p className="mb-2 px-1 text-label font-bold text-gray-600 m-0">{t('accountInfoTitle')}</p>
         <div className={`${CARD} px-5`}>
           <InfoRow label={profileLabel} value={profileValue} />
           <hr className="border-0 border-t border-gray-100 m-0" />
-          <InfoRow label="가입일" value={formatDateLabel(user.createdAt)} />
+          <InfoRow label={t('joinedAtLabel')} value={formatDateLabel(user.createdAt)} />
         </div>
       </section>
 
@@ -73,7 +75,7 @@ export function MyInfoView({ user, isOwner }: Props) {
             onClick={() => setEditOpen(true)}
             className="w-full flex items-center justify-between px-5 py-3.5 cursor-pointer font-sans bg-transparent border-0 transition-colors active:bg-gray-50"
           >
-            <span className="text-callout text-gray-900 font-semibold">프로필 수정</span>
+            <span className="text-callout text-gray-900 font-semibold">{t('editProfileMenu')}</span>
             <span className="text-gray-300">
               <IconChevronRight size={18} />
             </span>
@@ -86,7 +88,7 @@ export function MyInfoView({ user, isOwner }: Props) {
                 className="w-full flex items-center justify-between px-5 py-3.5 no-underline"
               >
                 <span className="flex items-center gap-2 text-callout text-gray-900 font-semibold">
-                  <IconFileText size={16} /> 초대코드 입력
+                  <IconFileText size={16} /> {t('redeemMenu')}
                 </span>
                 <span className="text-gray-300">
                   <IconChevronRight size={18} />
@@ -102,7 +104,7 @@ export function MyInfoView({ user, isOwner }: Props) {
                 className="w-full flex items-center justify-between px-5 py-3.5 no-underline"
               >
                 <span className="flex items-center gap-2 text-callout text-gray-900 font-semibold">
-                  <IconShield size={16} /> 기관 관리
+                  <IconShield size={16} /> {t('orgManageMenu')}
                 </span>
                 <span className="text-gray-300">
                   <IconChevronRight size={18} />
@@ -116,18 +118,18 @@ export function MyInfoView({ user, isOwner }: Props) {
             onClick={() => setLogoutOpen(true)}
             className="w-full text-left px-5 py-3.5 text-callout font-bold text-danger-strong cursor-pointer font-sans bg-transparent border-0 transition-colors active:bg-gray-50"
           >
-            로그아웃
+            {t('logoutMenu')}
           </button>
         </div>
-        <p className="mt-5 text-center text-caption text-gray-600 m-0">이어봄 · v1.0.0</p>
+        <p className="mt-5 text-center text-caption text-gray-600 m-0">{t('appFooter')}</p>
       </section>
 
       <EditProfileDialog open={editOpen} user={user} onClose={() => setEditOpen(false)} />
       <ConfirmDialog
         open={logoutOpen}
-        title="로그아웃 하시겠어요?"
-        description="다시 이용하려면 로그인이 필요합니다."
-        confirmLabel="로그아웃"
+        title={t('logoutConfirmTitle')}
+        description={t('logoutConfirmDescription')}
+        confirmLabel={t('logoutConfirmLabel')}
         destructive
         loading={isPending}
         onConfirm={() => logout()}
