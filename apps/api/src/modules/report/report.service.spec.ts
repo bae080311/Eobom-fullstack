@@ -144,6 +144,13 @@ describe('ReportService', () => {
       await expect(service.generate('s1', otherTherapistUser, { memo: '메모' })).rejects.toThrow(
         ForbiddenException,
       );
+      expect(prisma.organizationMembership.findFirst).toHaveBeenCalledWith({
+        where: {
+          therapistProfileId: 'tp2',
+          organizationId: 'org1',
+          status: OrgMembershipStatus.ACTIVE,
+        },
+      });
       expect(ollama.generateReport).not.toHaveBeenCalled();
     });
 
@@ -224,6 +231,9 @@ describe('ReportService', () => {
         prisma.parentChildLink.findUnique.mockResolvedValue(null);
 
         await expect(service.findOne('s1', parentUser)).rejects.toThrow(ForbiddenException);
+        expect(prisma.parentChildLink.findUnique).toHaveBeenCalledWith({
+          where: { parentId_childId: { parentId: 'pp1', childId: 'c1' } },
+        });
         expect(prisma.sessionReport.findUnique).not.toHaveBeenCalled();
       });
 
@@ -235,6 +245,9 @@ describe('ReportService', () => {
 
         const result = await service.findOne('s1', parentUser);
 
+        expect(prisma.parentChildLink.findUnique).toHaveBeenCalledWith({
+          where: { parentId_childId: { parentId: 'pp1', childId: 'c1' } },
+        });
         expect(result.data?.id).toBe('r1');
       });
 
@@ -266,6 +279,13 @@ describe('ReportService', () => {
         prisma.organizationMembership.findFirst.mockResolvedValue(null);
 
         await expect(service.findOne('s1', otherTherapistUser)).rejects.toThrow(ForbiddenException);
+        expect(prisma.organizationMembership.findFirst).toHaveBeenCalledWith({
+          where: {
+            therapistProfileId: 'tp2',
+            organizationId: 'org1',
+            status: OrgMembershipStatus.ACTIVE,
+          },
+        });
       });
 
       it('담당 치료사가 아니어도 같은 기관 ACTIVE 멤버면 조회할 수 있다', async () => {

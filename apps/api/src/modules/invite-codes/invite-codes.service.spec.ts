@@ -372,6 +372,11 @@ describe('InviteCodesService', () => {
       await expect(
         service.redeem('pu1', { code: '7H3K-92AB', relation: ParentRelation.MOTHER }),
       ).rejects.toThrow(ConflictException);
+      expect(prisma.inviteCode.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'code1', status: InviteCodeStatus.ACTIVE },
+        }),
+      );
       expect(prisma.parentChildLink.create).not.toHaveBeenCalled();
     });
   });
