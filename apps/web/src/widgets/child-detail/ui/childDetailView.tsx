@@ -13,21 +13,23 @@ interface Props {
   inviteCodeAction?: ReactNode;
   // 페이지(Server Component)에서 getTranslations('entities.child')로 미리 구한 번역기.
   t: Translate;
+  // 페이지(Server Component)에서 getTranslations('widgets.childDetail')로 미리 구한 번역기.
+  tWidget: Translate;
 }
 
-export function ChildDetailView({ child, backHref, footer, inviteCodeAction, t }: Props) {
+export function ChildDetailView({ child, backHref, footer, inviteCodeAction, t, tWidget }: Props) {
   const age = formatKoreanAge(child.birthDate);
-  const birthDateLabel = formatBirthDateLabel(child.birthDate) ?? '등록되지 않음';
+  const birthDateLabel = formatBirthDateLabel(child.birthDate) ?? tWidget('birthDateUnset');
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans antialiased pb-28">
       <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-gray-200 flex items-center justify-between px-5 py-3 z-10">
-        <Link href={backHref} className="inline-flex" aria-label="뒤로">
-          <IconButton label="뒤로">
+        <Link href={backHref} className="inline-flex" aria-label={tWidget('backAria')}>
+          <IconButton label={tWidget('backAria')}>
             <IconArrowLeft size={18} />
           </IconButton>
         </Link>
-        <span className="text-body font-bold text-gray-900">아동 상세</span>
+        <span className="text-body font-bold text-gray-900">{tWidget('pageTitle')}</span>
         <span className="w-9" />
       </div>
 
@@ -43,22 +45,30 @@ export function ChildDetailView({ child, backHref, footer, inviteCodeAction, t }
 
       <section className="px-5 mt-7">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-title3 font-bold tracking-tighter m-0">아동 정보</h2>
+          <h2 className="text-title3 font-bold tracking-tighter m-0">
+            {tWidget('infoSectionTitle')}
+          </h2>
           {inviteCodeAction}
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4">
-          <DetailRow icon={<IconCalendar size={16} />} label="생년월일" value={birthDateLabel} />
+          <DetailRow
+            icon={<IconCalendar size={16} />}
+            label={tWidget('birthDateLabel')}
+            value={birthDateLabel}
+          />
           <DetailRow
             icon={<IconUser size={16} />}
-            label="담당 치료사"
-            value={child.primaryTherapistName ?? '지정되지 않음'}
+            label={tWidget('primaryTherapistLabel')}
+            value={child.primaryTherapistName ?? tWidget('primaryTherapistUnset')}
           />
         </div>
       </section>
 
       {child.memo && (
         <section className="px-5 mt-7">
-          <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">메모</h2>
+          <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">
+            {tWidget('memoSectionTitle')}
+          </h2>
           <div className="bg-brand-softer border border-brand-soft rounded-lg p-5 text-body leading-relaxed text-gray-700">
             {child.memo}
           </div>

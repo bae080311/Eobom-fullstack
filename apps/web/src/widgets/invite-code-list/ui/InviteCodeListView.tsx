@@ -11,6 +11,8 @@ interface Props {
   codes: InviteCodeResponseDto[];
   // 페이지(Server Component)에서 getTranslations('entities.inviteCode')로 미리 구한 번역기.
   t: Translate;
+  // 페이지(Server Component)에서 getTranslations('widgets.inviteCodeList')로 미리 구한 번역기.
+  tWidget: Translate;
 }
 
 interface ChildGroup {
@@ -37,11 +39,13 @@ function buildChildGroups(items: ChildResponseDto[], codes: InviteCodeResponseDt
   return Array.from(groups.values());
 }
 
-export function InviteCodeListView({ items, codes, t }: Props) {
+export function InviteCodeListView({ items, codes, t, tWidget }: Props) {
   const groups = buildChildGroups(items, codes);
 
   if (groups.length === 0) {
-    return <p className="px-5 py-16 text-center text-body text-gray-600">담당 아동이 없어요</p>;
+    return (
+      <p className="px-5 py-16 text-center text-body text-gray-600">{tWidget('noChildren')}</p>
+    );
   }
 
   return (
@@ -56,7 +60,7 @@ export function InviteCodeListView({ items, codes, t }: Props) {
             />
             <div className={`${CARD} px-5`}>
               {childCodes.length === 0 ? (
-                <p className="py-8 text-center text-body text-gray-600">발급된 코드가 없어요</p>
+                <p className="py-8 text-center text-body text-gray-600">{tWidget('noCodes')}</p>
               ) : (
                 childCodes.map((code, index) => (
                   <div key={code.id}>

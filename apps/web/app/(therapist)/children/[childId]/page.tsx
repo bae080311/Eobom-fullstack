@@ -22,6 +22,7 @@ export default async function TherapistChildDetailPage({ params }: Props) {
 
   // 서로 독립적인 요청이므로 병렬로 시작한다 (아동 조회 실패는 아래 catch에서 notFound 처리).
   const tPromise = getTranslations('entities.child');
+  const tWidgetPromise = getTranslations('widgets.childDetail');
   let child: ChildResponseDto;
   let organization: OrganizationResponseDto | null;
   try {
@@ -42,13 +43,14 @@ export default async function TherapistChildDetailPage({ params }: Props) {
   const isCurrentPrimaryTherapist =
     myMembership !== undefined && myMembership.therapistProfileId === child.primaryTherapistId;
   const canReassignPrimaryTherapist = isOwner || isCurrentPrimaryTherapist;
-  const t = await tPromise;
+  const [t, tWidget] = await Promise.all([tPromise, tWidgetPromise]);
 
   return (
     <ChildDetailView
       child={child}
       backHref="/children"
       t={t}
+      tWidget={tWidget}
       inviteCodeAction={<IssueInviteCodeButton childId={child.id} />}
       footer={
         <TherapistChildActions

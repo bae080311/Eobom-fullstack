@@ -27,6 +27,7 @@ import { createTestTranslator } from '@/test/createTestTranslator';
 import ko from '../../../../messages/ko.json';
 
 const t = createTestTranslator(ko.entities.inviteCode);
+const tWidget = createTestTranslator(ko.widgets.inviteCodeList);
 
 function makeChild(overrides: Partial<ChildResponseDto> = {}): ChildResponseDto {
   return {
@@ -57,12 +58,12 @@ function makeCode(overrides: Partial<InviteCodeResponseDto> = {}): InviteCodeRes
 
 describe('InviteCodeListView', () => {
   it('담당 아동도, 코드도 없으면 안내 문구를 보여준다', () => {
-    render(<InviteCodeListView items={[]} codes={[]} t={t} />);
+    render(<InviteCodeListView items={[]} codes={[]} t={t} tWidget={tWidget} />);
     expect(screen.getByText('담당 아동이 없어요')).toBeInTheDocument();
   });
 
   it('담당 아동 섹션에는 발급 버튼을 보여준다', () => {
-    render(<InviteCodeListView items={[makeChild()]} codes={[]} t={t} />);
+    render(<InviteCodeListView items={[makeChild()]} codes={[]} t={t} tWidget={tWidget} />);
     expect(screen.getByText('홍길동')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '발급-c1' })).toBeInTheDocument();
   });
@@ -72,7 +73,9 @@ describe('InviteCodeListView', () => {
       id: 'ic-orphan',
       child: { id: 'c2', name: '김철수' },
     });
-    render(<InviteCodeListView items={[makeChild()]} codes={[orphanCode]} t={t} />);
+    render(
+      <InviteCodeListView items={[makeChild()]} codes={[orphanCode]} t={t} tWidget={tWidget} />,
+    );
 
     expect(screen.getByText('김철수')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '취소-ic-orphan' })).toBeInTheDocument();
@@ -83,7 +86,7 @@ describe('InviteCodeListView', () => {
       id: 'ic-orphan',
       child: { id: 'c2', name: '김철수' },
     });
-    render(<InviteCodeListView items={[]} codes={[orphanCode]} t={t} />);
+    render(<InviteCodeListView items={[]} codes={[orphanCode]} t={t} tWidget={tWidget} />);
 
     const section = screen.getByText('김철수').closest('section')!;
     expect(within(section).queryByRole('button', { name: /^발급-/ })).toBeNull();
@@ -96,7 +99,9 @@ describe('InviteCodeListView', () => {
       status: InviteCodeStatus.ACTIVE,
       expiresAt: '2000-01-01T00:00:00.000Z',
     });
-    render(<InviteCodeListView items={[makeChild()]} codes={[elapsedCode]} t={t} />);
+    render(
+      <InviteCodeListView items={[makeChild()]} codes={[elapsedCode]} t={t} tWidget={tWidget} />,
+    );
 
     expect(screen.queryByRole('button', { name: '취소-ic-elapsed' })).toBeNull();
   });
