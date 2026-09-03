@@ -313,5 +313,109 @@
         "OTHER": "기타"
       }
     }
+  },
+  "widgets": {
+    "childDetail": {
+      "backAria": "뒤로",
+      "pageTitle": "아동 상세",
+      "infoSectionTitle": "아동 정보",
+      "birthDateLabel": "생년월일",
+      "birthDateUnset": "등록되지 않음",
+      "primaryTherapistLabel": "담당 치료사",
+      "primaryTherapistUnset": "지정되지 않음",
+      "memoSectionTitle": "메모"
+    },
+    "inviteCodeList": {
+      "noChildren": "담당 아동이 없어요",
+      "noCodes": "발급된 코드가 없어요"
+    },
+    "myInfo": {
+      "greeting": "안녕하세요",
+      "roleTherapist": "치료사",
+      "roleParent": "학부모",
+      "nameSuffix": "님",
+      "licenseNumberLabel": "면허번호",
+      "phoneNumberLabel": "전화번호",
+      "unregistered": "미등록",
+      "accountInfoTitle": "계정 정보",
+      "joinedAtLabel": "가입일",
+      "editProfileMenu": "프로필 수정",
+      "redeemMenu": "초대코드 입력",
+      "orgManageMenu": "기관 관리",
+      "logoutMenu": "로그아웃",
+      "appFooter": "이어봄 · v1.0.0",
+      "logoutConfirmTitle": "로그아웃 하시겠어요?",
+      "logoutConfirmDescription": "다시 이용하려면 로그인이 필요합니다.",
+      "logoutConfirmLabel": "로그아웃"
+    },
+    "nextSessionHero": {
+      "sessionLabel": "{name}의 {type}",
+      "acknowledgeButton": "확인",
+      "changeRequestButton": "변경 요청"
+    },
+    "organizationDashboard": {
+      "orgInfoTitle": "기관 정보",
+      "membersTitle": "멤버",
+      "memberCount": "{count}명",
+      "noMembers": "소속된 멤버가 없어요"
+    },
+    "parentTabBar": {
+      "home": "홈",
+      "schedule": "일정",
+      "notes": "수업노트",
+      "me": "내 정보"
+    },
+    "scheduleCalendar": {
+      "dow": ["일", "월", "화", "수", "목", "금", "토"],
+      "month": [
+        "1월",
+        "2월",
+        "3월",
+        "4월",
+        "5월",
+        "6월",
+        "7월",
+        "8월",
+        "9월",
+        "10월",
+        "11월",
+        "12월"
+      ],
+      "todaySchedule": "오늘 일정",
+      "countSuffix": "{count}건",
+      "prevMonthAria": "이전 달",
+      "nextMonthAria": "다음 달",
+      "yearMonth": "{year}년 {month}",
+      "today": "오늘",
+      "noSchedule": "예정된 일정이 없어요"
+    },
+    "scheduleDetail": {
+      "backAria": "뒤로",
+      "pageTitle": "치료 일정 상세",
+      "moreAria": "더보기",
+      "infoSectionTitle": "치료 정보",
+      "primaryTherapistLabel": "담당 치료사",
+      "durationLabel": "치료 시간",
+      "typeLabel": "치료 종류",
+      "memoSectionTitle": "메모"
+    },
+    "therapistDashboard": {
+      "greeting": "안녕하세요,",
+      "greetingSuffix": "치료사님",
+      "noOrg": "소속 센터 없음",
+      "todayScheduleCount": "오늘 일정 · {count}건",
+      "noTodaySchedule": "오늘 예정된 일정이 없습니다",
+      "weekScheduleCount": "이번 주 · {count}건",
+      "viewAll": "전체 일정"
+    },
+    "therapistTabBar": {
+      "home": "홈",
+      "schedule": "일정",
+      "children": "담당 아동",
+      "me": "내 정보"
+    },
+    "weekStrip": {
+      "title": "이번 주"
+    }
   }
 }
