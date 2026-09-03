@@ -11,6 +11,7 @@
   - `schedules` 서비스의 `update`/`cancel`/`confirm`에 "다른 기관 OWNER 멤버십으로는 접근할 수 없다" 케이스 보강(기존에는 `findOne`에만 있었음 — 세 메서드가 공유하는 `assertCanAccessSchedule` private 헬퍼가 회귀 없이 org-scope를 지키는지 엔드포인트별로 확인)
   - `pnpm --filter api test:coverage` 기준 전체 커버리지 78.7%로 60% 목표 달성 확인
   - Notion 레이어 8 §8.4(Phase 3)를 이 완료 상태로 갱신(e2e만 잔여로 표시)
+  - PR #39에 CodeRabbit이 남긴 리뷰 코멘트 4건(모두 "mock이 실제 쿼리 인자를 검증하지 않아 회귀를 못 잡을 수 있다" 계열) 전부 반영 — `updateMany`/`findFirst`/`findUnique` 호출 인자 assertion 추가, "다른 기관 OWNER" 케이스 3건은 org1 실제 멤버십 + org2 조건부 null을 반환하는 `mockImplementation`으로 교체
 - 세션 시작 시 `.claude/skills/git-ship/SKILL.md`에 커밋되지 않은 변경(같은 레이어 내 대규모 작업의 슬라이스 그룹 분리 원칙 추가)이 남아있던 것을 발견 — 이번 작업과 무관해 stash로 보존만 해두고 건드리지 않음(`git stash list`에서 확인 가능, 다음 세션에서 처리 필요).
 
 ## 다음 작업 후보 (우선순위 순)
