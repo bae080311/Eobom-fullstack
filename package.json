@@ -7,7 +7,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "turbo run typecheck && pnpm typecheck:e2e",
     "test": "turbo run test",
     "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "test:e2e:ui": "playwright test -c e2e/playwright.config.ts --ui",
@@ -21,7 +21,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "prepare": "husky",
-    "e2e:db:push": "DATABASE_URL=postgresql://eobom:eobom_password@localhost:5434/eobom_test prisma db push --skip-generate"
+    "e2e:db:push": "DATABASE_URL=${E2E_DATABASE_URL:-postgresql://eobom:eobom_password@localhost:5434/eobom_test} prisma db push --skip-generate",
+    "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
