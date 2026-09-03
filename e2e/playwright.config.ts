@@ -61,12 +61,16 @@ export default defineConfig({
 
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 
+  // 서버를 재사용하지 않는다. 재사용하면 이미 떠 있던 프로세스가 아래 serverEnv를
+  // 받지 못해 개발용 DB(5432)를 향한 채로 테스트가 돌고, resetDb는 테스트 DB(5434)를
+  // 비우게 된다. 3000·3001이 이미 점유돼 있으면 Playwright가 즉시 에러를 낸다 —
+  // e2e 실행 전에 `pnpm dev`를 내려야 한다.
   webServer: [
     {
       command: 'pnpm --filter @eobom/api dev',
       cwd: '..',
       port: API_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       stdout: 'pipe',
       stderr: 'pipe',
@@ -76,7 +80,7 @@ export default defineConfig({
       command: 'pnpm --filter @eobom/web dev',
       cwd: '..',
       port: WEB_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
       stdout: 'pipe',
       stderr: 'pipe',
