@@ -16,6 +16,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# 스키마를 읽어 비교하기만 한다.
+permissions:
+  contents: read
+
 jobs:
   migration-drift:
     name: Migrations match schema
@@ -41,6 +45,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # 이 워크플로는 push하지 않는다. 자격증명을 .git/config에 남기면
+          # 뒤이은 pnpm install의 lifecycle 스크립트가 읽을 수 있다.
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
