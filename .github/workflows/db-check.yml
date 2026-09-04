@@ -1,0 +1,73 @@
+name: DB Check
+
+# prisma/migrations와 schema.prisma가 어긋나지 않았는지 검증한다.
+# 스키마만 고치고 마이그레이션을 남기지 않으면 새 환경에서 스키마를 재현할 수 없고,
+# 규칙 04(expand-migrate-contract)의 롤백 식별성도 깨진다.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'prisma/**'
+      - '.github/workflows/db-check.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 스키마를 읽어 비교하기만 한다.
+permissions:
+  contents: read
+
+jobs:
+  migration-drift:
+    name: Migrations match schema
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      # migrate diff가 마이그레이션을 재생할 빈 shadow DB.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: eobom_shadow
+          POSTGRES_USER: eobom
+          POSTGRES_PASSWORD: eobom_password
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U eobom -d eobom_shadow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # 이 워크플로는 push하지 않는다. 자격증명을 .git/config에 남기면
+          # 뒤이은 pnpm install의 lifecycle 스크립트가 읽을 수 있다.
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 마이그레이션을 전부 적용한 결과가 schema.prisma와 같아야 한다.
+      # 다르면 exit code 2로 실패하고, 어느 테이블·컬럼이 어긋났는지 출력한다.
+      - name: Detect drift between migrations and schema
+        run: |
+          pnpm exec prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url postgresql://eobom:eobom_password@localhost:5434/eobom_shadow \
+            --exit-code
