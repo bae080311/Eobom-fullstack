@@ -11,6 +11,7 @@
   - **`db-check.yml` 추가** — `migrate diff --exit-code`로 마이그레이션과 스키마가 어긋나면 CI 실패. 일부러 드리프트를 주입해 `exit 2` + 어긋난 컬럼 출력을 확인했습니다. 로드맵 §8.6의 `db-check.yml` 자리입니다.
   - e2e 테스트 DB는 계속 `db push`를 씁니다(일회용 DB라 이력 불필요). 마이그레이션 무결성은 `db-check.yml`이 전담합니다.
   - Notion 8.7 Decision Log에 전환 기록, §8.4 미해결 간극에서 이 항목을 해소 처리했습니다.
+  - PR #41 리뷰 반영: `db-check.yml`에 `persist-credentials: false`·`permissions: contents: read` 적용. 마이그레이션 SQL에 backfill을 넣으라는 지적은 **반영하지 않았습니다** — 이미 2026-05-27에 적용된 마이그레이션이라 SQL을 고치면 Prisma 체크섬 검증이 깨집니다(과거 마이그레이션은 새 forward 마이그레이션으로 고치는 것이 원칙).
 - 검증: `pnpm lint`·`typecheck`(e2e 포함)·`build`·`test`(562건)·`test:e2e`(4건) 전부 통과.
 
 ## 다음 작업 후보 (우선순위 순)
@@ -18,9 +19,10 @@
 1. **기관명이 학부모 화면에 전혀 노출되지 않습니다.** 레이어 1 §1.4 6단계는 일정 조회 시 "기관명·치료사명 함께 표기"를 요구하고 §5.9 Notification 샘플에도 `organizationName`이 있지만, `widgets/schedule-detail`은 치료사명·시간·종류·메모만 렌더하고 web 코드에 `organizationName` 사용처가 없습니다. **학부모 신뢰도에 직결**되는 항목이라 노출 위치 결정이 필요합니다(architect 판단 권장). e2e에는 해당 단정을 보류하고 주석으로 남겨뒀으니, 구현하면 주석도 함께 정리해야 합니다.
 2. **Phase 4.5 SessionReport 웹 UI 연동** — 백엔드(`POST/GET /schedules/:scheduleId/report*`, Ollama)는 완료됐으나 `features`·`widgets`·`entities` 어디에도 report 슬라이스가 없습니다(직접 확인). 치료사 작성 화면·학부모 열람 화면·알림 연동 여부 범위 결정부터 필요(Notion 8.7 Decision Log 리스크 항목 참고).
 3. **Phase 5(Ops) 나머지** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되기 시작했으니 배포 작업을 시작할 수 있습니다.
-4. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 정의돼 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1이 정의한 에러 엔벨로프(`{statusCode, code, message, details?}`)와도 불일치합니다. 등록할지/문서를 실제에 맞출지 결정 필요.
-5. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다(메모리 `feedback_commit_splitting`과 동일 내용). 별도 chore 커밋으로 정리할지 확인 필요.
-6. i18n·WCAG AA 브라우저 육안 확인 — 이제 Playwright가 있으므로 시각 회귀나 접근성 스냅샷을 e2e에 얹는 방식도 검토 가능합니다. 두 번째 로케일 도입 여부는 여전히 미결정.
+4. **기존 `ci.yml`도 `persist-credentials`·`permissions` 하드닝이 안 돼 있습니다.** `db-check.yml`에만 적용했고 PR #41 diff 밖이라 건드리지 않았습니다. 별도 chore로 정리할지 판단 필요.
+5. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 정의돼 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1이 정의한 에러 엔벨로프(`{statusCode, code, message, details?}`)와도 불일치합니다. 등록할지/문서를 실제에 맞출지 결정 필요.
+6. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다(메모리 `feedback_commit_splitting`과 동일 내용). 별도 chore 커밋으로 정리할지 확인 필요.
+7. i18n·WCAG AA 브라우저 육안 확인 — 이제 Playwright가 있으므로 시각 회귀나 접근성 스냅샷을 e2e에 얹는 방식도 검토 가능합니다. 두 번째 로케일 도입 여부는 여전히 미결정.
 
 ## 참고
 
