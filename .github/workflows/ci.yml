@@ -57,3 +57,79 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: eobom_test
+          POSTGRES_USER: eobom
+          POSTGRES_PASSWORD: eobom_password
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U eobom -d eobom_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      # 회원가입 e2e가 이메일 인증 코드 발송을 통과하려면 SMTP 수신처가 필요하다.
+      mailpit:
+        image: axllent/mailpit:v1.21
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        ports:
+          - 1025:1025
+
+    env:
+      E2E_DATABASE_URL: postgresql://eobom:eobom_password@localhost:5434/eobom_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      # prisma/migrations는 저장소에 없으므로(.gitignore) migrate deploy를 쓸 수 없다.
+      # 시나리오마다 비우는 일회용 DB라 이력 없이 스키마만 밀어넣으면 충분하다.
+      - name: Push schema to test database
+        run: pnpm e2e:db:push
+
+      # api·web은 @eobom/shared의 dist를 임포트하므로 dev 서버 기동 전에 빌드해야 한다.
+      - name: Build shared package
+        run: pnpm --filter @eobom/shared build
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Run e2e
+        run: pnpm test:e2e
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/.artifacts/
+          retention-days: 7

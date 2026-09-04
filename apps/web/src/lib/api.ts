@@ -30,7 +30,9 @@ async function request<T>(promise: ReturnType<typeof client.get>): Promise<T> {
     return res.json();
   } catch (err) {
     if (err instanceof HTTPError) {
-      const body = await err.response.json().catch(() => ({}));
+      // ky 2.x는 error.data를 채우면서 응답 본문을 소비한다 —
+      // err.response.json()은 'Body has already been read'로 실패하므로 err.data를 써야 한다.
+      const body = (err.data ?? {}) as { message?: string | string[] };
       const message = Array.isArray(body.message)
         ? body.message.join(', ')
         : (body.message ?? '요청에 실패했습니다.');

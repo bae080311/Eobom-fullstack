@@ -48,3 +48,8 @@ prisma/migrations/
 **/public/sw.js.map
 **/public/workbox-*.js
 **/public/workbox-*.js.map
+
+# Playwright e2e
+/e2e/.artifacts/
+/e2e/playwright-report/
+/e2e/blob-report/

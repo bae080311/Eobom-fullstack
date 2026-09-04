@@ -3,12 +3,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // vi.mock 팩토리는 파일 최상단으로 호이스팅되므로
 // 팩토리 안에서 사용할 변수는 vi.hoisted()로 먼저 정의해야 한다.
 const { kyMethods, MockHTTPError } = vi.hoisted(() => {
+  // ky 2.x의 HTTPError 계약을 그대로 모사한다.
+  // 본문은 error.data에 미리 파싱돼 담기고, 그 과정에서 응답 본문이 소비되므로
+  // response.json()은 항상 실패한다. json()에 의존하는 구현으로 되돌아가면 테스트가 깨진다.
   class MockHTTPError extends Error {
     response: { status: number; json: () => Promise<unknown> };
-    constructor(response: { status: number; json: () => Promise<unknown> }) {
+    data: unknown;
+    constructor({ status, data }: { status: number; data?: unknown }) {
       super('HTTPError');
       this.name = 'HTTPError';
-      this.response = response;
+      this.data = data;
+      this.response = {
+        status,
+        json: () => Promise.reject(new Error('Body is unusable: Body has already been read')),
+      };
     }
   }
   return {
@@ -72,10 +80,7 @@ describe('api', () => {
   });
 
   it('non-OK 응답 시 서버 메시지로 ApiError를 던진다', async () => {
-    const err = new MockHTTPError({
-      status: 409,
-      json: () => Promise.resolve({ message: '이미 존재합니다.' }),
-    });
+    const err = new MockHTTPError({ status: 409, data: { message: '이미 존재합니다.' } });
     kyMethods.post.mockRejectedValue(err);
     await expect(api.post('/items', {})).rejects.toMatchObject({
       name: 'ApiError',
@@ -84,11 +89,9 @@ describe('api', () => {
     });
   });
 
-  it('JSON 파싱 실패 시 fallback 메시지로 ApiError를 던진다', async () => {
-    const err = new MockHTTPError({
-      status: 500,
-      json: () => Promise.reject(new Error('parse error')),
-    });
+  it('본문이 비었거나 파싱에 실패해 data가 없으면 fallback 메시지로 ApiError를 던진다', async () => {
+    // ky는 본문이 없거나 파싱에 실패하면 error.data를 undefined로 둔다.
+    const err = new MockHTTPError({ status: 500, data: undefined });
     kyMethods.get.mockRejectedValue(err);
     await expect(api.get('/crash')).rejects.toMatchObject({
       name: 'ApiError',
@@ -112,10 +115,7 @@ describe('api', () => {
   });
 
   it('서버가 배열 메시지를 반환하면 join해서 ApiError로 던진다', async () => {
-    const err = new MockHTTPError({
-      status: 400,
-      json: () => Promise.resolve({ message: ['필드1 오류', '필드2 오류'] }),
-    });
+    const err = new MockHTTPError({ status: 400, data: { message: ['필드1 오류', '필드2 오류'] } });
     kyMethods.post.mockRejectedValue(err);
     await expect(api.post('/items', {})).rejects.toMatchObject({
       name: 'ApiError',
