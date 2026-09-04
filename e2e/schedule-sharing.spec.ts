@@ -193,8 +193,12 @@ test('치료사가 등록한 일정이 학부모에게 공유되고, 학부모�
   expect(ack).not.toBeNull();
 
   // 알림 화면에서도 일정 생성 알림을 볼 수 있다(카드 제목은 알림 유형 문구로 렌더된다).
+  // 어느 아이·어느 센터 알림인지도 함께 보여야 한다 — 레이어 5 §5.9.
   await parentPage.goto('/notifications');
   await expect(parentPage.getByText('새 일정이 등록되었어요').first()).toBeVisible();
+  await expect(parentPage.getByText(`${CHILD_NAME} · ${ORG_NAME}`)).toBeVisible();
+  // 본문은 API가 만든 문장이 아니라 payload(startAt)로 웹이 조립한 것이다.
+  await expect(parentPage.getByText(/14:00/).first()).toBeVisible();
 
   await therapistContext.close();
   await parentContext.close();

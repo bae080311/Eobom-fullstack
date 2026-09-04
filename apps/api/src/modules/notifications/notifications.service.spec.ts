@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { NotificationType } from '@eobom/shared';
 
 import { NotificationsService } from './notifications.service.js';
@@ -9,8 +10,31 @@ import type { PrismaService } from '../../database/prisma.service.js';
 // ---------------------------------------------------------------------------
 
 const makePrisma = () => ({
+  parentProfile: { findUnique: vi.fn() },
   parentChildLink: { findMany: vi.fn() },
-  notification: { createMany: vi.fn() },
+  notification: {
+    createMany: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+  },
+});
+
+/** findAll/markAsRead가 조인해서 돌려주는 알림 행 형태. */
+const makeNotificationRow = (overrides?: object) => ({
+  id: 'n1',
+  parentId: 'pp1',
+  type: NotificationType.SCHEDULE_CREATED,
+  scheduleId: 's1',
+  childId: 'c1',
+  organization: { name: '맑은소리 언어치료센터' },
+  child: { name: '홍길동' },
+  schedule: { therapist: { user: { name: '김치료' } } },
+  payload: { startAt: '2025-06-01T10:00:00.000Z' },
+  readAt: null,
+  createdAt: new Date('2025-06-01T10:00:00Z'),
+  ...overrides,
 });
 
 describe('NotificationsService', () => {
@@ -28,7 +52,7 @@ describe('NotificationsService', () => {
       childId: 'c1',
       organizationId: 'org1',
       type: NotificationType.SCHEDULE_CREATED,
-      message: '이치료 치료사님이 새 일정을 등록했습니다',
+      payload: { startAt: '2025-06-01T10:00:00.000Z' },
     };
 
     it('연결된 학부모가 있으면 각 학부모에게 알림을 생성한다', async () => {
@@ -49,7 +73,7 @@ describe('NotificationsService', () => {
           scheduleId: 's1',
           childId: 'c1',
           organizationId: 'org1',
-          payload: { message: baseParams.message },
+          payload: baseParams.payload,
         },
         {
           parentId: 'pp2',
@@ -57,7 +81,7 @@ describe('NotificationsService', () => {
           scheduleId: 's1',
           childId: 'c1',
           organizationId: 'org1',
-          payload: { message: baseParams.message },
+          payload: baseParams.payload,
         },
       ]);
     });
@@ -70,18 +94,103 @@ describe('NotificationsService', () => {
       expect(prisma.notification.createMany).not.toHaveBeenCalled();
     });
 
-    it('type을 그대로 payload/컬럼에 전달한다', async () => {
+    it('type과 구조화된 payload를 그대로 전달한다', async () => {
       prisma.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }]);
 
       await service.notifyScheduleEvent({
         ...baseParams,
         type: NotificationType.SCHEDULE_CANCELED,
-        message: '취소되었습니다',
+        payload: { startAt: '2025-07-01T05:00:00.000Z' },
       });
 
       const data = prisma.notification.createMany.mock.calls[0][0].data;
       expect(data[0].type).toBe(NotificationType.SCHEDULE_CANCELED);
-      expect(data[0].payload).toEqual({ message: '취소되었습니다' });
+      // 완성된 문장이 아니라 원자 데이터가 저장돼야 한다 — 번역은 웹이 담당한다.
+      expect(data[0].payload).toEqual({ startAt: '2025-07-01T05:00:00.000Z' });
+      expect(data[0].payload).not.toHaveProperty('message');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // findAll
+  // -------------------------------------------------------------------------
+
+  describe('findAll', () => {
+    it('학부모 프로필이 없으면 NotFoundException을 던진다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue(null);
+
+      await expect(service.findAll('unknown')).rejects.toThrow(NotFoundException);
+    });
+
+    it('알림이 어느 아동·기관·치료사의 것인지 함께 반환한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue({ id: 'pp1', userId: 'pu1' });
+      prisma.notification.findMany.mockResolvedValue([makeNotificationRow()]);
+
+      const result = await service.findAll('pu1');
+
+      // 레이어 5 §5.9: 알림은 기관명·치료사명·아동명을 함께 노출한다.
+      expect(result[0].childName).toBe('홍길동');
+      expect(result[0].organizationName).toBe('맑은소리 언어치료센터');
+      expect(result[0].therapistName).toBe('김치료');
+      expect(result[0].isRead).toBe(false);
+    });
+
+    it('본인 알림만 조회하고 최신순으로 정렬한다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue({ id: 'pp1', userId: 'pu1' });
+      prisma.notification.findMany.mockResolvedValue([]);
+
+      await service.findAll('pu1');
+
+      expect(prisma.notification.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { parentId: 'pp1' },
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
+    });
+
+    it('연결된 레코드가 없으면 표시용 필드는 null이다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue({ id: 'pp1', userId: 'pu1' });
+      // 기관이 삭제되면 organizationId가 SetNull이 되어 조인 결과가 비어 있을 수 있다.
+      prisma.notification.findMany.mockResolvedValue([
+        makeNotificationRow({ organization: null, child: null, schedule: null }),
+      ]);
+
+      const result = await service.findAll('pu1');
+
+      expect(result[0].organizationName).toBeNull();
+      expect(result[0].childName).toBeNull();
+      expect(result[0].therapistName).toBeNull();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // markAsRead
+  // -------------------------------------------------------------------------
+
+  describe('markAsRead', () => {
+    it('다른 학부모의 알림이면 ForbiddenException을 던지고 갱신하지 않는다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue({ id: 'pp1', userId: 'pu1' });
+      prisma.notification.findUnique.mockResolvedValue(
+        makeNotificationRow({ parentId: 'pp-other' }),
+      );
+
+      await expect(service.markAsRead('n1', 'pu1')).rejects.toThrow(ForbiddenException);
+      expect(prisma.notification.update).not.toHaveBeenCalled();
+    });
+
+    it('읽음 처리 후에도 표시용 필드를 그대로 돌려준다', async () => {
+      prisma.parentProfile.findUnique.mockResolvedValue({ id: 'pp1', userId: 'pu1' });
+      prisma.notification.findUnique.mockResolvedValue(makeNotificationRow());
+      prisma.notification.update.mockResolvedValue(
+        makeNotificationRow({ readAt: new Date('2025-06-02T00:00:00Z') }),
+      );
+
+      const result = await service.markAsRead('n1', 'pu1');
+
+      expect(result.isRead).toBe(true);
+      expect(result.childName).toBe('홍길동');
+      expect(result.organizationName).toBe('맑은소리 언어치료센터');
     });
   });
 });

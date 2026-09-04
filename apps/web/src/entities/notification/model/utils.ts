@@ -2,6 +2,7 @@ import { NotificationType } from '@eobom/shared';
 import type { NotificationResponseDto } from '@eobom/shared';
 import type { Notification, NotificationGroup, NotificationVariant } from './types';
 import type { Translate } from '@/shared/lib/i18n';
+import { formatDateLabel, formatTime } from '@/shared/lib/date';
 import koMessages from '../../../../messages/ko.json';
 
 const TYPE_VARIANT: Record<NotificationType, NotificationVariant> = {
@@ -45,12 +46,47 @@ function getGroup(createdAt: string): NotificationGroup {
   return 'earlier';
 }
 
+/**
+ * "홍길동 · 맑은소리 언어치료센터" 형태의 맥락 문구를 만든다.
+ * 아이가 둘 이상인 학부모는 이게 없으면 어느 아이 알림인지 구분할 수 없다.
+ * 연결 정보가 사라진 알림(기관 삭제 등)은 있는 것만 이어 붙인다.
+ */
+function formatContext(dto: NotificationResponseDto): string {
+  return [dto.childName, dto.organizationName].filter(Boolean).join(' · ');
+}
+
+/** "6월 1일 (월) 14:00" */
+function formatWhen(iso: string): string {
+  return `${formatDateLabel(iso)} ${formatTime(iso)}`;
+}
+
+/**
+ * 알림 본문을 payload로부터 조립한다.
+ *
+ * API는 완성된 문장을 저장하지 않는다 — 한국어가 서버에 굳으면 번역할 수 없다.
+ * 구조화 이전에 저장된 알림은 payload.message만 갖고 있으므로 그대로 보여준다.
+ */
+function buildSub(dto: NotificationResponseDto, t: Translate): string {
+  const { startAt, prevStartAt, scheduleCount, message } = dto.payload;
+
+  if (!startAt) return message ?? '';
+
+  if (prevStartAt) {
+    return t('sub.rescheduled', { prev: formatWhen(prevStartAt), next: formatWhen(startAt) });
+  }
+  if (scheduleCount && scheduleCount > 1) {
+    return t('sub.recurring', { when: formatWhen(startAt), rest: scheduleCount - 1 });
+  }
+  return t('sub.at', { when: formatWhen(startAt) });
+}
+
 export function mapDtoToNotification(dto: NotificationResponseDto, t: Translate): Notification {
   return {
     id: dto.id,
     type: TYPE_VARIANT[dto.type],
     title: t(`type.${dto.type}`),
-    sub: dto.payload.message,
+    sub: buildSub(dto, t),
+    context: formatContext(dto),
     time: formatRelativeTime(dto.createdAt, t),
     unread: !dto.isRead,
     group: getGroup(dto.createdAt),

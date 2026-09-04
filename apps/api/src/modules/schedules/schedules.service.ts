@@ -326,7 +326,7 @@ export class SchedulesService {
       childId: schedule.childId,
       organizationId: membership.organizationId,
       type: NotificationType.SCHEDULE_CREATED,
-      message: `${profile.user.name} 치료사님이 새 일정을 등록했습니다`,
+      payload: { startAt: schedule.startAt.toISOString() },
     });
 
     return this.toDto(schedule);
@@ -415,7 +415,10 @@ export class SchedulesService {
         childId: dto.childId,
         organizationId: membership.organizationId,
         type: NotificationType.SCHEDULE_CREATED,
-        message: `${profile.user.name} 치료사님이 반복 일정 ${schedules.length}건을 등록했습니다`,
+        payload: {
+          startAt: schedules[0].startAt.toISOString(),
+          scheduleCount: schedules.length,
+        },
       });
     }
 
@@ -512,7 +515,10 @@ export class SchedulesService {
       childId: updated.childId,
       organizationId: schedule.organizationId,
       type: NotificationType.SCHEDULE_UPDATED,
-      message: `${profile.user.name} 치료사님이 일정을 변경했습니다`,
+      payload: {
+        startAt: updated.startAt.toISOString(),
+        ...(timeChanged ? { prevStartAt: schedule.startAt.toISOString() } : {}),
+      },
     });
 
     return this.toDto(updated);
@@ -544,7 +550,7 @@ export class SchedulesService {
       childId: updated.childId,
       organizationId: schedule.organizationId,
       type: NotificationType.SCHEDULE_CANCELED,
-      message: `${profile.user.name} 치료사님이 일정을 취소했습니다`,
+      payload: { startAt: updated.startAt.toISOString() },
     });
 
     return this.toDto(updated);
