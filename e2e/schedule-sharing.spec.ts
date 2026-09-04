@@ -197,6 +197,8 @@ test('치료사가 등록한 일정이 학부모에게 공유되고, 학부모�
   await parentPage.goto('/notifications');
   await expect(parentPage.getByText('새 일정이 등록되었어요').first()).toBeVisible();
   await expect(parentPage.getByText(`${CHILD_NAME} · ${ORG_NAME}`)).toBeVisible();
+  // 본문은 API가 만든 문장이 아니라 payload(startAt)로 웹이 조립한 것이다.
+  await expect(parentPage.getByText(/14:00/).first()).toBeVisible();
 
   await therapistContext.close();
   await parentContext.close();
