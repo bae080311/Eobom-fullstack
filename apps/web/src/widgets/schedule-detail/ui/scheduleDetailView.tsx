@@ -7,6 +7,7 @@ import {
   IconButton,
   IconClock,
   IconFileText,
+  IconMapPin,
   IconMoreHorizontal,
   IconUser,
 } from '@/shared/ui';
@@ -61,6 +62,13 @@ export function ScheduleDetailView({ schedule, backHref, footer, statusLabel, t 
       <section className="px-5 mt-7">
         <h2 className="text-title3 font-bold tracking-tighter m-0 mb-3">{t('infoSectionTitle')}</h2>
         <div className="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-4">
+          {/* 어느 센터의 일정인지 먼저 보여준다 — 레이어 1 §1.4 6단계(기관명·치료사명 함께 표기) */}
+          <DetailRow
+            icon={<IconMapPin size={16} />}
+            label={t('organizationLabel')}
+            value={schedule.organizationName}
+          />
+          <hr className="border-0 border-t border-gray-100 m-0" />
           <DetailRow
             icon={<IconUser size={16} />}
             label={t('primaryTherapistLabel')}

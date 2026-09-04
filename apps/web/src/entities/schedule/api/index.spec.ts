@@ -102,6 +102,7 @@ describe('fetchSchedules', () => {
 const mockDetail: ScheduleDetailResponseDto = {
   ...mockSchedule,
   therapistName: '이치료',
+  organizationName: '맑은소리 언어치료센터',
   acknowledged: false,
   acknowledgedAt: null,
 };
