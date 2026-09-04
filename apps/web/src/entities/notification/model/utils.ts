@@ -45,12 +45,22 @@ function getGroup(createdAt: string): NotificationGroup {
   return 'earlier';
 }
 
+/**
+ * "홍길동 · 맑은소리 언어치료센터" 형태의 맥락 문구를 만든다.
+ * 아이가 둘 이상인 학부모는 이게 없으면 어느 아이 알림인지 구분할 수 없다.
+ * 연결 정보가 사라진 알림(기관 삭제 등)은 있는 것만 이어 붙인다.
+ */
+function formatContext(dto: NotificationResponseDto): string {
+  return [dto.childName, dto.organizationName].filter(Boolean).join(' · ');
+}
+
 export function mapDtoToNotification(dto: NotificationResponseDto, t: Translate): Notification {
   return {
     id: dto.id,
     type: TYPE_VARIANT[dto.type],
     title: t(`type.${dto.type}`),
     sub: dto.payload.message,
+    context: formatContext(dto),
     time: formatRelativeTime(dto.createdAt, t),
     unread: !dto.isRead,
     group: getGroup(dto.createdAt),
