@@ -4,7 +4,13 @@
 
 ## 최근 완료
 
-- PR #40(Playwright e2e 도입) main 병합 → **Phase 3 전항목 완료**. e2e 4건 + 단위 562건이 CI에서 돌고 있습니다.
+- PR #40(Playwright e2e 도입)·PR #41(prisma 마이그레이션 버전 관리 + `db-check.yml`) main 병합.
+- **학부모 일정 상세에 기관명 노출**(이번 세션) — §8.4에 남아 있던 마지막 간극을 닫았습니다. 레이어 1 §1.4 6단계가 요구하는 "기관명·치료사명 함께 표기"가 그동안 지켜지지 않았고, 원인은 웹이 아니라 **API에 기관명 필드 자체가 없던 것**이었습니다(`ScheduleDetailResponseDto`에 `therapistName`만 존재).
+  - `packages/shared` DTO에 `organizationName` 추가 → 서비스의 학부모·치료사 경로와 `acknowledge` 재조회 세 곳 모두 `organization` include → `widgets/schedule-detail` 치료 정보 첫 줄에 렌더.
+  - `Schedule.organizationId`가 이미 있어 **스키마 변경·마이그레이션 없음**.
+  - typecheck가 DTO 필드 누락으로 웹 픽스처 2곳을 잡아줬습니다(타입 공유의 효과).
+  - e2e에 보류해뒀던 기관명 단정을 복원하고 주석을 제거했습니다. API 스펙·위젯 스펙·e2e 3계층에서 검증됩니다.
+  - Notion 레이어 8 §8.4(간극 해소)·레이어 6 §6.6(원칙 명시)·레이어 5 §5.8(DTO 메모) 갱신.
 - **`prisma/migrations`를 버전 관리에 포함**(이번 세션). `.gitignore`가 배제하고 있어 저장소에 마이그레이션이 없었고, 그래서 새 환경에서 `migrate deploy`로 스키마를 재현할 수 없었습니다 — Phase 5 배포를 막는 선행 조건이자 규칙 04("1 PR = 1 마이그레이션 — 롤백 식별성 확보") 위반이었습니다.
   - 기존 3개가 현재 `schema.prisma`와 **정확히 일치**함을 먼저 확인해서(`migrate diff` → "No difference detected") 재작성 없이 그대로 커밋했습니다. 28K 순수 DDL, 민감 정보 없음.
   - 빈 DB에 `migrate deploy` → 15개 테이블 생성, `migrate status` "up to date" 확인.
@@ -16,7 +22,7 @@
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **기관명이 학부모 화면에 전혀 노출되지 않습니다.** 레이어 1 §1.4 6단계는 일정 조회 시 "기관명·치료사명 함께 표기"를 요구하고 §5.9 Notification 샘플에도 `organizationName`이 있지만, `widgets/schedule-detail`은 치료사명·시간·종류·메모만 렌더하고 web 코드에 `organizationName` 사용처가 없습니다. **학부모 신뢰도에 직결**되는 항목이라 노출 위치 결정이 필요합니다(architect 판단 권장). e2e에는 해당 단정을 보류하고 주석으로 남겨뒀으니, 구현하면 주석도 함께 정리해야 합니다.
+1. **`NotificationResponseDto`가 레이어 5 §5.9 명세와 불일치합니다.** 명세 샘플은 `organizationName`·`therapistName`·`childName`을 명시하는데 실제 DTO는 `payload: { message }` 하나뿐입니다. 알림 목록에서 "어느 아이의, 어느 센터 일정인지"를 알 수 없습니다. 이번에 일정 상세만 고쳤고 알림은 payload 구조 전체를 바꾸는 별건이라 분리했습니다.
 2. **Phase 4.5 SessionReport 웹 UI 연동** — 백엔드(`POST/GET /schedules/:scheduleId/report*`, Ollama)는 완료됐으나 `features`·`widgets`·`entities` 어디에도 report 슬라이스가 없습니다(직접 확인). 치료사 작성 화면·학부모 열람 화면·알림 연동 여부 범위 결정부터 필요(Notion 8.7 Decision Log 리스크 항목 참고).
 3. **Phase 5(Ops) 나머지** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되기 시작했으니 배포 작업을 시작할 수 있습니다.
 4. **기존 `ci.yml`도 `persist-credentials`·`permissions` 하드닝이 안 돼 있습니다.** `db-check.yml`에만 적용했고 PR #41 diff 밖이라 건드리지 않았습니다. 별도 chore로 정리할지 판단 필요.

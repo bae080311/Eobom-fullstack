@@ -81,10 +81,11 @@ const makeScheduleRow = (overrides?: object) => ({
   ...overrides,
 });
 
-// findOne/acknowledge가 반환하는 detail 형태(치료사 이름·확인 목록 포함)
+// findOne/acknowledge가 반환하는 detail 형태(치료사 이름·기관명·확인 목록 포함)
 const makeDetailRow = (overrides?: object) => ({
   ...makeScheduleRow(),
   therapist: { user: { name: '이치료' } },
+  organization: { name: '맑은소리 언어치료센터' },
   acknowledgements: [] as Array<{ acknowledgedAt: Date }>,
   ...overrides,
 });
@@ -321,6 +322,7 @@ describe('SchedulesService', () => {
       expect(result.id).toBe('s1');
       expect(result.therapistId).toBe('tp1');
       expect(result.therapistName).toBe('이치료');
+      expect(result.organizationName).toBe('맑은소리 언어치료센터');
       expect(result.acknowledged).toBe(false);
       expect(result.acknowledgedAt).toBeNull();
     });
@@ -403,8 +405,15 @@ describe('SchedulesService', () => {
 
       const result = await service.findOne('s1', parentUser);
 
+      // 레이어 1 §1.4 6단계: 학부모는 기관명·치료사명을 함께 본다.
       expect(result.therapistName).toBe('이치료');
+      expect(result.organizationName).toBe('맑은소리 언어치료센터');
       expect(result.acknowledged).toBe(false);
+      expect(prisma.schedule.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({ organization: { select: { name: true } } }),
+        }),
+      );
     });
 
     it('본인이 확인한 일정이면 acknowledged=true이고 본인 ack만 조회한다', async () => {
