@@ -16,6 +16,8 @@ export interface ScheduleResponseDto {
 
 export interface ScheduleDetailResponseDto extends ScheduleResponseDto {
   therapistName: string;
+  /** 학부모에게 "어느 센터의 일정인지"를 보여주기 위한 기관명 (레이어 1 §1.4 6단계). */
+  organizationName: string;
   acknowledged: boolean;
   acknowledgedAt: string | null;
 }
