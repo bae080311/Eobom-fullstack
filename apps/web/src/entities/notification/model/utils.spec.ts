@@ -14,6 +14,9 @@ function makeDto(overrides: Partial<NotificationResponseDto> = {}): Notification
     type: NotificationType.SCHEDULE_CREATED,
     scheduleId: 's1',
     childId: 'c1',
+    organizationName: '맑은소리 언어치료센터',
+    therapistName: '김치료',
+    childName: '홍길동',
     payload: { message: '오늘 14:00 · 개별 언어치료' },
     isRead: false,
     createdAt: '2026-06-19T00:00:00.000Z',
@@ -66,5 +69,25 @@ describe('mapDtoToNotification > time (formatRelativeTime)', () => {
     vi.setSystemTime(new Date('2026-06-22T00:00:00.000Z'));
     const n = mapDtoToNotification(makeDto({ createdAt: '2026-06-19T00:00:00.000Z' }), t);
     expect(n.time).toBe('3일 전');
+  });
+});
+
+describe('mapDtoToNotification — 맥락 문구', () => {
+  it('아동명과 기관명을 이어 붙인다', () => {
+    // 아이가 둘 이상인 학부모는 이 줄이 없으면 어느 아이 알림인지 알 수 없다.
+    expect(mapDtoToNotification(makeDto(), t).context).toBe('홍길동 · 맑은소리 언어치료센터');
+  });
+
+  it('기관 정보가 없으면 아동명만 남긴다', () => {
+    const n = mapDtoToNotification(makeDto({ organizationName: null }), t);
+    expect(n.context).toBe('홍길동');
+  });
+
+  it('연결 정보가 모두 없으면 빈 문자열이다', () => {
+    const n = mapDtoToNotification(
+      makeDto({ organizationName: null, childName: null, therapistName: null }),
+      t,
+    );
+    expect(n.context).toBe('');
   });
 });
