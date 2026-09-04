@@ -40,9 +40,6 @@ Thumbs.db
 # Testing
 coverage/
 
-# Prisma
-prisma/migrations/
-
 # Next.js PWA
 **/public/sw.js
 **/public/sw.js.map
