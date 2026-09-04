@@ -572,7 +572,8 @@ describe('SchedulesService', () => {
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
-      expect(arg.message).toContain('이치료');
+      // 완성된 문장이 아니라 문구 조립용 원자 데이터를 넘긴다.
+      expect(arg.payload).toEqual({ startAt: '2025-06-01T10:00:00.000Z' });
     });
   });
 
@@ -698,7 +699,11 @@ describe('SchedulesService', () => {
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
-      expect(arg.message).toContain('2건');
+      // 첫 일정 시각 + 생성 건수를 넘겨 웹이 "N건" 문구를 조립하게 한다.
+      expect(arg.payload).toEqual({
+        startAt: '2025-06-01T10:00:00.000Z',
+        scheduleCount: 2,
+      });
     });
 
     it('endDate 미전달 시 RecurringRule의 endDate는 null로 저장된다', async () => {
@@ -858,6 +863,9 @@ describe('SchedulesService', () => {
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
+      // 시간이 바뀌면 "이전 → 이후"를 웹에서 조립할 수 있도록 두 시각을 모두 넘긴다.
+      expect(arg.payload.prevStartAt).toBe('2025-06-01T10:00:00.000Z');
+      expect(arg.payload.startAt).toBeDefined();
     });
 
     it('시간 미변경(제목만 수정)이어도 SCHEDULE_UPDATED 타입으로 알림을 전송한다', async () => {
@@ -868,9 +876,10 @@ describe('SchedulesService', () => {
       await service.update('s1', { title: '수정된 제목' }, 'u1');
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      expect(notifications.notifyScheduleEvent.mock.calls[0][0].type).toBe(
-        NotificationType.SCHEDULE_UPDATED,
-      );
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      expect(arg.type).toBe(NotificationType.SCHEDULE_UPDATED);
+      // 시간이 그대로면 prevStartAt을 넣지 않아 "→" 문구가 뜨지 않는다.
+      expect(arg.payload.prevStartAt).toBeUndefined();
     });
   });
 

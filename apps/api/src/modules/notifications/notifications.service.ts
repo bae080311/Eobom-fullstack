@@ -66,7 +66,8 @@ export class NotificationsService {
     childId: string;
     organizationId: string;
     type: NotificationType;
-    message: string;
+    /** 완성된 문장이 아니라 문구 조립에 필요한 값만 담는다 — 번역은 웹이 한다. */
+    payload: NotificationPayload;
   }): Promise<void> {
     try {
       const links = await this.prisma.parentChildLink.findMany({
@@ -88,7 +89,7 @@ export class NotificationsService {
           scheduleId: params.scheduleId,
           childId: params.childId,
           organizationId: params.organizationId,
-          payload: { message: params.message },
+          payload: { ...params.payload },
         })),
       });
 
