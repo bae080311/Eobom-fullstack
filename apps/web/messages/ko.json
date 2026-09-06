@@ -394,6 +394,7 @@
       "pageTitle": "치료 일정 상세",
       "moreAria": "더보기",
       "infoSectionTitle": "치료 정보",
+      "organizationLabel": "기관",
       "primaryTherapistLabel": "담당 치료사",
       "durationLabel": "치료 시간",
       "typeLabel": "치료 종류",

@@ -192,6 +192,7 @@ export class SchedulesService {
         include: {
           child: { select: { id: true, name: true } },
           therapist: { select: { user: { select: { name: true } } } },
+          organization: { select: { name: true } },
           acknowledgements: {
             where: { parentId: parentProfile.id },
             select: { acknowledgedAt: true },
@@ -221,6 +222,7 @@ export class SchedulesService {
       include: {
         child: { select: { id: true, name: true } },
         therapist: { select: { user: { select: { name: true } } } },
+        organization: { select: { name: true } },
         acknowledgements: {
           orderBy: { acknowledgedAt: 'asc' },
           take: 1,
@@ -275,6 +277,7 @@ export class SchedulesService {
       include: {
         child: { select: { id: true, name: true } },
         therapist: { select: { user: { select: { name: true } } } },
+        organization: { select: { name: true } },
         acknowledgements: {
           where: { parentId: parentProfile.id },
           select: { acknowledgedAt: true },
@@ -606,12 +609,14 @@ export class SchedulesService {
       title: string;
       notes: string | null;
       therapist: { user: { name: string } };
+      organization: { name: string };
     },
     ack: { acknowledgedAt: Date } | null,
   ): ScheduleDetailResponseDto {
     return {
       ...this.toDto(schedule),
       therapistName: schedule.therapist.user.name,
+      organizationName: schedule.organization.name,
       acknowledged: ack !== null,
       acknowledgedAt: ack ? ack.acknowledgedAt.toISOString() : null,
     };
