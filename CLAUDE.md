@@ -32,6 +32,7 @@ cp .env.example .env && docker compose up -d && pnpm install && pnpm db:migrate 
 `InviteCode` 초대코드 · `InviteCodeType` THERAPIST_JOIN/PARENT_LINK
 `Schedule` 치료 세션 · `RecurringRule` 반복 규칙
 `ScheduleAcknowledgement` 일정 확인 (구 ScheduleConfirmation) · `Notification` 알림
+`SessionReport` 세션 리포트 (치료사 메모 → Ollama 요약, Schedule 당 1개)
 
 **ScheduleStatus**: `SCHEDULED` `RESCHEDULED` `CANCELED` `COMPLETED`
 **NotificationType**: `SCHEDULE_CREATED` `SCHEDULE_UPDATED` `SCHEDULE_CANCELED`
