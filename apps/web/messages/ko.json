@@ -58,6 +58,11 @@
         "SCHEDULE_UPDATED": "일정이 변경되었어요",
         "SCHEDULE_CANCELED": "일정이 취소되었어요"
       },
+      "sub": {
+        "at": "{when}",
+        "recurring": "{when} 외 {rest}건",
+        "rescheduled": "{prev} → {next}"
+      },
       "justNow": "방금 전",
       "minutesAgo": "{count}분 전",
       "hoursAgo": "{count}시간 전",

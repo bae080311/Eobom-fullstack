@@ -31,7 +31,7 @@ const makeNotificationRow = (overrides?: object) => ({
   organization: { name: '맑은소리 언어치료센터' },
   child: { name: '홍길동' },
   schedule: { therapist: { user: { name: '김치료' } } },
-  payload: { message: '김치료 치료사님이 새 일정을 등록했습니다' },
+  payload: { startAt: '2025-06-01T10:00:00.000Z' },
   readAt: null,
   createdAt: new Date('2025-06-01T10:00:00Z'),
   ...overrides,
@@ -52,7 +52,7 @@ describe('NotificationsService', () => {
       childId: 'c1',
       organizationId: 'org1',
       type: NotificationType.SCHEDULE_CREATED,
-      message: '이치료 치료사님이 새 일정을 등록했습니다',
+      payload: { startAt: '2025-06-01T10:00:00.000Z' },
     };
 
     it('연결된 학부모가 있으면 각 학부모에게 알림을 생성한다', async () => {
@@ -73,7 +73,7 @@ describe('NotificationsService', () => {
           scheduleId: 's1',
           childId: 'c1',
           organizationId: 'org1',
-          payload: { message: baseParams.message },
+          payload: baseParams.payload,
         },
         {
           parentId: 'pp2',
@@ -81,7 +81,7 @@ describe('NotificationsService', () => {
           scheduleId: 's1',
           childId: 'c1',
           organizationId: 'org1',
-          payload: { message: baseParams.message },
+          payload: baseParams.payload,
         },
       ]);
     });
@@ -94,18 +94,20 @@ describe('NotificationsService', () => {
       expect(prisma.notification.createMany).not.toHaveBeenCalled();
     });
 
-    it('type을 그대로 payload/컬럼에 전달한다', async () => {
+    it('type과 구조화된 payload를 그대로 전달한다', async () => {
       prisma.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }]);
 
       await service.notifyScheduleEvent({
         ...baseParams,
         type: NotificationType.SCHEDULE_CANCELED,
-        message: '취소되었습니다',
+        payload: { startAt: '2025-07-01T05:00:00.000Z' },
       });
 
       const data = prisma.notification.createMany.mock.calls[0][0].data;
       expect(data[0].type).toBe(NotificationType.SCHEDULE_CANCELED);
-      expect(data[0].payload).toEqual({ message: '취소되었습니다' });
+      // 완성된 문장이 아니라 원자 데이터가 저장돼야 한다 — 번역은 웹이 담당한다.
+      expect(data[0].payload).toEqual({ startAt: '2025-07-01T05:00:00.000Z' });
+      expect(data[0].payload).not.toHaveProperty('message');
     });
   });
 
