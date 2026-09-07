@@ -28,6 +28,7 @@ function makeDetail(overrides: Partial<ScheduleDetailResponseDto> = {}): Schedul
     title: '언어치료',
     notes: null,
     therapistName: '이치료',
+    organizationName: '맑은소리 언어치료센터',
     acknowledged: false,
     acknowledgedAt: null,
     ...overrides,
@@ -35,7 +36,7 @@ function makeDetail(overrides: Partial<ScheduleDetailResponseDto> = {}): Schedul
 }
 
 describe('ScheduleDetailView', () => {
-  it('아동명·치료사명·치료 종류를 표시한다', () => {
+  it('아동명·기관명·치료사명·치료 종류를 표시한다', () => {
     render(
       <ScheduleDetailView
         schedule={makeDetail()}
@@ -46,6 +47,8 @@ describe('ScheduleDetailView', () => {
       />,
     );
     expect(screen.getByText('김아동')).toBeInTheDocument();
+    // 레이어 1 §1.4 6단계: 학부모는 기관명과 치료사명을 함께 봐야 한다.
+    expect(screen.getByText('맑은소리 언어치료센터')).toBeInTheDocument();
     expect(screen.getByText('이치료')).toBeInTheDocument();
     expect(screen.getAllByText('언어치료').length).toBeGreaterThan(0);
   });
