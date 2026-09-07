@@ -31,7 +31,14 @@ export type OllamaReport = z.infer<typeof ollamaReportSchema>;
 export interface SessionReportResponseDto {
   id: string;
   scheduleId: string;
-  rawMemo: string;
+  /**
+   * 치료사가 입력한 원본 세션 메모.
+   *
+   * **학부모 응답에는 포함되지 않는다** — 원본이 아니라 요약본을 공유하는 것이
+   * SessionReport의 목적이기 때문이다(레이어 3 §3.3). 치료사가 재생성 폼을
+   * 채울 때만 필요하므로 요청자 역할에 따라 빠지며, 그래서 optional이다.
+   */
+  rawMemo?: string;
   summary: string;
   activities: string[];
   progress: string;
