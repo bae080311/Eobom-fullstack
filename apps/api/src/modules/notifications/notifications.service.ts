@@ -3,6 +3,14 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationType } from '@eobom/shared';
 import type { NotificationResponseDto, NotificationPayload } from '@eobom/shared';
 
+// 알림 카드에 "누구의·어디 일정"을 표시하기 위한 조인. 저장된 payload 대신
+// 조회 시점에 채우므로 이름이 바뀌어도, 과거 알림이어도 최신 값이 나온다.
+const DISPLAY_CONTEXT_INCLUDE = {
+  organization: { select: { name: true } },
+  child: { select: { name: true } },
+  schedule: { select: { therapist: { select: { user: { select: { name: true } } } } } },
+} as const;
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -15,6 +23,7 @@ export class NotificationsService {
 
     const notifications = await this.prisma.notification.findMany({
       where: { parentId: profile.id },
+      include: DISPLAY_CONTEXT_INCLUDE,
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -34,6 +43,7 @@ export class NotificationsService {
     const updated = await this.prisma.notification.update({
       where: { id },
       data: { readAt: new Date() },
+      include: DISPLAY_CONTEXT_INCLUDE,
     });
 
     return this.toDto(updated);
@@ -99,6 +109,9 @@ export class NotificationsService {
     type: string;
     scheduleId: string | null;
     childId: string | null;
+    organization: { name: string } | null;
+    child: { name: string } | null;
+    schedule: { therapist: { user: { name: string } } } | null;
     payload: unknown;
     readAt: Date | null;
     createdAt: Date;
@@ -109,6 +122,9 @@ export class NotificationsService {
       type: n.type as NotificationType,
       scheduleId: n.scheduleId,
       childId: n.childId,
+      organizationName: n.organization?.name ?? null,
+      therapistName: n.schedule?.therapist.user.name ?? null,
+      childName: n.child?.name ?? null,
       payload: n.payload as NotificationPayload,
       isRead: n.readAt !== null,
       createdAt: n.createdAt.toISOString(),

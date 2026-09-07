@@ -7,6 +7,8 @@ export interface Notification {
   type: NotificationVariant;
   title: string;
   sub: string;
+  /** "어느 아이의 · 어느 센터" 맥락. 연결 정보가 없으면 빈 문자열. */
+  context: string;
   time: string;
   unread: boolean;
   group: NotificationGroup;

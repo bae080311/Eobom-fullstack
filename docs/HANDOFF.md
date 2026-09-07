@@ -4,13 +4,13 @@
 
 ## 최근 완료
 
-- PR #40(Playwright e2e 도입)·PR #41(prisma 마이그레이션 버전 관리 + `db-check.yml`) main 병합.
-- **학부모 일정 상세에 기관명 노출**(이번 세션) — §8.4에 남아 있던 마지막 간극을 닫았습니다. 레이어 1 §1.4 6단계가 요구하는 "기관명·치료사명 함께 표기"가 그동안 지켜지지 않았고, 원인은 웹이 아니라 **API에 기관명 필드 자체가 없던 것**이었습니다(`ScheduleDetailResponseDto`에 `therapistName`만 존재).
-  - `packages/shared` DTO에 `organizationName` 추가 → 서비스의 학부모·치료사 경로와 `acknowledge` 재조회 세 곳 모두 `organization` include → `widgets/schedule-detail` 치료 정보 첫 줄에 렌더.
-  - `Schedule.organizationId`가 이미 있어 **스키마 변경·마이그레이션 없음**.
-  - typecheck가 DTO 필드 누락으로 웹 픽스처 2곳을 잡아줬습니다(타입 공유의 효과).
-  - e2e에 보류해뒀던 기관명 단정을 복원하고 주석을 제거했습니다. API 스펙·위젯 스펙·e2e 3계층에서 검증됩니다.
-  - Notion 레이어 8 §8.4(간극 해소)·레이어 6 §6.6(원칙 명시)·레이어 5 §5.8(DTO 메모) 갱신.
+- **알림에 "어느 아이·어느 센터" 맥락 추가**(이번 세션, PR 대기). 알림 메시지는 치료사명만 담고 있어 아이가 둘 이상인 학부모는 어느 아이 알림인지 구분할 수 없었습니다(레이어 5 §5.9 불일치).
+  - `NotificationResponseDto`에 `organizationName`·`therapistName`·`childName` 추가. **저장하지 않고 조회 시점에 조인**해 채우므로 과거 알림도 함께 채워지고 이름이 바뀌어도 최신값이 나옵니다. `Notification`에 이미 관계가 있어 **마이그레이션 없음**.
+  - 알림 카드에 "홍길동 · 맑은소리 언어치료센터" 줄 추가(연결 정보 없으면 렌더 안 함).
+  - `findAll`·`markAsRead`는 그동안 테스트가 전혀 없었습니다(커버리지 45%) — 권한 검증 포함해 스펙 신규 작성(API 237 → 243건).
+  - 소비처 없는 `MOCK_NOTIFICATIONS` 제거(알림 화면이 실제 API로 바뀐 뒤 죽은 코드).
+
+- PR #40(Playwright e2e 도입)·PR #41(prisma 마이그레이션 버전 관리 + `db-check.yml`)·**PR #42(학부모 일정 상세 기관명 노출)** main 병합 → **Phase 3 전항목 완료**. e2e 4건 + 단위 562건이 CI에서 돌고 있습니다. #42로 §8.4에 남아 있던 마지막 간극이 닫혔습니다(`ScheduleDetailResponseDto.organizationName`).
 - **`prisma/migrations`를 버전 관리에 포함**(이번 세션). `.gitignore`가 배제하고 있어 저장소에 마이그레이션이 없었고, 그래서 새 환경에서 `migrate deploy`로 스키마를 재현할 수 없었습니다 — Phase 5 배포를 막는 선행 조건이자 규칙 04("1 PR = 1 마이그레이션 — 롤백 식별성 확보") 위반이었습니다.
   - 기존 3개가 현재 `schema.prisma`와 **정확히 일치**함을 먼저 확인해서(`migrate diff` → "No difference detected") 재작성 없이 그대로 커밋했습니다. 28K 순수 DDL, 민감 정보 없음.
   - 빈 DB에 `migrate deploy` → 15개 테이블 생성, `migrate status` "up to date" 확인.
@@ -22,7 +22,7 @@
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **`NotificationResponseDto`가 레이어 5 §5.9 명세와 불일치합니다.** 명세 샘플은 `organizationName`·`therapistName`·`childName`을 명시하는데 실제 DTO는 `payload: { message }` 하나뿐입니다. 알림 목록에서 "어느 아이의, 어느 센터 일정인지"를 알 수 없습니다. 이번에 일정 상세만 고쳤고 알림은 payload 구조 전체를 바꾸는 별건이라 분리했습니다.
+1. **알림 `payload`가 아직 `{ message }` 단일 필드입니다.** 이번 세션에 `organizationName`·`therapistName`·`childName`은 채웠지만, API가 한국어 문장을 만들어 저장하는 구조라 클라이언트가 번역할 수 없습니다(Phase 4에서 UI 문자열을 전부 카탈로그로 뺀 것과 모순). payload를 원자 데이터로 구조화하는 작업이 남았습니다.
 2. **Phase 4.5 SessionReport 웹 UI 연동** — 백엔드(`POST/GET /schedules/:scheduleId/report*`, Ollama)는 완료됐으나 `features`·`widgets`·`entities` 어디에도 report 슬라이스가 없습니다(직접 확인). 치료사 작성 화면·학부모 열람 화면·알림 연동 여부 범위 결정부터 필요(Notion 8.7 Decision Log 리스크 항목 참고).
 3. **Phase 5(Ops) 나머지** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되기 시작했으니 배포 작업을 시작할 수 있습니다.
 4. **기존 `ci.yml`도 `persist-credentials`·`permissions` 하드닝이 안 돼 있습니다.** `db-check.yml`에만 적용했고 PR #41 diff 밖이라 건드리지 않았습니다. 별도 chore로 정리할지 판단 필요.

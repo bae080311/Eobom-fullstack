@@ -17,6 +17,7 @@ export function NotificationCard({ notification: n }: Props) {
           {n.title}
         </div>
         <div className="text-label text-gray-600 mt-1 leading-[1.45]">{n.sub}</div>
+        {n.context && <div className="text-caption text-gray-600 mt-1">{n.context}</div>}
       </div>
       <div className="text-caption text-gray-600 font-medium">{n.time}</div>
     </div>
