@@ -204,6 +204,25 @@ describe('ReportService', () => {
         }),
       );
     });
+
+    it('생성 응답에는 rawMemo가 포함된다 (치료사 전용 경로)', async () => {
+      prisma.schedule.findUnique.mockResolvedValue(makeSchedule());
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      ollama.generateReport.mockResolvedValue({
+        summary: '요약',
+        activities: ['활동1'],
+        progress: '진행상황',
+        homework: null,
+        nextGoal: '다음 목표',
+        tone: 'positive',
+      });
+      prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+
+      const result = await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
+
+      expect(result.data.rawMemo).toBe('오늘 ㄹ 발음 연습을 진행함');
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -249,6 +268,23 @@ describe('ReportService', () => {
           where: { parentId_childId: { parentId: 'pp1', childId: 'c1' } },
         });
         expect(result.data?.id).toBe('r1');
+      });
+
+      it('학부모 응답에는 rawMemo(치료사 원본 메모)가 아예 없다', async () => {
+        prisma.schedule.findUnique.mockResolvedValue(makeSchedule());
+        prisma.parentProfile.findUnique.mockResolvedValue(makeParentProfile());
+        prisma.parentChildLink.findUnique.mockResolvedValue({ parentId: 'pp1', childId: 'c1' });
+        prisma.sessionReport.findUnique.mockResolvedValue(
+          makeReportRow({ rawMemo: '종성 탈락 잔존, 보호자 상담 필요' }),
+        );
+
+        const result = await service.findOne('s1', parentUser);
+
+        // undefined 단정만으로는 키가 남아 있는 경우를 못 잡는다 — 직렬화되면 값이 노출된다.
+        expect(result.data).not.toHaveProperty('rawMemo');
+        expect(JSON.stringify(result.data)).not.toContain('종성 탈락');
+        // 요약본 필드는 그대로 내려간다
+        expect(result.data?.summary).toBe('오늘은 ㄹ 발음 연습을 즐겁게 진행했어요.');
       });
 
       it('리포트가 아직 없으면 data: null을 반환한다', async () => {
@@ -303,6 +339,17 @@ describe('ReportService', () => {
         const result = await service.findOne('s1', otherTherapistUser);
 
         expect(result.data?.id).toBe('r1');
+      });
+
+      it('치료사 응답에는 rawMemo가 포함된다 (재생성 폼 프리필용)', async () => {
+        prisma.schedule.findUnique.mockResolvedValue(makeSchedule());
+        prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+        prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+        prisma.sessionReport.findUnique.mockResolvedValue(makeReportRow());
+
+        const result = await service.findOne('s1', therapistUser);
+
+        expect(result.data?.rawMemo).toBe('오늘 ㄹ 발음 연습을 진행함');
       });
     });
   });

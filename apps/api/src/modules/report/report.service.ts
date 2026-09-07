@@ -74,7 +74,8 @@ export class ReportService {
     });
 
     this.logger.log(`generate: report saved id=${saved.id} schedule=${scheduleId}`);
-    return { data: this.toDto(saved) };
+    // 생성은 치료사 전용이므로 원본 메모를 함께 돌려준다 (재생성 폼 프리필용).
+    return { data: this.toDto(saved, { includeRawMemo: true }) };
   }
 
   async findOne(
@@ -121,27 +122,35 @@ export class ReportService {
     }
 
     const report = await this.prisma.sessionReport.findUnique({ where: { scheduleId } });
-    return { data: report ? this.toDto(report) : null };
+    if (!report) return { data: null };
+
+    // 학부모에게는 원본 메모를 내리지 않는다 — 요약본을 공유하는 것이 이 기능의 목적이다.
+    const includeRawMemo = user.role !== UserRole.PARENT;
+    return { data: this.toDto(report, { includeRawMemo }) };
   }
 
-  private toDto(report: {
-    id: string;
-    scheduleId: string;
-    rawMemo: string;
-    summary: string;
-    activities: string[];
-    progress: string;
-    homework: string | null;
-    nextGoal: string;
-    tone: string;
-    promptVersion: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): SessionReportResponseDto {
+  private toDto(
+    report: {
+      id: string;
+      scheduleId: string;
+      rawMemo: string;
+      summary: string;
+      activities: string[];
+      progress: string;
+      homework: string | null;
+      nextGoal: string;
+      tone: string;
+      promptVersion: string;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    { includeRawMemo }: { includeRawMemo: boolean },
+  ): SessionReportResponseDto {
     return {
       id: report.id,
       scheduleId: report.scheduleId,
-      rawMemo: report.rawMemo,
+      // 필드를 아예 빼야 한다 — null/빈 문자열로 두면 값이 응답에 남는다.
+      ...(includeRawMemo ? { rawMemo: report.rawMemo } : {}),
       summary: report.summary,
       activities: report.activities,
       progress: report.progress,
