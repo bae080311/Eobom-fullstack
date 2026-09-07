@@ -21,9 +21,11 @@ interface Props {
   statusLabel: string;
   // 페이지(Server Component)에서 getTranslations('widgets.scheduleDetail')로 미리 구한 번역기.
   t: Translate;
+  // 메모 아래·하단 액션바 위에 붙는 추가 섹션 (세션 리포트 등). 역할별로 다른 것이 들어간다.
+  extra?: ReactNode;
 }
 
-export function ScheduleDetailView({ schedule, backHref, footer, statusLabel, t }: Props) {
+export function ScheduleDetailView({ schedule, backHref, footer, statusLabel, t, extra }: Props) {
   const dateLabel = formatDateLabel(schedule.startAt);
   const timeRange = `${formatTime(schedule.startAt)} ~ ${formatTime(schedule.endAt)}`;
 
@@ -87,6 +89,8 @@ export function ScheduleDetailView({ schedule, backHref, footer, statusLabel, t 
           </div>
         </section>
       )}
+
+      {extra}
 
       {footer}
     </div>
