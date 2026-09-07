@@ -19,21 +19,25 @@
 
 - PR #43(알림에 아동·기관 맥락 추가)·PR #44(알림 문구 생성을 서버 → 웹으로 이관) main 병합. 알림 카드가 "홍길동 · 맑은소리 언어치료센터" 맥락과 `6월 1일 (월) 14:00 → 6월 2일 (화) 15:00` 형태의 변경 전후 시각을 함께 보여줍니다.
 
+- **세션 리포트 `rawMemo`의 학부모 노출 차단**(이번 세션, PR 대기). 치료사 원본 메모가 학부모 API 응답에 그대로 내려가고 있었습니다 — 웹 카드는 렌더하지 않았지만 네트워크 응답에는 남아 있었고, "원본이 아니라 요약본을 공유한다"는 이 기능의 전제와 어긋났습니다.
+  - `findOne`이 요청자 역할을 보고 PARENT면 **`rawMemo` 키 자체를 응답에서 뺍니다**. null·빈 문자열로 두면 값이 남으므로 키를 없앴습니다.
+  - `generate`는 치료사 전용 경로라 그대로 내려줍니다 — 재생성 폼 프리필에 필요합니다. 그래서 `SessionReportResponseDto.rawMemo`는 optional입니다.
+  - 스펙 3건 추가(API 243 → 246). 학부모 응답은 `not.toHaveProperty('rawMemo')` + 직렬화 문자열에 원본이 없는지까지 봅니다 — `undefined` 단정만으로는 키가 남은 경우를 놓칩니다.
+  - **마이그레이션 없음.** 웹 변경 없음(카드가 원래 렌더하지 않았고 치료사 폼은 이미 `?? ''` 폴백).
+
 ## 이번에 드러난 미해결 항목
 
-1. **`rawMemo`가 학부모 응답에도 내려갑니다.** 웹 카드는 렌더하지 않지만 네트워크 응답에는 그대로 있습니다. 치료사 원본 메모 대신 요약본을 공유한다는 이 기능의 전제와 어긋나므로 **역할별 응답 분리가 필요**합니다(레이어 5 §5.10 간극 ②). 웹만으로는 막을 수 없어 백엔드 작업입니다.
-2. **응답 엔벨로프가 report 모듈만 다릅니다.** `ReportService`만 레이어 5 §5.1의 `{ data: ... }`를 지키고 `schedules`·`notifications` 등은 DTO를 그대로 돌려줍니다(전역 변환 인터셉터 없음). **규약을 지키는 쪽이 소수**입니다. 현재는 `entities/session-report/api`에서 report 응답만 `.data`로 벗겨 씁니다. 어느 쪽으로 통일할지 결정 필요.
-3. **Notion MCP 경로가 일부 한글 음절을 깨뜨립니다.** 이번 세션에 쓴 "흡수"가 "흙수"로, "뜨면"이 "뜼면"으로 저장됐습니다(기존 문서의 "스햤마"·"자장소"·"귀칙"도 같은 원인으로 보입니다). **Notion 문서를 쓴 뒤에는 눈으로 확인**하세요.
+1. **응답 엔벨로프가 report 모듈만 다릅니다.** `ReportService`만 레이어 5 §5.1의 `{ data: ... }`를 지키고 `schedules`·`notifications` 등은 DTO를 그대로 돌려줍니다(전역 변환 인터셉터 없음). **규약을 지키는 쪽이 소수**입니다. 현재는 `entities/session-report/api`에서 report 응답만 `.data`로 벗겨 씁니다. 어느 쪽으로 통일할지 결정 필요.
+2. **Notion MCP 경로가 일부 한글 음절을 깨뜨립니다.** 읽기·쓰기 **양쪽 모두** 영향을 받습니다 — "흡수"로 검색했을 때 서버가 그 문자열을 "힙수"로 받았다고 응답했고, 읽어온 문서에도 "스햤마"·"자장소"·"귀칙" 같은 깨진 글자가 보입니다. **저장된 값 자체는 멀쩡할 가능성이 있으나 같은 채널로는 확인이 불가능**하므로, Notion 문서를 고친 뒤에는 브라우저로 직접 확인하세요. 특히 레이어 6 §6.7 본문 두 곳("흙수"·"뜼면")을 봐주세요.
 
 ## 다음 작업 후보 (우선순위 순)
 
 1. **Phase 5(Ops)** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되고 있으니 배포 작업을 시작할 수 있습니다. **이제 로드맵에서 유일하게 열린 Phase입니다.**
-2. **위 "미해결 항목" 1번(`rawMemo` 노출)** — 개인정보 성격이라 우선순위를 올릴 만합니다. `SessionReportResponseDto`를 역할별로 나누거나 `findOne`에서 PARENT일 때 필드를 빼는 방식.
-3. **리포트 작성 알림 연동** — 이번에 미룬 항목. `NotificationType` enum 확장 = 마이그레이션 1건이므로 단독 PR로.
-4. **기존 `ci.yml` 하드닝** — `persist-credentials`·`permissions`가 `db-check.yml`에만 적용돼 있습니다. 별도 chore.
-5. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1 에러 엔벨로프와도 불일치. 등록할지/문서를 실제에 맞출지 결정 필요. (2번 항목과 함께 "응답 형식 정리" PR로 묶는 것도 방법)
-6. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다.
-7. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
+2. **리포트 작성 알림 연동** — 미룬 항목. `NotificationType` enum 확장 = 마이그레이션 1건이므로 단독 PR로.
+3. **기존 `ci.yml` 하드닝** — `persist-credentials`·`permissions`가 `db-check.yml`에만 적용돼 있습니다. 별도 chore.
+4. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1 에러 엔벨로프와도 불일치. 등록할지/문서를 실제에 맞출지 결정 필요. (위 "미해결 항목" 1번과 함께 "응답 형식 정리" PR로 묶는 것도 방법)
+5. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다.
+6. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
 
 ## 참고
 
