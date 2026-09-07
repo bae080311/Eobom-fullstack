@@ -169,15 +169,11 @@ test('치료사가 등록한 일정이 학부모에게 공유되고, 학부모�
   await parentPage.goto('/schedule');
   await expect(parentPage.getByText(SCHEDULE_TITLE).first()).toBeVisible();
 
-  // 목록에서 상세로 진입 — 아동명과 담당 치료사명이 표기된다.
-  //
-  // NOTE: 레이어 1 §1.4 6단계는 "기관명·치료사명 함께 표기"를 요구하지만,
-  // 현재 `widgets/schedule-detail`은 기관명을 렌더하지 않는다(치료사명·치료시간·종류·메모만).
-  // 학부모 화면 어디에도 organizationName이 노출되지 않아 여기서는 단정하지 않는다.
-  // 명세-구현 간극이므로 별도 후속 작업으로 다뤄야 한다.
+  // 목록에서 상세로 진입 — 레이어 1 §1.4 6단계대로 기관명·치료사명이 함께 표기된다.
   await parentPage.getByText(SCHEDULE_TITLE).first().click();
   await expect(parentPage).toHaveURL(new RegExp(`/schedule/${schedule!.id}$`));
   await expect(parentPage.getByText(CHILD_NAME).first()).toBeVisible();
+  await expect(parentPage.getByText(ORG_NAME).first()).toBeVisible();
   await expect(parentPage.getByText(THERAPIST.name).first()).toBeVisible();
 
   // --- 7단계: 학부모가 일정을 확인 처리한다 ---

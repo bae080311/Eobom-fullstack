@@ -15,7 +15,7 @@
   - `findAll`·`markAsRead`는 그동안 테스트가 전혀 없었습니다(커버리지 45%) — 권한 검증 포함해 스펙 신규 작성(API 237 → 243건).
   - 소비처 없는 `MOCK_NOTIFICATIONS` 제거(알림 화면이 실제 API로 바뀐 뒤 죽은 코드).
 
-- PR #40(Playwright e2e 도입) main 병합 → **Phase 3 전항목 완료**. e2e 4건 + 단위 562건이 CI에서 돌고 있습니다.
+- PR #40(Playwright e2e 도입)·PR #41(prisma 마이그레이션 버전 관리 + `db-check.yml`)·**PR #42(학부모 일정 상세 기관명 노출)** main 병합 → **Phase 3 전항목 완료**. e2e 4건 + 단위 562건이 CI에서 돌고 있습니다. #42로 §8.4에 남아 있던 마지막 간극이 닫혔습니다(`ScheduleDetailResponseDto.organizationName`).
 - **`prisma/migrations`를 버전 관리에 포함**(이번 세션). `.gitignore`가 배제하고 있어 저장소에 마이그레이션이 없었고, 그래서 새 환경에서 `migrate deploy`로 스키마를 재현할 수 없었습니다 — Phase 5 배포를 막는 선행 조건이자 규칙 04("1 PR = 1 마이그레이션 — 롤백 식별성 확보") 위반이었습니다.
   - 기존 3개가 현재 `schema.prisma`와 **정확히 일치**함을 먼저 확인해서(`migrate diff` → "No difference detected") 재작성 없이 그대로 커밋했습니다. 28K 순수 DDL, 민감 정보 없음.
   - 빈 DB에 `migrate deploy` → 15개 테이블 생성, `migrate status` "up to date" 확인.
