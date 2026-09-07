@@ -25,6 +25,8 @@
   - 스펙 3건 추가(API 243 → 246). 학부모 응답은 `not.toHaveProperty('rawMemo')` + 직렬화 문자열에 원본이 없는지까지 봅니다 — `undefined` 단정만으로는 키가 남은 경우를 놓칩니다.
   - **마이그레이션 없음.** 웹 변경 없음(카드가 원래 렌더하지 않았고 치료사 폼은 이미 `?? ''` 폴백).
 
+- **`git-ship` 스킬에 슬라이스 그룹 분리 원칙 추가**(이번 세션, PR 대기). `feat/i18n-app-layer` 시절 stash에만 남아 있던 규칙을 저장소로 옮겼습니다 — 같은 레이어라도 파일이 10~15개를 넘으면 의미 있는 슬라이스 그룹 단위(3~5개 커밋)로 다시 쪼갠다는 내용입니다.
+
 ## 이번에 드러난 미해결 항목
 
 1. **응답 엔벨로프가 report 모듈만 다릅니다.** `ReportService`만 레이어 5 §5.1의 `{ data: ... }`를 지키고 `schedules`·`notifications` 등은 DTO를 그대로 돌려줍니다(전역 변환 인터셉터 없음). **규약을 지키는 쪽이 소수**입니다. 현재는 `entities/session-report/api`에서 report 응답만 `.data`로 벗겨 씁니다. 어느 쪽으로 통일할지 결정 필요.
@@ -36,8 +38,7 @@
 2. **리포트 작성 알림 연동** — 미룬 항목. `NotificationType` enum 확장 = 마이그레이션 1건이므로 단독 PR로.
 3. **기존 `ci.yml` 하드닝** — `persist-credentials`·`permissions`가 `db-check.yml`에만 적용돼 있습니다. 별도 chore.
 4. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1 에러 엔벨로프와도 불일치. 등록할지/문서를 실제에 맞출지 결정 필요. (위 "미해결 항목" 1번과 함께 "응답 형식 정리" PR로 묶는 것도 방법)
-5. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다.
-6. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
+5. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
 
 ## 참고
 
