@@ -1,8 +1,16 @@
 import { z } from "zod";
 
+// 메모 길이 제약은 web 폼도 동일하게 검증해야 하므로 상수로 노출한다.
+// (web은 i18n 메시지를 붙인 자체 스키마를 쓰기 때문에 스키마 자체를 재사용할 수 없다)
+export const REPORT_MEMO_MIN_LENGTH = 10;
+export const REPORT_MEMO_MAX_LENGTH = 2000;
+
 // 요청 입력: 치료사가 작성한 거친 세션 메모
 export const generateReportSchema = z.object({
-  memo: z.string().min(10, "메모를 10자 이상 입력해주세요").max(2000),
+  memo: z
+    .string()
+    .min(REPORT_MEMO_MIN_LENGTH, "메모를 10자 이상 입력해주세요")
+    .max(REPORT_MEMO_MAX_LENGTH),
 });
 
 export type GenerateReportDto = z.infer<typeof generateReportSchema>;

@@ -119,6 +119,33 @@ describe('ScheduleDetailView', () => {
     expect(screen.getByTestId('footer-slot')).toBeInTheDocument();
   });
 
+  it('extra 노드를 렌더링한다', () => {
+    render(
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedule"
+        footer={null}
+        extra={<div data-testid="extra-slot">EXTRA</div>}
+        statusLabel="예정"
+        t={t}
+      />,
+    );
+    expect(screen.getByTestId('extra-slot')).toBeInTheDocument();
+  });
+
+  it('extra를 넘기지 않아도 렌더링된다', () => {
+    render(
+      <ScheduleDetailView
+        schedule={makeDetail()}
+        backHref="/schedule"
+        footer={null}
+        statusLabel="예정"
+        t={t}
+      />,
+    );
+    expect(screen.getByText('김아동')).toBeInTheDocument();
+  });
+
   it('backHref를 뒤로가기 링크에 적용한다', () => {
     const { container } = render(
       <ScheduleDetailView

@@ -4,42 +4,45 @@
 
 ## 최근 완료
 
-- **알림 문구 생성을 서버 → 웹으로 이관**(이번 세션, PR 대기 / `feat/notification-context` 위에 스택). API가 `"김치료 치료사님이 새 일정을 등록했습니다"` 같은 한국어 문장을 만들어 저장하고 있어 클라이언트가 번역할 수 없었습니다 — Phase 4에서 UI 문자열을 전부 카탈로그로 뺀 것과 모순이었습니다.
-  - `payload`에 원자 데이터만: `startAt`, 시간이 바뀌면 `prevStartAt`, 반복 일괄 생성이면 `scheduleCount`. 문구는 웹이 `entities.notification.sub.*`로 조립합니다.
-  - **문구 자체가 유용해졌습니다** — 이전엔 "치료사님이 일정을 변경했습니다"라 언제로 바뀌었는지 알 수 없었는데, 이제 `6월 1일 (월) 14:00 → 6월 2일 (화) 15:00`으로 보입니다.
-  - 구조화 이전 알림은 `payload.message`로 폴백(deprecated, 신규 저장 안 함) — **백필·마이그레이션 없음**.
+- **Phase 4.5 SessionReport 웹 UI 연동**(이번 세션, PR 대기) → **Phase 4.5 완료**. 백엔드는 2026-06-26에 병합됐는데 웹에 report 슬라이스가 전혀 없어(`apps/web` 전체에 사용처 0건) 이 기능을 쓸 방법 자체가 없었습니다.
+  - `entities/session-report` — 조회·생성 API, tone 해석·색상, `useSessionReport` 쿼리, `SessionReportCard`·`SessionReportSection`.
+  - `features/generate-session-report` — `useGenerateSessionReport` 뮤테이션, `TherapistSessionReportSection`, `GenerateSessionReportForm`.
+  - `ScheduleDetailView`에 **`extra?: ReactNode` 슬롯 추가** — 메모 아래·하단 액션바 위에 역할별 섹션을 끼웁니다. optional이라 기존 호출부는 무변경입니다.
+  - 치료사(`/schedules/[id]`)는 작성·재생성, 학부모(`/schedule/[id]`)는 열람 전용. **학부모 화면은 리포트가 없으면 섹션을 아예 안 띄웁니다** — 예정된 미래 일정마다 "아직 없어요"가 뜨면 소음입니다.
+  - **재생성은 upsert라 기존 리포트를 덮어씁니다** → `ConfirmDialog` 경유. 폼에는 기존 `rawMemo`를 채워 처음부터 다시 쓰지 않게 했습니다.
+  - **생성은 최대 30초** 걸립니다(`OllamaService`의 `AbortSignal.timeout(30000)`). 제출 버튼이 "정리하는 중... (최대 30초)"로 바뀌고, 생성 중에는 모달을 닫지 못하게 막습니다(요청은 계속 진행돼 결과를 놓칩니다). 503은 Ollama 미기동이므로 재시도 안내 문구로 바꿔 보여줍니다.
+  - `tone`은 DB에 string으로 저장되는 LLM 생성값이라 계약을 벗어날 수 있어 `resolveSessionReportTone`이 모르는 값을 `neutral`로 흡수합니다.
+  - 메모 길이 제약은 `packages/shared`에 `REPORT_MEMO_MIN_LENGTH`/`REPORT_MEMO_MAX_LENGTH`로 노출해 API·웹 폼이 같은 값을 씁니다(문구만 i18n).
+  - **알림 연동은 의도적으로 제외**했습니다 — `NotificationType`에 값을 추가해야 하고 이는 DB enum 마이그레이션을 동반하므로, 규칙 04("1 PR = 1 마이그레이션")에 따라 분리했습니다. **마이그레이션 없음.**
+  - 테스트 25건 추가(web 336 → 361). Notion 레이어 5 §5.10(신규)·레이어 6 §6.7(신규)·레이어 8 §8.5 + Decision Log 갱신, 규칙 01·CLAUDE.md 용어 사전에 `SessionReport` 추가.
+- 검증: `pnpm lint`·`typecheck`(e2e 포함)·`build`·`test`(API 243 + web 361) 전부 통과.
 
-- **알림에 "어느 아이·어느 센터" 맥락 추가**(이번 세션, PR 대기). 알림 메시지는 치료사명만 담고 있어 아이가 둘 이상인 학부모는 어느 아이 알림인지 구분할 수 없었습니다(레이어 5 §5.9 불일치).
-  - `NotificationResponseDto`에 `organizationName`·`therapistName`·`childName` 추가. **저장하지 않고 조회 시점에 조인**해 채우므로 과거 알림도 함께 채워지고 이름이 바뀌어도 최신값이 나옵니다. `Notification`에 이미 관계가 있어 **마이그레이션 없음**.
-  - 알림 카드에 "홍길동 · 맑은소리 언어치료센터" 줄 추가(연결 정보 없으면 렌더 안 함).
-  - `findAll`·`markAsRead`는 그동안 테스트가 전혀 없었습니다(커버리지 45%) — 권한 검증 포함해 스펙 신규 작성(API 237 → 243건).
-  - 소비처 없는 `MOCK_NOTIFICATIONS` 제거(알림 화면이 실제 API로 바뀐 뒤 죽은 코드).
+- PR #43(알림에 아동·기관 맥락 추가)·PR #44(알림 문구 생성을 서버 → 웹으로 이관) main 병합. 알림 카드가 "홍길동 · 맑은소리 언어치료센터" 맥락과 `6월 1일 (월) 14:00 → 6월 2일 (화) 15:00` 형태의 변경 전후 시각을 함께 보여줍니다.
 
-- PR #40(Playwright e2e 도입)·PR #41(prisma 마이그레이션 버전 관리 + `db-check.yml`)·**PR #42(학부모 일정 상세 기관명 노출)** main 병합 → **Phase 3 전항목 완료**. e2e 4건 + 단위 562건이 CI에서 돌고 있습니다. #42로 §8.4에 남아 있던 마지막 간극이 닫혔습니다(`ScheduleDetailResponseDto.organizationName`).
-- **`prisma/migrations`를 버전 관리에 포함**(이번 세션). `.gitignore`가 배제하고 있어 저장소에 마이그레이션이 없었고, 그래서 새 환경에서 `migrate deploy`로 스키마를 재현할 수 없었습니다 — Phase 5 배포를 막는 선행 조건이자 규칙 04("1 PR = 1 마이그레이션 — 롤백 식별성 확보") 위반이었습니다.
-  - 기존 3개가 현재 `schema.prisma`와 **정확히 일치**함을 먼저 확인해서(`migrate diff` → "No difference detected") 재작성 없이 그대로 커밋했습니다. 28K 순수 DDL, 민감 정보 없음.
-  - 빈 DB에 `migrate deploy` → 15개 테이블 생성, `migrate status` "up to date" 확인.
-  - **`db-check.yml` 추가** — `migrate diff --exit-code`로 마이그레이션과 스키마가 어긋나면 CI 실패. 일부러 드리프트를 주입해 `exit 2` + 어긋난 컬럼 출력을 확인했습니다. 로드맵 §8.6의 `db-check.yml` 자리입니다.
-  - e2e 테스트 DB는 계속 `db push`를 씁니다(일회용 DB라 이력 불필요). 마이그레이션 무결성은 `db-check.yml`이 전담합니다.
-  - Notion 8.7 Decision Log에 전환 기록, §8.4 미해결 간극에서 이 항목을 해소 처리했습니다.
-  - PR #41 리뷰 반영: `db-check.yml`에 `persist-credentials: false`·`permissions: contents: read` 적용. 마이그레이션 SQL에 backfill을 넣으라는 지적은 **반영하지 않았습니다** — 이미 2026-05-27에 적용된 마이그레이션이라 SQL을 고치면 Prisma 체크섬 검증이 깨집니다(과거 마이그레이션은 새 forward 마이그레이션으로 고치는 것이 원칙).
-- 검증: `pnpm lint`·`typecheck`(e2e 포함)·`build`·`test`(562건)·`test:e2e`(4건) 전부 통과.
+## 이번에 드러난 미해결 항목
+
+1. **`rawMemo`가 학부모 응답에도 내려갑니다.** 웹 카드는 렌더하지 않지만 네트워크 응답에는 그대로 있습니다. 치료사 원본 메모 대신 요약본을 공유한다는 이 기능의 전제와 어긋나므로 **역할별 응답 분리가 필요**합니다(레이어 5 §5.10 간극 ②). 웹만으로는 막을 수 없어 백엔드 작업입니다.
+2. **응답 엔벨로프가 report 모듈만 다릅니다.** `ReportService`만 레이어 5 §5.1의 `{ data: ... }`를 지키고 `schedules`·`notifications` 등은 DTO를 그대로 돌려줍니다(전역 변환 인터셉터 없음). **규약을 지키는 쪽이 소수**입니다. 현재는 `entities/session-report/api`에서 report 응답만 `.data`로 벗겨 씁니다. 어느 쪽으로 통일할지 결정 필요.
+3. **Notion MCP 경로가 일부 한글 음절을 깨뜨립니다.** 이번 세션에 쓴 "흡수"가 "흙수"로, "뜨면"이 "뜼면"으로 저장됐습니다(기존 문서의 "스햤마"·"자장소"·"귀칙"도 같은 원인으로 보입니다). **Notion 문서를 쓴 뒤에는 눈으로 확인**하세요.
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **Phase 4.5 SessionReport 웹 UI 연동** — 백엔드(`POST/GET /schedules/:scheduleId/report*`, Ollama)는 완료됐으나 `features`·`widgets`·`entities` 어디에도 report 슬라이스가 없습니다(직접 확인). 치료사 작성 화면·학부모 열람 화면·알림 연동 여부 범위 결정부터 필요(Notion 8.7 Decision Log 리스크 항목 참고).
-2. **Phase 5(Ops) 나머지** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되기 시작했으니 배포 작업을 시작할 수 있습니다.
-3. **기존 `ci.yml`도 `persist-credentials`·`permissions` 하드닝이 안 돼 있습니다.** `db-check.yml`에만 적용했고 PR #41 diff 밖이라 건드리지 않았습니다. 별도 chore로 정리할지 판단 필요.
-4. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 정의돼 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1이 정의한 에러 엔벨로프(`{statusCode, code, message, details?}`)와도 불일치합니다. 등록할지/문서를 실제에 맞출지 결정 필요.
-5. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다(메모리 `feedback_commit_splitting`과 동일 내용). 별도 chore 커밋으로 정리할지 확인 필요.
-6. i18n·WCAG AA 브라우저 육안 확인 — 이제 Playwright가 있으므로 시각 회귀나 접근성 스냅샷을 e2e에 얹는 방식도 검토 가능합니다. 두 번째 로케일 도입 여부는 여전히 미결정.
+1. **Phase 5(Ops)** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되고 있으니 배포 작업을 시작할 수 있습니다. **이제 로드맵에서 유일하게 열린 Phase입니다.**
+2. **위 "미해결 항목" 1번(`rawMemo` 노출)** — 개인정보 성격이라 우선순위를 올릴 만합니다. `SessionReportResponseDto`를 역할별로 나누거나 `findOne`에서 PARENT일 때 필드를 빼는 방식.
+3. **리포트 작성 알림 연동** — 이번에 미룬 항목. `NotificationType` enum 확장 = 마이그레이션 1건이므로 단독 PR로.
+4. **기존 `ci.yml` 하드닝** — `persist-credentials`·`permissions`가 `db-check.yml`에만 적용돼 있습니다. 별도 chore.
+5. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1 에러 엔벨로프와도 불일치. 등록할지/문서를 실제에 맞출지 결정 필요. (2번 항목과 함께 "응답 형식 정리" PR로 묶는 것도 방법)
+6. **`.claude/skills/git-ship/SKILL.md` 미커밋 변경** — `git stash list`의 `stash@{0}`에 커밋 분리 원칙 추가분이 보존돼 있습니다.
+7. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
 
 ## 참고
 
-- **스키마를 바꾸면 반드시 `prisma migrate dev`로 마이그레이션 파일을 남겨야 합니다.** 이제 `db-check.yml`이 `schema.prisma`와 마이그레이션의 불일치를 CI에서 잡습니다(`prisma/**` 변경 시에만 트리거).
+- **세션 리포트를 로컬에서 보려면 Ollama가 떠 있어야 합니다.** `OLLAMA_URL`(기본 `http://localhost:11434`)·`OLLAMA_MODEL`(기본 `qwen2.5:7b`). 안 떠 있으면 503이 나고 웹은 재시도 안내를 띄웁니다 — 화면 자체는 정상 동작합니다.
+- 리포트 e2e는 없습니다(로컬 Ollama 의존). 단위 테스트로만 덮여 있습니다.
+- **스키마를 바꾸면 반드시 `prisma migrate dev`로 마이그레이션 파일을 남겨야 합니다.** `db-check.yml`이 `schema.prisma`와의 불일치를 CI에서 잡습니다(`prisma/**` 변경 시에만 트리거).
 - **e2e 실행 전 `pnpm dev`를 내려야 합니다.** `reuseExistingServer: false`라서 3000·3001이 점유돼 있으면 Playwright가 즉시 에러를 냅니다(개발 DB와 테스트 DB가 섞이는 것을 막기 위한 의도된 동작).
 - e2e 실행: `pnpm e2e:db:up` → `pnpm e2e:db:push` → `pnpm test:e2e`. 테스트 DB는 5434(tmpfs), mailpit은 1025.
 - e2e 작성 시 주의: 폼의 `<label>`이 `htmlFor`로 input과 연결돼 있지 않아 `getByLabel`이 동작하지 않습니다. placeholder·role 기준으로 잡았고 `data-testid`는 도입하지 않았습니다. `getByText`는 부분일치라 상수값이 다른 문자열(예: 기관명)에 포함되지 않도록 주의해야 합니다.
 - **환경변수를 숫자·불리언으로 쓸 때는 직접 변환해야 합니다.** `ConfigModule.forRoot({ isGlobal: true })`는 타입 변환을 하지 않아 `config.get<number>('X')`가 문자열을 돌려줍니다(제네릭은 TS 단계의 주장일 뿐).
 - 모듈별 상세 구현 이력·알려진 이슈: Claude 메모리(`project_phase2_modules` 등)
-- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. 로드맵(레이어 8)·API 설계(레이어 5)는 최신 상태입니다.
+- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. 로드맵(레이어 8)·API 설계(레이어 5)·Web 설계(레이어 6)는 최신 상태입니다.

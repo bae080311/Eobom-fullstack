@@ -74,6 +74,19 @@
       "addAriaLabel": "아동 추가",
       "noUpcomingSession": "예정된 일정 없음",
       "nextSession": "다음 일정 {date} {time}"
+    },
+    "sessionReport": {
+      "sectionTitle": "세션 리포트",
+      "activitiesLabel": "오늘 한 활동",
+      "progressLabel": "진행 상황",
+      "homeworkLabel": "집에서 함께 해보세요",
+      "nextGoalLabel": "다음 목표",
+      "updatedAt": "{when} 작성",
+      "tone": {
+        "positive": "순조로워요",
+        "neutral": "무난해요",
+        "needs_attention": "관심이 필요해요"
+      }
     }
   },
   "features": {
@@ -317,6 +330,27 @@
         "GUARDIAN": "보호자",
         "OTHER": "기타"
       }
+    },
+    "generateSessionReport": {
+      "createButton": "리포트 작성",
+      "regenerateButton": "다시 작성",
+      "empty": "아직 작성된 리포트가 없어요",
+      "emptyHint": "세션 메모를 입력하면 학부모가 읽기 쉬운 리포트로 정리해드려요",
+      "title": "세션 리포트 작성",
+      "description": "치료사가 쓰던 대로 적어주세요. 학부모가 이해하기 쉬운 표현으로 바꿔 정리합니다.",
+      "memoLabel": "세션 메모",
+      "memoPlaceholder": "예: /ㄹ/ 조음 훈련 10분, 문장 따라말하기 15분. 초성 정확도 상승, 종성 탈락 잔존.",
+      "memoTooShort": "메모를 {min}자 이상 입력해주세요",
+      "memoTooLong": "메모는 {max}자까지 입력할 수 있어요",
+      "cancel": "취소",
+      "submit": "리포트 만들기",
+      "submitting": "정리하는 중... (최대 30초)",
+      "generateSuccess": "세션 리포트가 작성되었습니다",
+      "generateError": "리포트 생성에 실패했습니다",
+      "unavailableError": "리포트 생성 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요",
+      "regenerateConfirmTitle": "리포트를 다시 작성할까요?",
+      "regenerateConfirmDescription": "기존 리포트는 새로 작성한 내용으로 덮어써지며, 되돌릴 수 없습니다.",
+      "regenerateConfirmLabel": "다시 작성"
     }
   },
   "widgets": {
