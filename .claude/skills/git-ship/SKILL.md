@@ -69,6 +69,8 @@ fi
 - 형식: `<type>: <한국어 설명>`
 - type: `feat` `fix` `docs` `refactor` `test` `chore`
 - 예시: `feat: 아동 CRUD 엔드포인트 구현`
+- `Co-Authored-By` 트레일러의 `<실행 중인 모델>`은 **지금 이 세션에서 실행 중인 모델 이름**으로 바꾼다 (예: `Claude Opus 5 (1M context)`).
+  모델은 세션마다 달라지므로 스킬 파일에 특정 모델명을 하드코딩하지 않는다 — 하드코딩하면 실제와 다른 모델이 저자로 기록된다.
 
 ```bash
 # 관심사별로 나눠서 반복 (전체를 한 번에 add하지 않는다)
@@ -76,7 +78,7 @@ git add <group-A-files>
 git commit -m "$(cat <<'EOF'
 <type>: <그룹 A 설명>
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: <실행 중인 모델> <noreply@anthropic.com>
 EOF
 )"
 
@@ -84,7 +86,7 @@ git add <group-B-files>
 git commit -m "$(cat <<'EOF'
 <type>: <그룹 B 설명>
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: <실행 중인 모델> <noreply@anthropic.com>
 EOF
 )"
 ```
@@ -101,7 +103,7 @@ git add docs/HANDOFF.md
 git commit -m "$(cat <<'EOF'
 docs: 핸드오프 문서 갱신
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: <실행 중인 모델> <noreply@anthropic.com>
 EOF
 )"
 ```
