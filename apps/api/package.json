@@ -7,7 +7,7 @@
   "main": "dist/apps/api/src/main.js",
   "scripts": {
     "build": "nest build",
-    "start": "node dist/apps/api/src/main.js",
+    "start": "node --import ./dist/apps/api/src/instrument.js dist/apps/api/src/main.js",
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint src --ext .ts",
