@@ -58,6 +58,11 @@ export class OrganizationsController {
     return this.organizationsService.rotateJoinCode(user.id, orgId);
   }
 
+  @Get(':orgId/join-code/rotations')
+  findJoinCodeRotations(@CurrentUser() user: IUser, @Param('orgId') orgId: string) {
+    return this.organizationsService.findJoinCodeRotations(user.id, orgId);
+  }
+
   @Get(':orgId/members')
   findMembers(@CurrentUser() user: IUser, @Param('orgId') orgId: string) {
     return this.organizationsService.findMembers(user.id, orgId);

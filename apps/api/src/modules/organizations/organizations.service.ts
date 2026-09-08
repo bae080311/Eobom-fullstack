@@ -16,6 +16,7 @@ import type {
   OrganizationResponseDto,
   MemberResponseDto,
   RotateJoinCodeResponseDto,
+  JoinCodeRotationResponseDto,
 } from '@eobom/shared';
 import { PrismaService } from '../../database/prisma.service.js';
 
@@ -102,16 +103,64 @@ export class OrganizationsService {
   async rotateJoinCode(userId: string, orgId: string): Promise<RotateJoinCodeResponseDto> {
     this.logger.log(`rotateJoinCode: userId=${userId} org=${orgId}`);
 
-    await this.requireMembership(userId, orgId, { ownerOnly: true });
+    const membership = await this.requireMembership(userId, orgId, { ownerOnly: true });
 
     const joinCode = await this.generateUniqueJoinCode();
-    const org = await this.prisma.organization.update({
-      where: { id: orgId },
-      data: { joinCode, joinCodeRotatedAt: new Date() },
+
+    // 회전과 감사 기록을 한 트랜잭션으로 묶는다. 기록이 빠진 회전이 남으면
+    // 감사 로그가 "전부는 아닌 이력"이 돼 신뢰할 수 없어진다.
+    const org = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.organization.update({
+        where: { id: orgId },
+        data: { joinCode, joinCodeRotatedAt: new Date() },
+      });
+
+      await tx.joinCodeRotation.create({
+        data: {
+          organizationId: orgId,
+          rotatedById: membership.therapistProfileId,
+          // 응답의 rotatedAt과 어긋나지 않게 같은 값을 쓴다.
+          rotatedAt: updated.joinCodeRotatedAt,
+        },
+      });
+
+      return updated;
     });
 
-    this.logger.log(`rotateJoinCode: org=${org.id} rotated`);
+    this.logger.log(
+      `rotateJoinCode: org=${org.id} rotated by therapist=${membership.therapistProfileId}`,
+    );
     return { joinCode: org.joinCode, rotatedAt: org.joinCodeRotatedAt.toISOString() };
+  }
+
+  /**
+   * joinCode 회전 이력. OWNER만 볼 수 있다 — 회전 자체가 OWNER 전용 행위이고,
+   * "언제 자격증명이 갈렸는지"는 일반 멤버에게 필요한 정보가 아니다.
+   */
+  async findJoinCodeRotations(
+    userId: string,
+    orgId: string,
+  ): Promise<JoinCodeRotationResponseDto[]> {
+    this.logger.log(`findJoinCodeRotations: userId=${userId} org=${orgId}`);
+
+    await this.requireMembership(userId, orgId, { ownerOnly: true });
+
+    const rotations = await this.prisma.joinCodeRotation.findMany({
+      where: { organizationId: orgId },
+      include: { rotatedBy: { include: { user: { select: { name: true } } } } },
+      orderBy: { rotatedAt: 'desc' },
+      take: 50,
+    });
+
+    this.logger.log(`findJoinCodeRotations: org=${orgId} count=${rotations.length}`);
+    return rotations.map((rotation) => ({
+      id: rotation.id,
+      rotatedAt: rotation.rotatedAt.toISOString(),
+      rotatedBy: {
+        therapistProfileId: rotation.rotatedById,
+        name: rotation.rotatedBy.user.name,
+      },
+    }));
   }
 
   async findMembers(userId: string, orgId: string): Promise<MemberResponseDto[]> {
