@@ -30,12 +30,13 @@ cp .env.example .env && docker compose up -d && pnpm install && pnpm db:migrate 
 `Therapist` 치료사 · `TherapistProfile` 치료사 프로필 · `Parent` 학부모 · `ParentProfile` 학부모 프로필
 `Child` 아동 · `ParentChildLink` 학부모-아동 연결 (구 ChildParent)
 `InviteCode` 초대코드 · `InviteCodeType` THERAPIST_JOIN/PARENT_LINK
+`JoinCodeRotation` joinCode 회전 감사 기록 (누가·언제. 코드값은 저장하지 않는다)
 `Schedule` 치료 세션 · `RecurringRule` 반복 규칙
 `ScheduleAcknowledgement` 일정 확인 (구 ScheduleConfirmation) · `Notification` 알림
 `SessionReport` 세션 리포트 (치료사 메모 → Ollama 요약, Schedule 당 1개)
 
 **ScheduleStatus**: `SCHEDULED` `RESCHEDULED` `CANCELED` `COMPLETED`
-**NotificationType**: `SCHEDULE_CREATED` `SCHEDULE_UPDATED` `SCHEDULE_CANCELED`
+**NotificationType**: `SCHEDULE_CREATED` `SCHEDULE_UPDATED` `SCHEDULE_CANCELED` `SESSION_REPORT_CREATED`
 
 코드 식별자는 영어만. 한국어는 UI 문자열·주석에만.
 

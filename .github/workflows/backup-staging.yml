@@ -1,0 +1,92 @@
+name: Backup Staging Database
+
+# ⛔ 운영 DB에 쓰지 마세요.
+#
+#    운영 백업은 두 갈래로 갑니다 (레이어 7 §7.9):
+#      1차 — DB 프로바이더의 자동 백업/PITR. 자격증명을 밖으로 꺼낼 필요가 없다.
+#      2차 — DB 호스트(또는 같은 네트워크)의 cron에서 scripts/backup-db.sh 실행,
+#            BACKUP_UPLOAD_CMD로 오브젝트 스토리지에 전송.
+#
+#    이 워크플로를 운영 DB에 겨누면 (1) DB가 GitHub 러너 IP 대역 전체에
+#    개방돼야 하고 (2) 운영 자격증명이 GitHub Secrets에 놓입니다. 아동 이름·치료
+#    메모가 담긴 DB이므로 위 두 갈래보다 노출면이 훨씬 넓습니다. 게다가 아티팩트
+#    보존 상한이 90일이라 장기 보관도 안 되고 시점 복구도 없습니다.
+#
+# 그래서 이 파일의 용도는 **스테이징·합성 데이터 DB 전용**입니다.
+# 실제 학부모·아동 데이터가 들어 있지 않은 DB에만 겨누세요.
+#
+# 켜는 법:
+#   1) Variables: BACKUP_STAGING_ENABLED = true
+#   2) Environments 에 `staging` 환경을 만들고, 그 환경의 Secrets 에 등록한다
+#      (저장소 레벨 시크릿이 아니라 환경 시크릿이어야 이 job에 주입된다):
+#        BACKUP_DATABASE_URL — 스테이징 DB. 읽기 전용 롤 권장
+#        BACKUP_PASSPHRASE   — 덤프 대칭키 암호화용. 없으면 실패시킨다
+on:
+  schedule:
+    # 매일 18:00 UTC = 03:00 KST
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    name: pg_dump staging and archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: vars.BACKUP_STAGING_ENABLED == 'true'
+
+    # 변수명만으로는 `BACKUP_DATABASE_URL`이 운영 DB를 겨누는 것을 막을 수 없다.
+    # 시크릿을 `staging` 환경에 두면 값의 범위를 GitHub의 보호 모델이 관리한다 —
+    # 저장소 레벨 시크릿이 아니라 이 환경에 등록된 것만 이 job에 주입된다.
+    # 환경을 만들지 않으면 시크릿이 비어 아래 단계에서 명시적으로 실패한다.
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 시크릿을 GitHub Actions 표현식으로 셸에 직접 펼치지 않는다 —
+      # env로 넘겨 셸 변수로만 읽는다.
+      - name: Fail fast on missing secrets
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "${BACKUP_DATABASE_URL:-}" ]; then
+            echo "::error::BACKUP_DATABASE_URL 시크릿이 없습니다."
+            exit 1
+          fi
+          # 평문 덤프를 아티팩트로 올리는 일은 막는다.
+          if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+            echo "::error::BACKUP_PASSPHRASE 시크릿이 없습니다. 암호화 없이 덤프를 보관할 수 없습니다."
+            exit 1
+          fi
+
+      # 러너의 pg_dump는 구버전일 수 있다. 서버(16)보다 낮으면 거부당한다.
+      - name: Install PostgreSQL 16 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-16
+
+      # BACKUP_UPLOAD_CMD는 넘기지 않는다 — 여기서는 아티팩트가 목적지다.
+      - name: Run backup
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          chmod +x scripts/backup-db.sh
+          ./scripts/backup-db.sh ./backups
+
+      - name: Upload encrypted dump
+        uses: actions/upload-artifact@v4
+        with:
+          name: eobom-staging-backup-${{ github.run_id }}
+          path: backups/*.dump.gpg
+          retention-days: 30
+          if-no-files-found: error

@@ -56,7 +56,8 @@
       "type": {
         "SCHEDULE_CREATED": "새 일정이 등록되었어요",
         "SCHEDULE_UPDATED": "일정이 변경되었어요",
-        "SCHEDULE_CANCELED": "일정이 취소되었어요"
+        "SCHEDULE_CANCELED": "일정이 취소되었어요",
+        "SESSION_REPORT_CREATED": "수업 리포트가 도착했어요"
       },
       "sub": {
         "at": "{when}",

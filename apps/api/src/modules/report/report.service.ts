@@ -1,10 +1,15 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { OllamaService } from './ollama.service.js';
-import { UserRole, OrgMembershipStatus } from '@eobom/shared';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { UserRole, OrgMembershipStatus, NotificationType } from '@eobom/shared';
 import type { GenerateReportDto, SessionReportResponseDto, IUser } from '@eobom/shared';
 
 const PROMPT_VERSION = 'report-v1';
+
+/** Prisma가 unique 제약 위반에 쓰는 에러 코드. */
+const UNIQUE_VIOLATION_CODE = 'P2002';
 
 @Injectable()
 export class ReportService {
@@ -13,6 +18,7 @@ export class ReportService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ollama: OllamaService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async generate(
@@ -48,32 +54,55 @@ export class ReportService {
 
     const report = await this.ollama.generateReport(dto.memo);
 
-    const saved = await this.prisma.sessionReport.upsert({
-      where: { scheduleId },
-      create: {
-        scheduleId,
-        rawMemo: dto.memo,
-        summary: report.summary,
-        activities: report.activities,
-        progress: report.progress,
-        homework: report.homework,
-        nextGoal: report.nextGoal,
-        tone: report.tone,
-        promptVersion: PROMPT_VERSION,
-      },
-      update: {
-        rawMemo: dto.memo,
-        summary: report.summary,
-        activities: report.activities,
-        progress: report.progress,
-        homework: report.homework,
-        nextGoal: report.nextGoal,
-        tone: report.tone,
-        promptVersion: PROMPT_VERSION,
-      },
-    });
+    const fields = {
+      rawMemo: dto.memo,
+      summary: report.summary,
+      activities: report.activities,
+      progress: report.progress,
+      homework: report.homework,
+      nextGoal: report.nextGoal,
+      tone: report.tone,
+      promptVersion: PROMPT_VERSION,
+    };
 
-    this.logger.log(`generate: report saved id=${saved.id} schedule=${scheduleId}`);
+    // 알림은 "처음 작성"에만 보낸다. 재생성은 덮어쓰기라 치료사가 문구를 다듬을
+    // 때마다 학부모에게 알림이 쌓이면 소음이 된다.
+    //
+    // "처음인지"를 미리 조회해서 판단하면 동시 요청 둘이 모두 없음을 읽고 각자
+    // 알림을 보낸다(폼 제출이 30초 걸려 이중 클릭이 실제로 가능하다).
+    // scheduleId unique 제약으로 생성을 원자적으로 선점하고, 선점에 성공한
+    // 요청만 알림을 보낸다.
+    let saved: Awaited<ReturnType<typeof this.prisma.sessionReport.create>>;
+    let isFirstReport: boolean;
+
+    try {
+      saved = await this.prisma.sessionReport.create({ data: { scheduleId, ...fields } });
+      isFirstReport = true;
+    } catch (error) {
+      if (!this.isUniqueViolation(error)) throw error;
+
+      // 다른 요청이 먼저 만들었거나 이미 있던 리포트다 — 갱신만 한다.
+      saved = await this.prisma.sessionReport.update({ where: { scheduleId }, data: fields });
+      isFirstReport = false;
+    }
+
+    this.logger.log(
+      `generate: report saved id=${saved.id} schedule=${scheduleId} first=${isFirstReport}`,
+    );
+
+    if (isFirstReport) {
+      // 알림은 리포트에 딸린 부수 효과다. 실패해도 리포트 생성은 성공으로 둔다
+      // (notifyScheduleEvent가 내부에서 예외를 삼키고 로그만 남긴다).
+      await this.notifications.notifyScheduleEvent({
+        scheduleId,
+        childId: schedule.childId,
+        organizationId: schedule.organizationId,
+        type: NotificationType.SESSION_REPORT_CREATED,
+        // 웹이 "6월 1일 (월) 14:00" 형태로 어느 수업의 리포트인지 보여준다.
+        payload: { startAt: schedule.startAt.toISOString() },
+      });
+    }
+
     // 생성은 치료사 전용이므로 원본 메모를 함께 돌려준다 (재생성 폼 프리필용).
     return { data: this.toDto(saved, { includeRawMemo: true }) };
   }
@@ -127,6 +156,13 @@ export class ReportService {
     // 학부모에게는 원본 메모를 내리지 않는다 — 요약본을 공유하는 것이 이 기능의 목적이다.
     const includeRawMemo = user.role !== UserRole.PARENT;
     return { data: this.toDto(report, { includeRawMemo }) };
+  }
+
+  /** Prisma의 unique 제약 위반(P2002)인지 판별한다. */
+  private isUniqueViolation(error: unknown): boolean {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_VIOLATION_CODE
+    );
   }
 
   private toDto(

@@ -62,4 +62,9 @@ USER node
 EXPOSE 3001
 
 WORKDIR /repo/apps/api
-CMD ["node", "dist/apps/api/src/main.js"]
+
+# --import로 instrument.js를 preload한다. ESM에서는 main.js의 정적 import만으로는
+# Sentry의 로더 훅이 의존 모듈보다 먼저 등록되지 않아 자동 계측이 일부 누락된다.
+# 같은 파일이 preload와 정적 import로 두 번 지정되지만 ESM 모듈 캐시가 같은
+# URL을 한 번만 평가하므로 Sentry.init은 한 번만 돈다.
+CMD ["node", "--import", "./dist/apps/api/src/instrument.js", "dist/apps/api/src/main.js"]

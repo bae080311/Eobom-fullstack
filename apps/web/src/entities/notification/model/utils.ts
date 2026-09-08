@@ -9,6 +9,7 @@ const TYPE_VARIANT: Record<NotificationType, NotificationVariant> = {
   [NotificationType.SCHEDULE_CREATED]: 'new',
   [NotificationType.SCHEDULE_UPDATED]: 'reschedule',
   [NotificationType.SCHEDULE_CANCELED]: 'cancel',
+  [NotificationType.SESSION_REPORT_CREATED]: 'note',
 };
 
 // ko.json에 NotificationType 모든 값에 대응하는 키가 있는지 컴파일 타임에 검증한다.

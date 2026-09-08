@@ -1,59 +1,76 @@
 # Handoff
 
-> 매 작업 세션(`git-ship` 실행) 마지막에 자동으로 덮어써지는 문서입니다. **최신 상태만** 유지하고 과거 이력은 남기지 않습니다 — 이력이 필요하면 git log·PR·Notion 9.8 Flywheel Log를 참고하세요.
+> 매 작업 세션(`git-ship` 실행) 마지막에 자동으로 덮어써지는 문서입니다. **최신 상태만** 유지하고 과거 이력은 남기지 않습니다 — 이력이 필요하면 git log·PR·Notion 8.7 Decision Log를 참고하세요.
+
+## ⚠️ 먼저 볼 것 — main이 아직 불완전합니다
+
+PR `#49`~`#53`은 GitHub에서 전부 MERGED로 표시되지만 **main에는 `#49`·`#50`만 들어갔습니다.** 스택 PR이라 각 PR의 base가 앞 PR의 브랜치였고(`#51`→`feat/ops-deploy` 등), 머지 순서가 엇갈리면서 `#49`가 `feat/api-rate-limit`을 main으로 가져간 시점에 Sentry 이후 내용이 아직 그 브랜치에 도달하지 않았습니다.
+
+**열린 PR 2개를 순서대로 머지해야 합니다.**
+
+| PR                                                          | 내용                                          | base         | 마이그레이션 |
+| ----------------------------------------------------------- | --------------------------------------------- | ------------ | ------------ |
+| [#54](https://github.com/bae080311/Eobom-fullstack/pull/54) | `#51`~`#53` 착륙 + 백업 수정 + 리뷰 반영 11건 | `main`       | 2건          |
+| [#55](https://github.com/bae080311/Eobom-fullstack/pull/55) | 응답 엔벨로프 통일                            | `#54` 브랜치 | 없음         |
+
+`#54`를 머지하면 `#55`의 base가 자동으로 main으로 내려옵니다.
+
+> **교훈: 스택 PR은 리뷰도 못 받습니다.** CodeRabbit은 base가 기본 브랜치가 아니면 리뷰를 건너뜁니다 — `#50`~`#53`과 `#55`가 전부 스킵됐고, 이번 세션 코드는 `#54`가 열리고 나서야 처음 리뷰됐습니다. 앞으로 PR의 base는 main으로 두세요.
 
 ## 최근 완료
 
-- **Phase 4.5 SessionReport 웹 UI 연동**(이번 세션, PR 대기) → **Phase 4.5 완료**. 백엔드는 2026-06-26에 병합됐는데 웹에 report 슬라이스가 전혀 없어(`apps/web` 전체에 사용처 0건) 이 기능을 쓸 방법 자체가 없었습니다.
-  - `entities/session-report` — 조회·생성 API, tone 해석·색상, `useSessionReport` 쿼리, `SessionReportCard`·`SessionReportSection`.
-  - `features/generate-session-report` — `useGenerateSessionReport` 뮤테이션, `TherapistSessionReportSection`, `GenerateSessionReportForm`.
-  - `ScheduleDetailView`에 **`extra?: ReactNode` 슬롯 추가** — 메모 아래·하단 액션바 위에 역할별 섹션을 끼웁니다. optional이라 기존 호출부는 무변경입니다.
-  - 치료사(`/schedules/[id]`)는 작성·재생성, 학부모(`/schedule/[id]`)는 열람 전용. **학부모 화면은 리포트가 없으면 섹션을 아예 안 띄웁니다** — 예정된 미래 일정마다 "아직 없어요"가 뜨면 소음입니다.
-  - **재생성은 upsert라 기존 리포트를 덮어씁니다** → `ConfirmDialog` 경유. 폼에는 기존 `rawMemo`를 채워 처음부터 다시 쓰지 않게 했습니다.
-  - **생성은 최대 30초** 걸립니다(`OllamaService`의 `AbortSignal.timeout(30000)`). 제출 버튼이 "정리하는 중... (최대 30초)"로 바뀌고, 생성 중에는 모달을 닫지 못하게 막습니다(요청은 계속 진행돼 결과를 놓칩니다). 503은 Ollama 미기동이므로 재시도 안내 문구로 바꿔 보여줍니다.
-  - `tone`은 DB에 string으로 저장되는 LLM 생성값이라 계약을 벗어날 수 있어 `resolveSessionReportTone`이 모르는 값을 `neutral`로 흡수합니다.
-  - 메모 길이 제약은 `packages/shared`에 `REPORT_MEMO_MIN_LENGTH`/`REPORT_MEMO_MAX_LENGTH`로 노출해 API·웹 폼이 같은 값을 씁니다(문구만 i18n).
-  - **알림 연동은 의도적으로 제외**했습니다 — `NotificationType`에 값을 추가해야 하고 이는 DB enum 마이그레이션을 동반하므로, 규칙 04("1 PR = 1 마이그레이션")에 따라 분리했습니다. **마이그레이션 없음.**
-  - 테스트 25건 추가(web 336 → 361). Notion 레이어 5 §5.10(신규)·레이어 6 §6.7(신규)·레이어 8 §8.5 + Decision Log 갱신, 규칙 01·CLAUDE.md 용어 사전에 `SessionReport` 추가.
-- 검증: `pnpm lint`·`typecheck`(e2e 포함)·`build`·`test`(API 243 + web 361) 전부 통과.
+**Phase 5(Ops) 전항목 + Phase 4.5 후속 항목** — 로드맵(Notion 레이어 8)에 열린 Phase가 없습니다.
 
-- PR #43(알림에 아동·기관 맥락 추가)·PR #44(알림 문구 생성을 서버 → 웹으로 이관) main 병합. 알림 카드가 "홍길동 · 맑은소리 언어치료센터" 맥락과 `6월 1일 (월) 14:00 → 6월 2일 (화) 15:00` 형태의 변경 전후 시각을 함께 보여줍니다.
+레이트 리밋 · `/api/health` · API Dockerfile · `deploy-api`/`deploy-web`/`backup-staging` 워크플로 · Sentry(API+Web) · joinCode 회전 감사 로그 · 세션 리포트 알림 · 응답 엔벨로프 통일.
 
-- **세션 리포트 `rawMemo`의 학부모 노출 차단**(이번 세션, PR 대기). 치료사 원본 메모가 학부모 API 응답에 그대로 내려가고 있었습니다 — 웹 카드는 렌더하지 않았지만 네트워크 응답에는 남아 있었고, "원본이 아니라 요약본을 공유한다"는 이 기능의 전제와 어긋났습니다.
-  - `findOne`이 요청자 역할을 보고 PARENT면 **`rawMemo` 키 자체를 응답에서 뺍니다**. null·빈 문자열로 두면 값이 남으므로 키를 없앴습니다.
-  - `generate`는 치료사 전용 경로라 그대로 내려줍니다 — 재생성 폼 프리필에 필요합니다. 그래서 `SessionReportResponseDto.rawMemo`는 optional입니다.
-  - 스펙 3건 추가(API 243 → 246). 학부모 응답은 `not.toHaveProperty('rawMemo')` + 직렬화 문자열에 원본이 없는지까지 봅니다 — `undefined` 단정만으로는 키가 남은 경우를 놓칩니다.
-  - **마이그레이션 없음.** 웹 변경 없음(카드가 원래 렌더하지 않았고 치료사 폼은 이미 `?? ''` 폴백).
+### 작업 중 드러난 것 — 전부 "문서엔 있는데 실제론 없던" 것들
 
-- **`git-ship` 스킬에 슬라이스 그룹 분리 원칙 추가**(PR #47 병합). `feat/i18n-app-layer` 시절 stash에만 남아 있던 규칙을 저장소로 옮겼습니다 — 같은 레이어라도 파일이 10~15개를 넘으면 의미 있는 슬라이스 그룹 단위(3~5개 커밋)로 다시 쪼갠다는 내용입니다.
+1. **`/api/health`가 아예 없었습니다.** Phase 1 DoD에 `[x]`인데 404였습니다.
+2. **`.env.example`이 한 번도 커밋된 적이 없었습니다.** `.gitignore`가 `.env*` 목록에 섞어 무시하고 있어 `cp .env.example .env`가 새 클론에서 실패했습니다. 로컬 파일은 다른 프로젝트 템플릿 잔재였습니다.
+3. **Docker 이미지가 조용히 깨졌습니다.** `.dockerignore`의 `*.tsbuildinfo`가 루트만 매칭 → `tsc --build`가 빌드를 건너뜀 → nest CLI가 `@eobom/shared`를 `.ts` 경로로 재작성 → **빌드는 성공하고 런타임에만 터짐.** 이제 Dockerfile이 빌드 단계에서 검사해 실패시킵니다.
+4. **백업 스크립트가 성공해도 항상 `exit 1`이었습니다.** `$RETENTION_DAYS일보다...`에서 bash가 한글 '일'의 첫 바이트를 변수명에 포함해 `set -u`가 죽였습니다. 워크플로의 아티팩트 업로드가 아예 실행되지 않았을 것입니다. 로컬 `pg_dump`가 v14라 서버(16)와 안 맞아 그 앞에서 멈추는 바람에 여태 안 드러났습니다.
 
-- **`git-ship` 커밋 트레일러의 모델명 하드코딩 제거**(이번 세션, PR 대기). 템플릿이 `Claude Sonnet 4.6`으로 박혀 있어 실제와 다른 모델이 저자로 기록될 수 있었습니다(저장소 이력은 전부 `Claude Opus 5 (1M context)`). `<실행 중인 모델>` 플레이스홀더로 바꾸고 이유를 명시했습니다.
+### 리뷰 반영 11건 (`#54`)
 
-- **Notion 레이어 6 §6.7의 깨진 한글 2건 수정**(이번 세션). `흙수`→`흡수`, `뜼면`→`계속 노출되면`. 아래 "미해결 항목" 2번 참고.
+`TRUST_PROXY=Infinity` 우회(Express가 XFF 체인 전체 신뢰 → 레이트 리밋 무력화) · Sentry 트랜잭션·스팬 쿼리 스크러빙(API+Web 4곳, `beforeSend`는 에러만 통과) · Sentry ESM `--import` preload · 리포트 최초 작성 판정 원자화(unique 제약 선점) · 백업 암호화 강제 + 정리 순서 · `backup-staging`을 `environment: staging`으로 스코프 · HANDOFF 정정.
 
-## 이번에 드러난 미해결 항목
+### 검증
 
-1. **응답 엔벨로프가 report 모듈만 다릅니다.** `ReportService`만 레이어 5 §5.1의 `{ data: ... }`를 지키고 `schedules`·`notifications` 등은 DTO를 그대로 돌려줍니다(전역 변환 인터셉터 없음). **규약을 지키는 쪽이 소수**입니다. 현재는 `entities/session-report/api`에서 report 응답만 `.data`로 벗겨 씁니다. 어느 쪽으로 통일할지 결정 필요.
-2. **Notion MCP 쓰기 경로가 한글 음절을 가끔 깨뜨립니다.** 특정 글자에 고정된 것이 아니라 **산발적**입니다 — 같은 "흡수"가 한 번은 "힙수"로 전달됐다가 다음 시도에서는 정상 전달됐습니다. 손상된 글자가 그대로 저장되므로 실제 문서가 깨집니다(레이어 6 §6.7에서 2건 확인·수정 완료).
-   - **진단·검증 방법**: 페이지를 건드리지 않고 확인하려면 매칭되지 않을 문자열로 `update_content`를 호출하면 됩니다. 에러 메시지가 **서버가 실제로 받은 문자열을 그대로 되돌려주므로**, 내가 보낸 것과 비교하면 이번 요청에서 깨졌는지 알 수 있습니다. 같은 원리로 "깨진 문자열이 아직 페이지에 있는지"도 매칭 성공/실패로 판별됩니다.
-   - **작업 요령**: Notion에 한글을 쓴 뒤에는 위 방법으로 검증하고, 깨지기 쉬운 글자가 나오면 다른 표현으로 우회하세요(예: "뜨면" → "표시되면"). 재시도하면 대개 통과합니다.
+`pnpm lint` · `typecheck`(e2e 포함) · `build` · `test` 전부 통과.
+
+**테스트 수: API 246 → 294, web 361 → 375** — 기준선은 **세션 시작 시점 main(`3008285`)** 입니다(당시 API 246 · web 361).
+
+> PR `#54` 코멘트에는 `API 280 → 294`, `web 367 → 375`로 적혀 있습니다. 그쪽은 **리뷰 반영 라운드만** 따로 센 것이라 기준선이 다릅니다(`280`·`367`은 리뷰 반영 직전의 이 브랜치 상태). 둘 다 맞는 값이며, 다음 세션이 볼 기준은 위의 세션 전체 수치입니다.
+
+실측 확인: 레이트 리밋 429·`Retry-After`·라우트별 버킷 · 컨테이너에서 `/api/health` 200 → postgres 중단 시 **503** → 복구 200 · 엔벨로프(성공 `{data:...}` / 204 본문 0바이트 / health 미포장 / 에러 형식 불변) · 백업 스크립트 4개 경로 · 마이그레이션 5건 "No difference detected".
+
+## 미해결 / 결정 필요
+
+1. **알림 durability** — `notifyScheduleEvent`가 예외를 삼켜서, 리포트 알림이 실패하면 리포트만 남고 이후 `generate`는 update 경로라 알림이 **영구히** 안 갑니다. 트랜잭셔널 아웃박스(새 테이블+워커)가 필요해 `#54`에서 보류했습니다. `#54`의 원자화 수정으로 중복은 막혔지만 누락은 남아 있습니다.
+2. **배포 워크플로는 실행 검증이 안 됐습니다.** 문법·게이트 로직까지만 확인했습니다. 셋 다 기본값이 꺼짐이라 설정 전에는 CI를 깨뜨리지 않습니다. 켜는 법은 각 워크플로 상단 주석과 Notion 레이어 7 §7.5.
+3. **백업 스토리지 대상 미선정.** 실행 위치는 결정했습니다 — GitHub Actions에서 운영 DB를 백업하지 않고, (1) DB 프로바이더 자동 백업/PITR + (2) DB 호스트 cron에서 `scripts/backup-db.sh` + `BACKUP_UPLOAD_CMD` 2단. 어느 오브젝트 스토리지로 보낼지가 남았습니다.
+4. **API 이미지 1.78 GB.** devDependencies를 안고 갑니다. `pnpm deploy --prod`로 줄일 여지가 있으나 pnpm 심링크가 깨지면 런타임에만 드러나 검증 비용이 큽니다.
+5. **`JoinCodeRotation` 웹 UI 없음.** 엔드포인트(`GET /organizations/:orgId/join-code/rotations`, OWNER 전용)만 열려 있습니다.
+6. **`LoggingInterceptor`가 죽은 코드** — 등록된 적 없습니다. 요청 로깅을 켤지 결정 필요. (`AllExceptionsFilter`는 `#55`에서 삭제)
+7. **리포트 e2e 없음** (로컬 Ollama 의존). Ollama를 스텁으로 갈아끼울지 미결.
+8. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부 미결정 — `global-error.tsx`는 i18n을 못 쓰므로 별도 처리 필요.
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **Phase 5(Ops)** — `ci.yml`(ci·e2e)·`db-check.yml`은 갖춰졌고, `deploy-*.yml`·Sentry/OpenTelemetry·Vercel/컨테이너 배포·pg_dump 백업·레이트리밋·joinCode 회전 감사 로그가 남았습니다. 마이그레이션이 추적되고 있으니 배포 작업을 시작할 수 있습니다. **이제 로드맵에서 유일하게 열린 Phase입니다.**
-2. **리포트 작성 알림 연동** — 미룬 항목. `NotificationType` enum 확장 = 마이그레이션 1건이므로 단독 PR로.
-3. **기존 `ci.yml` 하드닝** — `persist-credentials`·`permissions`가 `db-check.yml`에만 적용돼 있습니다. 별도 chore.
-4. **`AllExceptionsFilter`가 죽은 코드** — `apps/api/src/common/filters/`에 있지만 `main.ts`에 `useGlobalFilters`로 등록되지 않아 실제 응답은 NestJS 기본 형식입니다. 레이어 5 §5.1 에러 엔벨로프와도 불일치. 등록할지/문서를 실제에 맞출지 결정 필요. (위 "미해결 항목" 1번과 함께 "응답 형식 정리" PR로 묶는 것도 방법)
-5. i18n·WCAG AA 브라우저 육안 확인. 두 번째 로케일 도입 여부는 여전히 미결정.
+1. **`#54` → `#55` 머지.** main을 온전하게 만드는 것이 최우선입니다.
+2. **배포 실제 연결** — Vercel 프로젝트 생성 + 시크릿 등록 후 `DEPLOY_WEB_ENABLED=true`. API는 GHCR이라 시크릿 없이 `DEPLOY_API_ENABLED=true`만으로 됩니다.
+3. **알림 durability** (위 1번). 마이그레이션 1건이므로 단독 PR로.
+4. `JoinCodeRotation` 웹 UI (기관 설정 화면).
 
 ## 참고
 
-- **세션 리포트를 로컬에서 보려면 Ollama가 떠 있어야 합니다.** `OLLAMA_URL`(기본 `http://localhost:11434`)·`OLLAMA_MODEL`(기본 `qwen2.5:7b`). 안 떠 있으면 503이 나고 웹은 재시도 안내를 띄웁니다 — 화면 자체는 정상 동작합니다.
-- 리포트 e2e는 없습니다(로컬 Ollama 의존). 단위 테스트로만 덮여 있습니다.
-- **스키마를 바꾸면 반드시 `prisma migrate dev`로 마이그레이션 파일을 남겨야 합니다.** `db-check.yml`이 `schema.prisma`와의 불일치를 CI에서 잡습니다(`prisma/**` 변경 시에만 트리거).
-- **e2e 실행 전 `pnpm dev`를 내려야 합니다.** `reuseExistingServer: false`라서 3000·3001이 점유돼 있으면 Playwright가 즉시 에러를 냅니다(개발 DB와 테스트 DB가 섞이는 것을 막기 위한 의도된 동작).
-- e2e 실행: `pnpm e2e:db:up` → `pnpm e2e:db:push` → `pnpm test:e2e`. 테스트 DB는 5434(tmpfs), mailpit은 1025.
-- e2e 작성 시 주의: 폼의 `<label>`이 `htmlFor`로 input과 연결돼 있지 않아 `getByLabel`이 동작하지 않습니다. placeholder·role 기준으로 잡았고 `data-testid`는 도입하지 않았습니다. `getByText`는 부분일치라 상수값이 다른 문자열(예: 기관명)에 포함되지 않도록 주의해야 합니다.
-- **환경변수를 숫자·불리언으로 쓸 때는 직접 변환해야 합니다.** `ConfigModule.forRoot({ isGlobal: true })`는 타입 변환을 하지 않아 `config.get<number>('X')`가 문자열을 돌려줍니다(제네릭은 TS 단계의 주장일 뿐).
-- 모듈별 상세 구현 이력·알려진 이슈: Claude 메모리(`project_phase2_modules` 등)
-- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. 로드맵(레이어 8)·API 설계(레이어 5)·Web 설계(레이어 6)는 최신 상태입니다.
+- **세션 리포트를 로컬에서 보려면 Ollama가 떠 있어야 합니다.** `OLLAMA_URL`(기본 `http://localhost:11434`)·`OLLAMA_MODEL`(기본 `qwen2.5:7b`). 안 떠 있으면 503이고 웹은 재시도 안내를 띄웁니다.
+- **스키마를 바꾸면 반드시 `pnpm db:migrate`로 마이그레이션 파일을 남깁니다.** `db-check.yml`이 CI에서 드리프트를 잡습니다(`prisma/**` 변경 시에만 트리거).
+- **e2e 실행 전 `pnpm dev`를 내려야 합니다.** `reuseExistingServer: false`라 3000·3001이 점유돼 있으면 즉시 에러입니다. 실행: `pnpm e2e:db:up` → `pnpm e2e:db:push` → `pnpm test:e2e`. 테스트 DB 5434(tmpfs), mailpit 1025. **e2e는 레이트 리밋을 자동으로 끕니다**(`THROTTLE_ENABLED: 'false'`).
+- **레이트 리밋 수치는 환경변수로 못 바꿉니다.** `@Throttle` 데코레이터는 컨트롤러 import 시점에 평가되고 이는 `ConfigModule.forRoot()`가 `.env`를 읽기 전입니다(ESM import가 `AppModule` 클래스 본문보다 먼저 실행). 값은 `throttle.policy.ts` 상수, 환경변수로는 끄기만 됩니다.
+- **`ConfigModule`은 타입 변환을 하지 않습니다.** `config.get<number>('X')`가 문자열을 돌려줍니다.
+- **셸에서 변수 뒤에 한글이 바로 붙으면 `${VAR}`로 끊으세요.** bash가 첫 바이트를 변수명에 포함해 `set -u`와 만나면 죽습니다.
+- **Notion MCP 쓰기 주의 2가지**: ① 본문에 `<script>` 문자열이 있으면 Cloudflare가 403으로 막습니다(레이어 7 작성 중 3회 차단 — `pnpm <script>`가 원인). 큰 페이로드는 나눠 보내세요. ② 한글 음절이 산발적으로 깨집니다 — `쪽`이 반복 실패했습니다. 쓴 뒤 매칭 안 될 문자열로 `update_content`를 호출해 에러 메시지의 에코로 검증하고, `old_str`은 짧게 잡으세요.
+- **Sentry 스크러빙은 `apps/api/src/common/sentry-scrub.ts`와 `apps/web/src/shared/lib/sentry-scrub.ts` 두 곳에 있습니다.** 패키지 경계 때문에 복제했고 한쪽만 고치면 구멍이 남습니다.
+- 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. **레이어 3·4·5·6·7·8 전부 2026-09-08 기준 갱신.** 레이어 4는 스키마 사본 대신 `prisma/schema.prisma`를 정본으로 선언하도록 바꿨습니다(사본 유지가 반복 실패했기 때문).
+- 모듈별 상세 구현 이력: Claude 메모리(`project_phase5_ops`, `eobom_ops_gotchas` 등)
