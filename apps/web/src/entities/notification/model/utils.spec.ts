@@ -44,6 +44,37 @@ describe('NOTIFICATION_TYPE_TITLES_KO', () => {
   });
 });
 
+describe('SESSION_REPORT_CREATED', () => {
+  it('타이틀은 "수업 리포트가 도착했어요"이다', () => {
+    expect(NOTIFICATION_TYPE_TITLES_KO[NotificationType.SESSION_REPORT_CREATED]).toBe(
+      '수업 리포트가 도착했어요',
+    );
+  });
+
+  it("variant는 'note'로 매핑된다", () => {
+    const result = mapDtoToNotification(
+      makeDto({ type: NotificationType.SESSION_REPORT_CREATED, payload: {} }),
+      t,
+    );
+
+    expect(result.type).toBe('note');
+    expect(result.title).toBe('수업 리포트가 도착했어요');
+  });
+
+  // 어느 수업의 리포트인지 학부모가 알 수 있어야 한다.
+  it('본문에 해당 수업의 시각을 보여준다', () => {
+    const result = mapDtoToNotification(
+      makeDto({
+        type: NotificationType.SESSION_REPORT_CREATED,
+        payload: { startAt: '2026-06-01T05:00:00.000Z' },
+      }),
+      t,
+    );
+
+    expect(result.sub).toContain('6월 1일');
+  });
+});
+
 describe('mapDtoToNotification > time (formatRelativeTime)', () => {
   afterEach(() => {
     vi.useRealTimers();
