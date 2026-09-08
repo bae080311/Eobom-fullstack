@@ -54,6 +54,7 @@ enum NotificationType {
   SCHEDULE_CREATED
   SCHEDULE_UPDATED
   SCHEDULE_CANCELED
+  SESSION_REPORT_CREATED
 }
 
 // ==================== Users ====================

@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { UserRole, OrgMemberRole, OrgMembershipStatus } from '@eobom/shared';
+import { UserRole, OrgMemberRole, OrgMembershipStatus, NotificationType } from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
 
 import { ReportService } from './report.service.js';
 import type { PrismaService } from '../../database/prisma.service.js';
 import type { OllamaService } from './ollama.service.js';
+import type { NotificationsService } from '../notifications/notifications.service.js';
 
 // ---------------------------------------------------------------------------
 // Mock factories
@@ -22,6 +23,8 @@ const makePrisma = () => ({
 
 const makeOllama = () => ({ generateReport: vi.fn() });
 
+const makeNotifications = () => ({ notifyScheduleEvent: vi.fn() });
+
 // ---------------------------------------------------------------------------
 // Fixture helpers
 // ---------------------------------------------------------------------------
@@ -31,6 +34,7 @@ const makeSchedule = (overrides?: object) => ({
   organizationId: 'org1',
   childId: 'c1',
   therapistId: 'tp1', // 담당 치료사 — generate/findOne 권한은 이 값과 무관하게 org 멤버십만 본다
+  startAt: new Date('2025-06-01T05:00:00Z'), // 알림 payload에 실린다
   ...overrides,
 });
 
@@ -95,13 +99,16 @@ describe('ReportService', () => {
   let service: ReportService;
   let prisma: ReturnType<typeof makePrisma>;
   let ollama: ReturnType<typeof makeOllama>;
+  let notifications: ReturnType<typeof makeNotifications>;
 
   beforeEach(() => {
     prisma = makePrisma();
     ollama = makeOllama();
+    notifications = makeNotifications();
     service = new ReportService(
       prisma as unknown as PrismaService,
       ollama as unknown as OllamaService,
+      notifications as unknown as NotificationsService,
     );
   });
 
@@ -203,6 +210,55 @@ describe('ReportService', () => {
           update: expect.objectContaining({ promptVersion: 'report-v1' }),
         }),
       );
+    });
+
+    describe('학부모 알림', () => {
+      const arrangeHappyPath = () => {
+        prisma.schedule.findUnique.mockResolvedValue(makeSchedule());
+        prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+        prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+        ollama.generateReport.mockResolvedValue({
+          summary: '요약',
+          activities: ['활동1'],
+          progress: '진행상황',
+          homework: null,
+          nextGoal: '다음 목표',
+          tone: 'positive',
+        });
+        prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+      };
+
+      it('처음 작성하면 연결된 학부모에게 알림을 보낸다', async () => {
+        arrangeHappyPath();
+        prisma.sessionReport.findUnique.mockResolvedValue(null); // 기존 리포트 없음
+
+        await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
+
+        expect(notifications.notifyScheduleEvent).toHaveBeenCalledWith({
+          scheduleId: 's1',
+          childId: 'c1',
+          organizationId: 'org1',
+          type: NotificationType.SESSION_REPORT_CREATED,
+          payload: { startAt: '2025-06-01T05:00:00.000Z' },
+        });
+      });
+
+      // 재생성은 upsert로 덮어쓰는 것이다. 문구를 다듬을 때마다 알림이 쌓이면 소음이 된다.
+      it('재생성할 때는 알림을 보내지 않는다', async () => {
+        arrangeHappyPath();
+        prisma.sessionReport.findUnique.mockResolvedValue({ id: 'r1' }); // 이미 있음
+
+        await service.generate('s1', therapistUser, { memo: '다시 쓴 메모' });
+
+        expect(notifications.notifyScheduleEvent).not.toHaveBeenCalled();
+      });
+
+      it('권한이 없으면 알림도 보내지 않는다', async () => {
+        await expect(service.generate('s1', parentUser, { memo: '메모' })).rejects.toThrow(
+          ForbiddenException,
+        );
+        expect(notifications.notifyScheduleEvent).not.toHaveBeenCalled();
+      });
     });
 
     it('생성 응답에는 rawMemo가 포함된다 (치료사 전용 경로)', async () => {
