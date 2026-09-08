@@ -14,6 +14,7 @@ import { InviteCodesService } from './invite-codes.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { ThrottlePolicy } from '../../common/throttle/throttle.policy.js';
 import { issueParentLinkCodeSchema, redeemInviteCodeSchema } from '@eobom/shared';
 import type { IssueParentLinkCodeDto, RedeemInviteCodeDto, IUser } from '@eobom/shared';
 
@@ -42,6 +43,7 @@ export class InviteCodesController {
   }
 
   @Post('redeem')
+  @ThrottlePolicy('redeemInviteCode')
   @HttpCode(HttpStatus.OK)
   redeem(
     @CurrentUser() user: IUser,

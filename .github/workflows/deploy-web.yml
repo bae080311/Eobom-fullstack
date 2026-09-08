@@ -1,0 +1,94 @@
+name: Deploy Web
+
+# 저장소 변수 DEPLOY_WEB_ENABLED=true 일 때만 돈다.
+#
+# 켜는 법:
+#   1) Settings → Secrets and variables → Actions → Variables
+#      DEPLOY_WEB_ENABLED = true
+#   2) 같은 화면 Secrets 탭에 3개 등록
+#      VERCEL_TOKEN       — Vercel 계정 설정 → Tokens
+#      VERCEL_ORG_ID      — 로컬에서 `vercel link` 실행 후 .vercel/project.json
+#      VERCEL_PROJECT_ID  — 위와 같은 파일
+#   3) Vercel 프로젝트의 Root Directory를 apps/web 으로 지정하고
+#      NEXT_PUBLIC_API_URL 을 프로젝트 환경변수에 넣는다
+#      (빌드 시점에 번들로 굽히므로 여기서 넘겨도 소용없다).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Vercel production deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: vars.DEPLOY_WEB_ENABLED == 'true'
+
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 시크릿을 ${{ }}로 셸에 직접 펼치지 않는다 — 값에 셸 메타문자가 있으면
+      # 명령이 깨지거나 주입된다. env로 넘겨 셸 변수로만 읽는다.
+      - name: Fail fast on missing secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          missing=""
+          [ -z "${VERCEL_TOKEN:-}" ] && missing="$missing VERCEL_TOKEN"
+          [ -z "${VERCEL_ORG_ID:-}" ] && missing="$missing VERCEL_ORG_ID"
+          [ -z "${VERCEL_PROJECT_ID:-}" ] && missing="$missing VERCEL_PROJECT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::DEPLOY_WEB_ENABLED는 켜져 있는데 시크릿이 없습니다:$missing"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # web은 @eobom/shared의 dist를 임포트하므로 먼저 빌드해야 한다.
+      - name: Build shared package
+        run: pnpm --filter @eobom/shared build
+
+      # VERCEL_TOKEN은 CLI가 환경변수로도 읽으므로 --token 인자를 쓰지 않는다.
+      - name: Pull Vercel environment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel@latest pull --yes --environment=production
+
+      - name: Build
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel@latest build --prod
+
+      - name: Deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: pnpm dlx vercel@latest deploy --prebuilt --prod

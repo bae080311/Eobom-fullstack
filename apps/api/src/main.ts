@@ -2,11 +2,22 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
+
+  // 프록시·로드밸런서 뒤에 배포하면 Express가 보는 req.ip가 전부 프록시 IP다.
+  // 그대로 두면 레이트 리밋이 모든 사용자를 한 버킷에 넣어, 한 명이 전체를 잠글 수 있다.
+  // 신뢰할 홉 수를 TRUST_PROXY로 명시한다(예: '1'). 미설정이면 끈 상태 — 로컬 기본값.
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) {
+    const hops = Number(trustProxy);
+    app.set('trust proxy', Number.isNaN(hops) ? trustProxy : hops);
+    logger.log(`trust proxy: ${trustProxy}`);
+  }
 
   app.setGlobalPrefix('api');
 
