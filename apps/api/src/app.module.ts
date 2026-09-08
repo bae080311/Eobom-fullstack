@@ -12,6 +12,7 @@ import { SchedulesModule } from './modules/schedules/schedules.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { OrganizationsModule } from './modules/organizations/organizations.module.js';
 import { ReportModule } from './modules/report/report.module.js';
+import { HealthModule } from './modules/health/health.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ReportModule } from './modules/report/report.module.js';
     SchedulesModule,
     NotificationsModule,
     ReportModule,
+    HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
