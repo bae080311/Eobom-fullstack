@@ -1,3 +1,5 @@
+// Sentry 계측은 다른 어떤 모듈보다 먼저 올라와야 한다. import 순서가 곧 계측 순서다.
+import './instrument.js';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
