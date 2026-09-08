@@ -1,6 +1,7 @@
 // 타입 전용 import는 컴파일 시 지워지므로 번들에 SDK를 끌어오지 않는다.
 import type * as SentryNextjs from '@sentry/nextjs';
 import { parseSampleRate } from './src/shared/lib/sentry-sample-rate';
+import { scrubRequest, scrubSpanAttributes, stripQuery } from './src/shared/lib/sentry-scrub';
 
 /**
  * 브라우저용 Sentry 초기화.
@@ -37,14 +38,28 @@ if (dsn) {
 
       sendDefaultPii: false,
 
+      // 훅이 세 개인 이유: beforeSend는 **에러 이벤트만** 통과한다.
+      // 브라우저 트랜잭션·스팬(navigation, fetch, resource)의 URL 속성과
+      // description에는 쿼리스트링이 그대로 남는다.
       beforeSend(event) {
-        if (event.request) {
-          delete event.request.data;
-          delete event.request.cookies;
-          delete event.request.query_string;
-          delete event.request.headers;
+        return scrubRequest(event);
+      },
+
+      beforeSendTransaction(event) {
+        scrubRequest(event);
+        if (event.transaction) {
+          event.transaction = stripQuery(event.transaction);
         }
+        scrubSpanAttributes(event.contexts?.trace?.data);
         return event;
+      },
+
+      beforeSendSpan(span) {
+        scrubSpanAttributes(span.data);
+        if (span.description) {
+          span.description = stripQuery(span.description);
+        }
+        return span;
       },
     });
   });
