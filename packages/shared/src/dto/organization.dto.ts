@@ -45,3 +45,16 @@ export interface RotateJoinCodeResponseDto {
   joinCode: string;
   rotatedAt: string;
 }
+
+/**
+ * joinCode 회전 감사 기록 1건.
+ * 코드값은 담지 않는다 — 자격증명을 이력에 평문으로 남기지 않기 위해서다.
+ */
+export interface JoinCodeRotationResponseDto {
+  id: string;
+  rotatedAt: string;
+  rotatedBy: {
+    therapistProfileId: string;
+    name: string;
+  };
+}

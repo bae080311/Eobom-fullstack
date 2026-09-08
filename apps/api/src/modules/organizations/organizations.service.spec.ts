@@ -23,6 +23,10 @@ const makePrisma = () => {
       update: vi.fn(),
       findUnique: vi.fn(),
     },
+    joinCodeRotation: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
     $transaction: vi.fn(),
   };
   // 서비스는 $transaction(cb, opts)를 호출하므로, cb에 동일한 mock을 tx로 전달해 그대로 재사용한다.
@@ -169,6 +173,107 @@ describe('OrganizationsService', () => {
 
       expect(result.joinCode).toBe('NEWCODE1');
       expect(result.rotatedAt).toBe('2025-02-01T00:00:00.000Z');
+    });
+
+    it('회전할 때마다 누가 돌렸는지 감사 기록을 남긴다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.organization.findUnique.mockResolvedValue(null);
+      prisma.organization.update.mockResolvedValue(
+        makeOrg({ joinCode: 'NEWCODE1', joinCodeRotatedAt: new Date('2025-02-01T00:00:00Z') }),
+      );
+
+      await service.rotateJoinCode('u1', 'org1');
+
+      expect(prisma.joinCodeRotation.create).toHaveBeenCalledWith({
+        data: {
+          organizationId: 'org1',
+          rotatedById: 'tp1',
+          // 응답의 rotatedAt과 같은 값이어야 이력과 조직 레코드가 어긋나지 않는다.
+          rotatedAt: new Date('2025-02-01T00:00:00Z'),
+        },
+      });
+    });
+
+    // 기록이 빠진 회전이 남으면 감사 로그가 "전부는 아닌 이력"이 된다.
+    it('회전과 감사 기록을 한 트랜잭션 안에서 처리한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.organization.findUnique.mockResolvedValue(null);
+      prisma.organization.update.mockResolvedValue(makeOrg({ joinCode: 'NEWCODE1' }));
+
+      await service.rotateJoinCode('u1', 'org1');
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+    });
+
+    it('OWNER가 아니면 감사 기록도 남기지 않는다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.THERAPIST }),
+      );
+
+      await expect(service.rotateJoinCode('u1', 'org1')).rejects.toThrow(ForbiddenException);
+      expect(prisma.joinCodeRotation.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // findJoinCodeRotations
+  // -------------------------------------------------------------------------
+
+  describe('findJoinCodeRotations', () => {
+    const makeRotation = (overrides?: object) => ({
+      id: 'rot1',
+      organizationId: 'org1',
+      rotatedById: 'tp1',
+      rotatedAt: new Date('2025-02-01T00:00:00Z'),
+      rotatedBy: { id: 'tp1', user: { name: '이치료' } },
+      ...overrides,
+    });
+
+    it('OWNER가 아니면 ForbiddenException을 던진다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(
+        makeMembership({ role: OrgMemberRole.THERAPIST }),
+      );
+
+      await expect(service.findJoinCodeRotations('u1', 'org1')).rejects.toThrow(ForbiddenException);
+      expect(prisma.joinCodeRotation.findMany).not.toHaveBeenCalled();
+    });
+
+    it('OWNER면 최신순으로 이력을 돌려준다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.joinCodeRotation.findMany.mockResolvedValue([makeRotation()]);
+
+      const result = await service.findJoinCodeRotations('u1', 'org1');
+
+      expect(result).toEqual([
+        {
+          id: 'rot1',
+          rotatedAt: '2025-02-01T00:00:00.000Z',
+          rotatedBy: { therapistProfileId: 'tp1', name: '이치료' },
+        },
+      ]);
+      expect(prisma.joinCodeRotation.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { organizationId: 'org1' },
+          orderBy: { rotatedAt: 'desc' },
+        }),
+      );
+    });
+
+    // joinCode는 기관 가입 자격증명이다. 이력에 평문으로 남기지 않는다.
+    it('응답에 코드값을 담지 않는다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.joinCodeRotation.findMany.mockResolvedValue([makeRotation()]);
+
+      const result = await service.findJoinCodeRotations('u1', 'org1');
+
+      expect(JSON.stringify(result)).not.toContain('ABCD1234');
+      expect(result[0]).not.toHaveProperty('joinCode');
     });
   });
 
