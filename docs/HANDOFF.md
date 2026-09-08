@@ -72,5 +72,7 @@ PR `#49`~`#53`은 GitHub에서 전부 MERGED로 표시되지만 **main에는 `#4
 - **셸에서 변수 뒤에 한글이 바로 붙으면 `${VAR}`로 끊으세요.** bash가 첫 바이트를 변수명에 포함해 `set -u`와 만나면 죽습니다.
 - **Notion MCP 쓰기 주의 2가지**: ① 본문에 `<script>` 문자열이 있으면 Cloudflare가 403으로 막습니다(레이어 7 작성 중 3회 차단 — `pnpm <script>`가 원인). 큰 페이로드는 나눠 보내세요. ② 한글 음절이 산발적으로 깨집니다 — `쪽`이 반복 실패했습니다. 쓴 뒤 매칭 안 될 문자열로 `update_content`를 호출해 에러 메시지의 에코로 검증하고, `old_str`은 짧게 잡으세요.
 - **Sentry 스크러빙은 `apps/api/src/common/sentry-scrub.ts`와 `apps/web/src/shared/lib/sentry-scrub.ts` 두 곳에 있습니다.** 패키지 경계 때문에 복제했고 한쪽만 고치면 구멍이 남습니다.
+- **`.claude/rules/`의 숫자 접두사가 제거됐습니다**(`bc9f82b`). `01-domain-naming.md` → `domain-naming.md` 식이고, **"규칙 04" 같은 번호 호칭은 이제 가리킬 대상이 없습니다** — 이름으로 부르세요(`prisma-migration` 규칙). 커밋 이력에는 옛 번호 표기가 남아 있습니다.
+- **`flywheel-upgrade` 스킬의 규칙 갱신 대상 표에 `prisma-migration.md`·`shell-scripts.md`가 빠져 있습니다.** 규칙 자체는 `CLAUDE.md`가 디렉터리째 로드하므로 동작엔 문제없지만, 그 스킬이 자동으로 규칙을 추가할 때 이 둘은 후보에서 제외됩니다. 리네이밍과 무관한 별개 갭이라 손대지 않았습니다.
 - 레이어 정본 문서: `CLAUDE.md` 상단 Notion 표. **레이어 3·4·5·6·7·8 전부 2026-09-08 기준 갱신.** 레이어 4는 스키마 사본 대신 `prisma/schema.prisma`를 정본으로 선언하도록 바꿨습니다(사본 유지가 반복 실패했기 때문).
 - 모듈별 상세 구현 이력: Claude 메모리(`project_phase5_ops`, `eobom_ops_gotchas` 등)
