@@ -6,6 +6,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
+import { resolveTrustProxy } from './common/trust-proxy.js';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -16,8 +17,9 @@ async function bootstrap() {
   // 신뢰할 홉 수를 TRUST_PROXY로 명시한다(예: '1'). 미설정이면 끈 상태 — 로컬 기본값.
   const trustProxy = process.env.TRUST_PROXY;
   if (trustProxy) {
-    const hops = Number(trustProxy);
-    app.set('trust proxy', Number.isNaN(hops) ? trustProxy : hops);
+    // 잘못된 값은 던져서 부팅을 막는다 — Infinity가 통과하면 클라이언트가
+    // XFF 헤더로 req.ip를 골라 레이트 리밋을 우회한다.
+    app.set('trust proxy', resolveTrustProxy(trustProxy));
     logger.log(`trust proxy: ${trustProxy}`);
   }
 
