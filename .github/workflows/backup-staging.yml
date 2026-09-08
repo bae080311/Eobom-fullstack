@@ -1,21 +1,27 @@
-name: Backup Database
+name: Backup Staging Database
 
-# 일일 pg_dump. 저장소 변수 BACKUP_ENABLED=true 일 때만 돈다.
+# ⛔ 운영 DB에 쓰지 마세요.
 #
-# ⚠️ 트레이드오프를 알고 켜야 한다.
-#    이 워크플로를 켜면 (1) 운영 DB가 GitHub 러너의 IP에서 접근 가능해야 하고
-#    (2) 운영 DB 자격증명이 GitHub Secrets에 놓인다. 아동 이름·치료 메모가 담긴
-#    DB라 둘 다 가벼운 결정이 아니다. DB 호스트에서 cron으로 같은 스크립트를
-#    (scripts/backup-db.sh) 돌리는 편이 노출면이 훨씬 좁다.
-#    GitHub 아티팩트는 보존 상한이 90일이라 장기 보관용도 아니다 — 임시 방편이다.
+#    운영 백업은 두 갈래로 갑니다 (레이어 7 §7.9):
+#      1차 — DB 프로바이더의 자동 백업/PITR. 자격증명을 밖으로 꺼낼 필요가 없다.
+#      2차 — DB 호스트(또는 같은 네트워크)의 cron에서 scripts/backup-db.sh 실행,
+#            BACKUP_UPLOAD_CMD로 오브젝트 스토리지에 전송.
+#
+#    이 워크플로를 운영 DB에 겨누면 (1) DB가 GitHub 러너 IP 대역 전체에
+#    개방돼야 하고 (2) 운영 자격증명이 GitHub Secrets에 놓입니다. 아동 이름·치료
+#    메모가 담긴 DB이므로 위 두 갈래보다 노출면이 훨씬 넓습니다. 게다가 아티팩트
+#    보존 상한이 90일이라 장기 보관도 안 되고 시점 복구도 없습니다.
+#
+# 그래서 이 파일의 용도는 **스테이징·합성 데이터 DB 전용**입니다.
+# 실제 학부모·아동 데이터가 들어 있지 않은 DB에만 겨누세요.
 #
 # 켜는 법:
-#   Variables: BACKUP_ENABLED = true
-#   Secrets:   BACKUP_DATABASE_URL — 읽기 전용 롤 권장
-#              BACKUP_PASSPHRASE   — 덤프 대칭키 암호화용. 없으면 실패시킨다.
+#   Variables: BACKUP_STAGING_ENABLED = true
+#   Secrets:   BACKUP_DATABASE_URL — 스테이징 DB. 읽기 전용 롤 권장
+#              BACKUP_PASSPHRASE   — 덤프 대칭키 암호화용. 없으면 실패시킨다
 on:
   schedule:
-    # 매일 18:00 UTC = 03:00 KST (트래픽이 가장 적은 시간대)
+    # 매일 18:00 UTC = 03:00 KST
     - cron: '0 18 * * *'
   workflow_dispatch:
 
@@ -24,10 +30,10 @@ permissions:
 
 jobs:
   dump:
-    name: pg_dump and archive
+    name: pg_dump staging and archive
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: vars.BACKUP_ENABLED == 'true'
+    if: vars.BACKUP_STAGING_ENABLED == 'true'
 
     steps:
       - name: Checkout
@@ -35,7 +41,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # 시크릿을 ${{ }}로 셸에 직접 펼치지 않는다 — env로 넘겨 셸 변수로만 읽는다.
+      # 시크릿을 GitHub Actions 표현식으로 셸에 직접 펼치지 않는다 —
+      # env로 넘겨 셸 변수로만 읽는다.
       - name: Fail fast on missing secrets
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
@@ -47,7 +54,7 @@ jobs:
           fi
           # 평문 덤프를 아티팩트로 올리는 일은 막는다.
           if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
-            echo "::error::BACKUP_PASSPHRASE 시크릿이 없습니다. 개인정보가 든 덤프를 평문으로 보관할 수 없습니다."
+            echo "::error::BACKUP_PASSPHRASE 시크릿이 없습니다. 암호화 없이 덤프를 보관할 수 없습니다."
             exit 1
           fi
 
@@ -59,6 +66,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends postgresql-client-16
 
+      # BACKUP_UPLOAD_CMD는 넘기지 않는다 — 여기서는 아티팩트가 목적지다.
       - name: Run backup
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
@@ -70,8 +78,7 @@ jobs:
       - name: Upload encrypted dump
         uses: actions/upload-artifact@v4
         with:
-          name: eobom-db-backup-${{ github.run_id }}
+          name: eobom-staging-backup-${{ github.run_id }}
           path: backups/*.dump.gpg
-          # 아티팩트 보존 상한은 90일이다. 장기 보관은 오브젝트 스토리지로 옮겨야 한다.
           retention-days: 30
           if-no-files-found: error
