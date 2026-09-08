@@ -24,6 +24,10 @@ const serverEnv = {
   WEB_URL: `http://localhost:${WEB_PORT}`,
   NEXT_PUBLIC_API_URL: `http://localhost:${API_PORT}/api`,
 
+  // 모든 시나리오가 같은 IP에서 회원가입·로그인을 반복하므로 레이트 리밋을 끈다.
+  // 켜 두면 5회/10분인 signup 정책에 걸려 뒤쪽 시나리오가 429로 죽는다.
+  THROTTLE_ENABLED: 'false',
+
   // 회원가입은 인증 코드 발송이 성공해야 다음 단계로 넘어간다(RegisterForm step2 → 2.5).
   // docker-compose.test.yml의 mailpit으로 보내 실제 메일 없이 통과시킨다.
   SMTP_HOST: 'localhost',
