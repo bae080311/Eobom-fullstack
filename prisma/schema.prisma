@@ -54,6 +54,7 @@ enum NotificationType {
   SCHEDULE_CREATED
   SCHEDULE_UPDATED
   SCHEDULE_CANCELED
+  SESSION_REPORT_CREATED
 }
 
 // ==================== Users ====================
@@ -94,6 +95,7 @@ model TherapistProfile {
   issuedInviteCodes    InviteCode[]             @relation("InviteIssuer")
   schedules            Schedule[]
   recurringRules       RecurringRule[]
+  joinCodeRotations    JoinCodeRotation[]       @relation("JoinCodeRotator")
 }
 
 model ParentProfile {
@@ -120,12 +122,30 @@ model Organization {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  memberships    OrganizationMembership[]
-  children       Child[]
-  inviteCodes    InviteCode[]
-  schedules      Schedule[]
-  recurringRules RecurringRule[]
-  notifications  Notification[]
+  memberships       OrganizationMembership[]
+  children          Child[]
+  inviteCodes       InviteCode[]
+  schedules         Schedule[]
+  recurringRules    RecurringRule[]
+  notifications     Notification[]
+  joinCodeRotations JoinCodeRotation[]
+}
+
+/// joinCode 회전 감사 기록. Organization.joinCodeRotatedAt은 마지막 1건만 남기므로
+/// "누가 언제 돌렸는지"의 이력이 사라진다. joinCode는 기관 가입 자격증명이라
+/// 회전은 되돌릴 수 없는 보안 사건이고, 추적이 남아야 한다.
+///
+/// 코드값 자체(이전/이후)는 저장하지 않는다 — 자격증명을 감사 로그에 평문으로
+/// 영구 보관하는 셈이 된다. 추적에 필요한 것은 주체와 시각이다.
+model JoinCodeRotation {
+  id             String           @id @default(uuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rotatedById    String
+  rotatedBy      TherapistProfile @relation("JoinCodeRotator", fields: [rotatedById], references: [id])
+  rotatedAt      DateTime         @default(now())
+
+  @@index([organizationId, rotatedAt])
 }
 
 model OrganizationMembership {

@@ -10,6 +10,7 @@ const makeService = () => ({
   findMine: vi.fn(),
   update: vi.fn(),
   rotateJoinCode: vi.fn(),
+  findJoinCodeRotations: vi.fn(),
   findMembers: vi.fn(),
   updateMember: vi.fn(),
   leaveMember: vi.fn(),
@@ -51,6 +52,11 @@ describe('OrganizationsController', () => {
   it('rotateJoinCode는 user.id와 orgId를 서비스에 전달한다', () => {
     controller.rotateJoinCode(user, 'org1');
     expect(service.rotateJoinCode).toHaveBeenCalledWith('u1', 'org1');
+  });
+
+  it('findJoinCodeRotations는 user.id와 orgId를 서비스에 전달한다', () => {
+    controller.findJoinCodeRotations(user, 'org1');
+    expect(service.findJoinCodeRotations).toHaveBeenCalledWith('u1', 'org1');
   });
 
   it('findMembers는 user.id와 orgId를 서비스에 전달한다', () => {
