@@ -16,9 +16,11 @@ name: Backup Staging Database
 # 실제 학부모·아동 데이터가 들어 있지 않은 DB에만 겨누세요.
 #
 # 켜는 법:
-#   Variables: BACKUP_STAGING_ENABLED = true
-#   Secrets:   BACKUP_DATABASE_URL — 스테이징 DB. 읽기 전용 롤 권장
-#              BACKUP_PASSPHRASE   — 덤프 대칭키 암호화용. 없으면 실패시킨다
+#   1) Variables: BACKUP_STAGING_ENABLED = true
+#   2) Environments 에 `staging` 환경을 만들고, 그 환경의 Secrets 에 등록한다
+#      (저장소 레벨 시크릿이 아니라 환경 시크릿이어야 이 job에 주입된다):
+#        BACKUP_DATABASE_URL — 스테이징 DB. 읽기 전용 롤 권장
+#        BACKUP_PASSPHRASE   — 덤프 대칭키 암호화용. 없으면 실패시킨다
 on:
   schedule:
     # 매일 18:00 UTC = 03:00 KST
@@ -34,6 +36,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: vars.BACKUP_STAGING_ENABLED == 'true'
+
+    # 변수명만으로는 `BACKUP_DATABASE_URL`이 운영 DB를 겨누는 것을 막을 수 없다.
+    # 시크릿을 `staging` 환경에 두면 값의 범위를 GitHub의 보호 모델이 관리한다 —
+    # 저장소 레벨 시크릿이 아니라 이 환경에 등록된 것만 이 job에 주입된다.
+    # 환경을 만들지 않으면 시크릿이 비어 아래 단계에서 명시적으로 실패한다.
+    environment: staging
 
     steps:
       - name: Checkout
