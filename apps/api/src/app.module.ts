@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { THROTTLE_POLICIES, resolveThrottleEnabled } from './common/throttle/throttle.policy.js';
 import { DatabaseModule } from './database/database.module.js';
@@ -16,6 +17,9 @@ import { HealthModule } from './modules/health/health.module.js';
 
 @Module({
   imports: [
+    // Sentry 문서 권장대로 첫 번째로 둔다.
+    // SENTRY_DSN이 없으면 instrument.ts가 init을 건너뛰므로 전부 no-op이 된다.
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     // 리밋 값 자체는 throttle.policy.ts의 상수다(데코레이터가 .env보다 먼저 평가되므로).
     // 환경변수로는 끄기만 제어한다 — e2e는 같은 IP에서 로그인·가입을 반복한다.
@@ -43,6 +47,11 @@ import { HealthModule } from './modules/health/health.module.js';
     ReportModule,
     HealthModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    // 500대 예외만 Sentry로 보내고(HttpException 4xx는 예상된 에러로 걸러진다)
+    // 응답은 BaseExceptionFilter에 위임하므로 기존 응답 형식이 그대로 유지된다.
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
