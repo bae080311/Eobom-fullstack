@@ -4,17 +4,18 @@
 
 ## 엔티티 이름
 
-| 사용              | 금지                          |
-| ----------------- | ----------------------------- |
-| `Therapist`       | ~~치료사, Therapist~~s        |
-| `Parent`          | ~~학부모~~                    |
-| `Child`           | ~~Children, Patient~~         |
-| `InviteCode`      | ~~Code, Invitation~~          |
-| `Schedule`        | ~~Session, Appointment~~      |
-| `RecurringRule`   | ~~Repeat, Recurring~~         |
-| `Notification`    | ~~Alert, Message~~            |
-| `Acknowledgement` | ~~Confirm, Read~~             |
-| `SessionReport`   | ~~Report, Summary, AiReport~~ |
+| 사용               | 금지                          |
+| ------------------ | ----------------------------- |
+| `Therapist`        | ~~치료사, Therapist~~s        |
+| `Parent`           | ~~학부모~~                    |
+| `Child`            | ~~Children, Patient~~         |
+| `InviteCode`       | ~~Code, Invitation~~          |
+| `Schedule`         | ~~Session, Appointment~~      |
+| `RecurringRule`    | ~~Repeat, Recurring~~         |
+| `Notification`     | ~~Alert, Message~~            |
+| `Acknowledgement`  | ~~Confirm, Read~~             |
+| `SessionReport`    | ~~Report, Summary, AiReport~~ |
+| `JoinCodeRotation` | ~~CodeRotation, AuditLog~~    |
 
 ## DTO 이름
 
@@ -28,9 +29,20 @@ Create<Entity>Dto   UpdateScheduleDto   ScheduleResponseDto
 
 ## enum 값
 
+정본은 `packages/shared/src/enums/index.ts` 하나다. Prisma·NestJS·Next.js가 이 값을 재사용한다.
+
 ```typescript
 UserRole: THERAPIST | PARENT;
-ScheduleStatus: SCHEDULED | MODIFIED | CANCELLED;
+OrgMemberRole: OWNER | THERAPIST;
+OrgMembershipStatus: ACTIVE | LEFT;
+ParentRelation: MOTHER | FATHER | GUARDIAN | OTHER;
+InviteCodeType: THERAPIST_JOIN | PARENT_LINK;
 InviteCodeStatus: ACTIVE | USED | EXPIRED | REVOKED;
-NotificationType: SCHEDULE_CREATED | SCHEDULE_MODIFIED | SCHEDULE_CANCELLED;
+ScheduleStatus: SCHEDULED | RESCHEDULED | CANCELED | COMPLETED;
+NotificationType: SCHEDULE_CREATED |
+  SCHEDULE_UPDATED |
+  SCHEDULE_CANCELED |
+  SESSION_REPORT_CREATED;
 ```
+
+> 철자는 미국식 한 글자 L(`CANCELED`)로 통일한다. `CANCELLED`·`MODIFIED`는 쓰지 않는다.
