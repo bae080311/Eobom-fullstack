@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nestjs';
+import { scrubRequest, scrubSpanAttributes, stripQuery } from './common/sentry-scrub.js';
 
 /**
  * Sentry 초기화.
@@ -33,17 +34,32 @@ if (dsn) {
     // 아동 이름·치료 메모가 오가는 API다. IP·쿠키·헤더를 기본 수집하지 않는다.
     sendDefaultPii: false,
 
+    // sendDefaultPii=false로도 요청 본문·쿼리는 남을 수 있다. 아동 이름이나
+    // 세션 메모를 그대로 담을 수 있으므로 통째로 지운다. 어느 엔드포인트에서
+    // 터졌는지는 url·method만으로 충분히 좁혀진다.
+    //
+    // 훅이 세 개인 이유: beforeSend는 **에러 이벤트만** 통과한다.
+    // tracesSampleRate가 0보다 크면 트랜잭션·스팬이 따로 전송되고,
+    // 그쪽 URL 속성에는 쿼리스트링이 그대로 남는다.
     beforeSend(event) {
-      // sendDefaultPii=false로도 요청 본문은 남을 수 있다. 본문·쿠키·쿼리는
-      // 아동 이름이나 세션 메모를 그대로 담을 수 있으므로 통째로 지운다.
-      // 어느 엔드포인트에서 터졌는지는 url·method만으로 충분히 좁혀진다.
-      if (event.request) {
-        delete event.request.data;
-        delete event.request.cookies;
-        delete event.request.query_string;
-        delete event.request.headers;
+      return scrubRequest(event);
+    },
+
+    beforeSendTransaction(event) {
+      scrubRequest(event);
+      if (event.transaction) {
+        event.transaction = stripQuery(event.transaction);
       }
+      scrubSpanAttributes(event.contexts?.trace?.data);
       return event;
+    },
+
+    beforeSendSpan(span) {
+      scrubSpanAttributes(span.data);
+      if (span.description) {
+        span.description = stripQuery(span.description);
+      }
+      return span;
     },
   });
 }
