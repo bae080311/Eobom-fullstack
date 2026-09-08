@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { UserRole, OrgMemberRole, OrgMembershipStatus, NotificationType } from '@eobom/shared';
 import type { IUser } from '@eobom/shared';
 
@@ -18,12 +19,23 @@ const makePrisma = () => ({
   parentProfile: { findUnique: vi.fn() },
   organizationMembership: { findFirst: vi.fn() },
   parentChildLink: { findUnique: vi.fn() },
-  sessionReport: { upsert: vi.fn(), findUnique: vi.fn() },
+  sessionReport: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
 });
 
 const makeOllama = () => ({ generateReport: vi.fn() });
 
 const makeNotifications = () => ({ notifyScheduleEvent: vi.fn() });
+
+/**
+ * scheduleId unique 제약 위반. 다른 요청이 먼저 리포트를 만들었을 때 Prisma가 던지는 것.
+ * 서비스가 `instanceof PrismaClientKnownRequestError` + `code === 'P2002'`로 판별하므로
+ * 실제 클래스를 써야 한다.
+ */
+const uniqueViolation = () =>
+  new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: 'test',
+  });
 
 // ---------------------------------------------------------------------------
 // Fixture helpers
@@ -179,7 +191,7 @@ describe('ReportService', () => {
         nextGoal: '다음 목표',
         tone: 'positive',
       });
-      prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+      prisma.sessionReport.create.mockResolvedValue(makeReportRow());
 
       const result = await service.generate('s1', otherTherapistUser, { memo: '메모' });
 
@@ -187,7 +199,7 @@ describe('ReportService', () => {
       expect(result.data.id).toBe('r1');
     });
 
-    it('정상 흐름에서 promptVersion을 태깅해 scheduleId 기준 upsert한다', async () => {
+    it('정상 흐름에서 promptVersion을 태깅해 scheduleId로 생성한다', async () => {
       prisma.schedule.findUnique.mockResolvedValue(makeSchedule());
       prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
       prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
@@ -199,17 +211,13 @@ describe('ReportService', () => {
         nextGoal: '다음 목표',
         tone: 'positive',
       });
-      prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+      prisma.sessionReport.create.mockResolvedValue(makeReportRow());
 
       await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
 
-      expect(prisma.sessionReport.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { scheduleId: 's1' },
-          create: expect.objectContaining({ scheduleId: 's1', promptVersion: 'report-v1' }),
-          update: expect.objectContaining({ promptVersion: 'report-v1' }),
-        }),
-      );
+      expect(prisma.sessionReport.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ scheduleId: 's1', promptVersion: 'report-v1' }),
+      });
     });
 
     describe('학부모 알림', () => {
@@ -225,12 +233,11 @@ describe('ReportService', () => {
           nextGoal: '다음 목표',
           tone: 'positive',
         });
-        prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+        prisma.sessionReport.create.mockResolvedValue(makeReportRow());
       };
 
       it('처음 작성하면 연결된 학부모에게 알림을 보낸다', async () => {
-        arrangeHappyPath();
-        prisma.sessionReport.findUnique.mockResolvedValue(null); // 기존 리포트 없음
+        arrangeHappyPath(); // create가 성공 = 선점 성공 = 최초 작성
 
         await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
 
@@ -243,13 +250,42 @@ describe('ReportService', () => {
         });
       });
 
-      // 재생성은 upsert로 덮어쓰는 것이다. 문구를 다듬을 때마다 알림이 쌓이면 소음이 된다.
+      // 재생성은 덮어쓰기다. 문구를 다듬을 때마다 알림이 쌓이면 소음이 된다.
       it('재생성할 때는 알림을 보내지 않는다', async () => {
         arrangeHappyPath();
-        prisma.sessionReport.findUnique.mockResolvedValue({ id: 'r1' }); // 이미 있음
+        prisma.sessionReport.create.mockRejectedValue(uniqueViolation());
+        prisma.sessionReport.update.mockResolvedValue(makeReportRow());
 
         await service.generate('s1', therapistUser, { memo: '다시 쓴 메모' });
 
+        expect(prisma.sessionReport.update).toHaveBeenCalledWith({
+          where: { scheduleId: 's1' },
+          data: expect.objectContaining({ rawMemo: '다시 쓴 메모' }),
+        });
+        expect(notifications.notifyScheduleEvent).not.toHaveBeenCalled();
+      });
+
+      // 동시 요청 둘이 사전 조회로 "없음"을 함께 읽으면 각자 알림을 보낸다.
+      // unique 제약으로 선점하므로 뒤늦은 요청은 update 경로로 빠지고 알림이 없다.
+      it('동시 생성에서 선점에 실패한 요청은 알림을 보내지 않는다', async () => {
+        arrangeHappyPath();
+        prisma.sessionReport.create.mockRejectedValue(uniqueViolation());
+        prisma.sessionReport.update.mockResolvedValue(makeReportRow());
+
+        await service.generate('s1', therapistUser, { memo: '메모' });
+
+        expect(notifications.notifyScheduleEvent).not.toHaveBeenCalled();
+      });
+
+      // unique 위반이 아닌 오류는 삼키지 않는다.
+      it('unique 위반이 아닌 DB 오류는 그대로 전파한다', async () => {
+        arrangeHappyPath();
+        prisma.sessionReport.create.mockRejectedValue(new Error('connection lost'));
+
+        await expect(service.generate('s1', therapistUser, { memo: '메모' })).rejects.toThrow(
+          'connection lost',
+        );
+        expect(prisma.sessionReport.update).not.toHaveBeenCalled();
         expect(notifications.notifyScheduleEvent).not.toHaveBeenCalled();
       });
 
@@ -273,7 +309,7 @@ describe('ReportService', () => {
         nextGoal: '다음 목표',
         tone: 'positive',
       });
-      prisma.sessionReport.upsert.mockResolvedValue(makeReportRow());
+      prisma.sessionReport.create.mockResolvedValue(makeReportRow());
 
       const result = await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
 
