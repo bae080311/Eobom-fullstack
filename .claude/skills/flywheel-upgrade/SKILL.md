@@ -54,12 +54,12 @@ Notion URL: https://baekyungjin.notion.site/367085d59d5e81c287a5dc3838527446
 
 보고서에서 "2회 이상 반복" 또는 "새 패턴" 항목이 있으면 아래 파일에 추가한다.
 
-| 대상 파일                           | 적용 범위                                   |
-| ----------------------------------- | ------------------------------------------- |
-| `.claude/rules/02-api-structure.md` | NestJS·DTO·Logger 관련                      |
-| `.claude/rules/03-web-structure.md` | FSD·컴포넌트·스타일 관련                    |
-| `.claude/rules/01-domain-naming.md` | 네이밍 관련                                 |
-| `.claude/rules/05-dev-process.md`   | 개발 프로세스·체크리스트 (없으면 새로 생성) |
+| 대상 파일                        | 적용 범위                                   |
+| -------------------------------- | ------------------------------------------- |
+| `.claude/rules/api-structure.md` | NestJS·DTO·Logger 관련                      |
+| `.claude/rules/web-structure.md` | FSD·컴포넌트·스타일 관련                    |
+| `.claude/rules/domain-naming.md` | 네이밍 관련                                 |
+| `.claude/rules/dev-process.md`   | 개발 프로세스·체크리스트 (없으면 새로 생성) |
 
 새 규칙 추가 형식 (기존 파일 맨 끝에 추가, 덮어쓰기 금지):
 

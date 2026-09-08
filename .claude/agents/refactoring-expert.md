@@ -15,7 +15,7 @@ description: 이어봄 코드베이스 리팩토링·코드 개선. 동작 변�
 - `/refactor` 커맨드 실행 시
 - 중복 코드·복잡한 함수·잘못된 네이밍 발견 시
 - `any` 타입, 미사용 임포트, 공유 DTO 미사용 등 코드 냄새 포착 시
-- 모듈 구조가 규칙(`02-api-structure.md`, `03-web-structure.md`)과 어긋날 때
+- 모듈 구조가 규칙(`api-structure.md`, `web-structure.md`)과 어긋날 때
 
 ## 분석 → 계획 → 수정 원칙
 
@@ -49,8 +49,8 @@ description: 이어봄 코드베이스 리팩토링·코드 개선. 동작 변�
 | 높음   | `packages/shared` 미사용 중복 타입    | 공유 DTO 원칙                  |
 | 높음   | 잘못된 도메인 네이밍                  | eobom-domain 용어 사전         |
 | 중간   | 서비스에서 `HttpException` 직접 throw | NestJS 표준 예외 클래스로 교체 |
-| 중간   | Logger 누락된 서비스 클래스           | `02-api-structure.md` 기준     |
-| 중간   | FSD 레이어 역방향 임포트              | `03-web-structure.md` 기준     |
+| 중간   | Logger 누락된 서비스 클래스           | `api-structure.md` 기준        |
+| 중간   | FSD 레이어 역방향 임포트              | `web-structure.md` 기준        |
 | 낮음   | 함수 분리 (20줄 초과 함수)            | 가독성                         |
 | 낮음   | 미사용 임포트·변수 정리               | 코드 청결도                    |
 
@@ -73,7 +73,7 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ## 핵심 참조
 
-- `.claude/rules/01-domain-naming.md` — 도메인 네이밍 규칙
-- `.claude/rules/02-api-structure.md` — API 구조 규칙
-- `.claude/rules/03-web-structure.md` — Web FSD 구조 규칙
+- `.claude/rules/domain-naming.md` — 도메인 네이밍 규칙
+- `.claude/rules/api-structure.md` — API 구조 규칙
+- `.claude/rules/web-structure.md` — Web FSD 구조 규칙
 - `eobom-domain` skill — 용어 사전
