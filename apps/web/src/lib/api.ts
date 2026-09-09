@@ -27,7 +27,11 @@ async function request<T>(promise: ReturnType<typeof client.get>): Promise<T> {
   try {
     const res = await promise;
     if (res.status === 204) return undefined as T;
-    return res.json();
+
+    // API는 성공 응답을 전역 인터셉터로 `{ data: ... }` 로 감싼다 (레이어 5 §5.1).
+    // 여기서 한 번만 벗겨 호출부는 DTO를 그대로 받는다.
+    const body = await res.json<{ data: T }>();
+    return body.data;
   } catch (err) {
     if (err instanceof HTTPError) {
       // ky 2.x는 error.data를 채우면서 응답 본문을 소비한다 —

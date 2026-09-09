@@ -2,7 +2,7 @@ name: DB Check
 
 # prisma/migrations와 schema.prisma가 어긋나지 않았는지 검증한다.
 # 스키마만 고치고 마이그레이션을 남기지 않으면 새 환경에서 스키마를 재현할 수 없고,
-# 규칙 04(expand-migrate-contract)의 롤백 식별성도 깨진다.
+# prisma-migration 규칙(expand-migrate-contract)의 롤백 식별성도 깨진다.
 on:
   push:
     branches: [main, develop]
