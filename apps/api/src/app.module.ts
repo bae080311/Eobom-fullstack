@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { THROTTLE_POLICIES, resolveThrottleEnabled } from './common/throttle/throttle.policy.js';
@@ -52,6 +53,8 @@ import { HealthModule } from './modules/health/health.module.js';
     // 응답은 BaseExceptionFilter에 위임하므로 기존 응답 형식이 그대로 유지된다.
     { provide: APP_FILTER, useClass: SentryGlobalFilter },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // 성공 응답을 { data: ... }로 통일한다 (레이어 5 §5.1).
+    { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
   ],
 })
 export class AppModule {}
