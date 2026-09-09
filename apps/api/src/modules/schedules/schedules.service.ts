@@ -309,28 +309,34 @@ export class SchedulesService {
       throw new BadRequestException('시작 시간은 종료 시간보다 빨라야 합니다.');
     }
 
-    const schedule = await this.prisma.schedule.create({
-      data: {
-        childId: dto.childId,
-        therapistId: dto.therapistId ?? profile.id,
+    // 일정과 알림을 한 트랜잭션으로 묶는다 — 일정만 커밋되고 알림이 사라지면 학부모는
+    // 영구히 모른다. 권한·시간 검증은 위에서 이미 끝났으므로 트랜잭션은 쓰기만 감싼다.
+    const schedule = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.schedule.create({
+        data: {
+          childId: dto.childId,
+          therapistId: dto.therapistId ?? profile.id,
+          organizationId: membership.organizationId,
+          startAt,
+          endAt,
+          title: dto.title,
+          notes: dto.notes,
+        },
+        include: { child: { select: { id: true, name: true } } },
+      });
+
+      await this.notificationsService.notifyScheduleEvent(tx, {
+        scheduleId: created.id,
+        childId: created.childId,
         organizationId: membership.organizationId,
-        startAt,
-        endAt,
-        title: dto.title,
-        notes: dto.notes,
-      },
-      include: { child: { select: { id: true, name: true } } },
+        type: NotificationType.SCHEDULE_CREATED,
+        payload: { startAt: created.startAt.toISOString() },
+      });
+
+      return created;
     });
 
     this.logger.log(`create: schedule=${schedule.id}`);
-
-    await this.notificationsService.notifyScheduleEvent({
-      scheduleId: schedule.id,
-      childId: schedule.childId,
-      organizationId: membership.organizationId,
-      type: NotificationType.SCHEDULE_CREATED,
-      payload: { startAt: schedule.startAt.toISOString() },
-    });
 
     return this.toDto(schedule);
   }
@@ -407,23 +413,25 @@ export class SchedulesService {
         orderBy: { startAt: 'asc' },
       });
 
+      // 알림도 같은 트랜잭션에서 남긴다 — 일괄 생성만 커밋되고 알림이 사라지면 학부모는
+      // 새 일정 200건을 모른 채로 남는다.
+      if (schedules.length > 0) {
+        await this.notificationsService.notifyScheduleEvent(tx, {
+          scheduleId: schedules[0].id,
+          childId: dto.childId,
+          organizationId: membership.organizationId,
+          type: NotificationType.SCHEDULE_CREATED,
+          payload: {
+            startAt: schedules[0].startAt.toISOString(),
+            scheduleCount: schedules.length,
+          },
+        });
+      }
+
       return { rule, schedules };
     });
 
     this.logger.log(`createRecurring: rule=${rule.id} schedulesCreated=${schedules.length}`);
-
-    if (schedules.length > 0) {
-      await this.notificationsService.notifyScheduleEvent({
-        scheduleId: schedules[0].id,
-        childId: dto.childId,
-        organizationId: membership.organizationId,
-        type: NotificationType.SCHEDULE_CREATED,
-        payload: {
-          startAt: schedules[0].startAt.toISOString(),
-          scheduleCount: schedules.length,
-        },
-      });
-    }
 
     return {
       recurringRule: this.toRecurringRuleDto(rule),
@@ -499,30 +507,36 @@ export class SchedulesService {
 
     const timeChanged = !!(dto.startAt || dto.endAt);
 
-    const updated = await this.prisma.schedule.update({
-      where: { id },
-      data: {
-        ...(dto.startAt ? { startAt } : {}),
-        ...(dto.endAt ? { endAt } : {}),
-        ...(dto.title !== undefined ? { title: dto.title } : {}),
-        ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
-        ...(timeChanged ? { status: ScheduleStatus.RESCHEDULED } : {}),
-      },
-      include: { child: { select: { id: true, name: true } } },
+    // 변경과 알림을 한 트랜잭션으로 묶는다 — 시간이 바뀐 것을 학부모가 모르면
+    // 엉뚱한 시각에 아이를 데려온다. `prevStartAt`은 트랜잭션 밖에서 읽은 변경 전 값이다.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const next = await tx.schedule.update({
+        where: { id },
+        data: {
+          ...(dto.startAt ? { startAt } : {}),
+          ...(dto.endAt ? { endAt } : {}),
+          ...(dto.title !== undefined ? { title: dto.title } : {}),
+          ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+          ...(timeChanged ? { status: ScheduleStatus.RESCHEDULED } : {}),
+        },
+        include: { child: { select: { id: true, name: true } } },
+      });
+
+      await this.notificationsService.notifyScheduleEvent(tx, {
+        scheduleId: next.id,
+        childId: next.childId,
+        organizationId: schedule.organizationId,
+        type: NotificationType.SCHEDULE_UPDATED,
+        payload: {
+          startAt: next.startAt.toISOString(),
+          ...(timeChanged ? { prevStartAt: schedule.startAt.toISOString() } : {}),
+        },
+      });
+
+      return next;
     });
 
     this.logger.log(`update: schedule=${id} timeChanged=${timeChanged}`);
-
-    await this.notificationsService.notifyScheduleEvent({
-      scheduleId: updated.id,
-      childId: updated.childId,
-      organizationId: schedule.organizationId,
-      type: NotificationType.SCHEDULE_UPDATED,
-      payload: {
-        startAt: updated.startAt.toISOString(),
-        ...(timeChanged ? { prevStartAt: schedule.startAt.toISOString() } : {}),
-      },
-    });
 
     return this.toDto(updated);
   }
@@ -540,21 +554,26 @@ export class SchedulesService {
     if (!schedule) throw new NotFoundException('일정을 찾을 수 없습니다.');
     await this.assertCanAccessSchedule(schedule, profile);
 
-    const updated = await this.prisma.schedule.update({
-      where: { id },
-      data: { status: ScheduleStatus.CANCELED },
-      include: { child: { select: { id: true, name: true } } },
+    // 취소와 알림을 한 트랜잭션으로 묶는다 — 취소를 모르면 학부모가 헛걸음한다.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const canceled = await tx.schedule.update({
+        where: { id },
+        data: { status: ScheduleStatus.CANCELED },
+        include: { child: { select: { id: true, name: true } } },
+      });
+
+      await this.notificationsService.notifyScheduleEvent(tx, {
+        scheduleId: canceled.id,
+        childId: canceled.childId,
+        organizationId: schedule.organizationId,
+        type: NotificationType.SCHEDULE_CANCELED,
+        payload: { startAt: canceled.startAt.toISOString() },
+      });
+
+      return canceled;
     });
 
     this.logger.log(`cancel: schedule=${id}`);
-
-    await this.notificationsService.notifyScheduleEvent({
-      scheduleId: updated.id,
-      childId: updated.childId,
-      organizationId: schedule.organizationId,
-      type: NotificationType.SCHEDULE_CANCELED,
-      payload: { startAt: updated.startAt.toISOString() },
-    });
 
     return this.toDto(updated);
   }

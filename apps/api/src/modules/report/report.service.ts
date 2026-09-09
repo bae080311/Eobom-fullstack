@@ -76,7 +76,28 @@ export class ReportService {
     let isFirstReport: boolean;
 
     try {
-      saved = await this.prisma.sessionReport.create({ data: { scheduleId, ...fields } });
+      // 선점 성공(=최초 작성)과 알림을 한 트랜잭션으로 묶는다. 알림을 남길 수 없으면
+      // 리포트 생성도 롤백돼 치료사가 재시도할 수 있다 — 리포트만 커밋되면 이후 호출은
+      // 전부 update 경로(알림 없음)라 학부모는 리포트가 온 것을 영구히 모른다.
+      //
+      // Ollama 호출(최대 30초)은 위에서 이미 끝났다. 트랜잭션 안에 두면 안 된다.
+      //
+      // 아래 catch가 트랜잭션 전체의 P2002를 보게 되지만, `Notification`에는 unique
+      // 제약이 없어 알림 insert가 P2002를 낼 경로가 없다.
+      saved = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.sessionReport.create({ data: { scheduleId, ...fields } });
+
+        await this.notifications.notifyScheduleEvent(tx, {
+          scheduleId,
+          childId: schedule.childId,
+          organizationId: schedule.organizationId,
+          type: NotificationType.SESSION_REPORT_CREATED,
+          // 웹이 "6월 1일 (월) 14:00" 형태로 어느 수업의 리포트인지 보여준다.
+          payload: { startAt: schedule.startAt.toISOString() },
+        });
+
+        return created;
+      });
       isFirstReport = true;
     } catch (error) {
       if (!this.isUniqueViolation(error)) throw error;
@@ -89,19 +110,6 @@ export class ReportService {
     this.logger.log(
       `generate: report saved id=${saved.id} schedule=${scheduleId} first=${isFirstReport}`,
     );
-
-    if (isFirstReport) {
-      // 알림은 리포트에 딸린 부수 효과다. 실패해도 리포트 생성은 성공으로 둔다
-      // (notifyScheduleEvent가 내부에서 예외를 삼키고 로그만 남긴다).
-      await this.notifications.notifyScheduleEvent({
-        scheduleId,
-        childId: schedule.childId,
-        organizationId: schedule.organizationId,
-        type: NotificationType.SESSION_REPORT_CREATED,
-        // 웹이 "6월 1일 (월) 14:00" 형태로 어느 수업의 리포트인지 보여준다.
-        payload: { startAt: schedule.startAt.toISOString() },
-      });
-    }
 
     // 생성은 치료사 전용이므로 원본 메모를 함께 돌려준다 (재생성 폼 프리필용).
     return this.toDto(saved, { includeRawMemo: true });

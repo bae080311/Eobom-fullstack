@@ -58,7 +58,7 @@ describe('NotificationsService', () => {
     it('연결된 학부모가 있으면 각 학부모에게 알림을 생성한다', async () => {
       prisma.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }, { parentId: 'pp2' }]);
 
-      await service.notifyScheduleEvent(baseParams);
+      await service.notifyScheduleEvent(prisma as unknown as PrismaService, baseParams);
 
       expect(prisma.parentChildLink.findMany).toHaveBeenCalledWith({
         where: { childId: 'c1' },
@@ -89,7 +89,9 @@ describe('NotificationsService', () => {
     it('연결된 학부모가 없으면 에러 없이 종료하고 createMany를 호출하지 않는다', async () => {
       prisma.parentChildLink.findMany.mockResolvedValue([]);
 
-      await expect(service.notifyScheduleEvent(baseParams)).resolves.toBeUndefined();
+      await expect(
+        service.notifyScheduleEvent(prisma as unknown as PrismaService, baseParams),
+      ).resolves.toBeUndefined();
 
       expect(prisma.notification.createMany).not.toHaveBeenCalled();
     });
@@ -97,7 +99,7 @@ describe('NotificationsService', () => {
     it('type과 구조화된 payload를 그대로 전달한다', async () => {
       prisma.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }]);
 
-      await service.notifyScheduleEvent({
+      await service.notifyScheduleEvent(prisma as unknown as PrismaService, {
         ...baseParams,
         type: NotificationType.SCHEDULE_CANCELED,
         payload: { startAt: '2025-07-01T05:00:00.000Z' },
@@ -108,6 +110,39 @@ describe('NotificationsService', () => {
       // 완성된 문장이 아니라 원자 데이터가 저장돼야 한다 — 번역은 웹이 담당한다.
       expect(data[0].payload).toEqual({ startAt: '2025-07-01T05:00:00.000Z' });
       expect(data[0].payload).not.toHaveProperty('message');
+    });
+
+    // durability의 핵심. 이전 구현은 예외를 삼키고 로그만 남겨서, 알림 insert가 실패하면
+    // 도메인 쓰기는 성공으로 응답하고 학부모는 영구히 알림을 못 받았다.
+    it('알림 생성이 실패하면 예외를 삼키지 않고 전파한다', async () => {
+      prisma.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }]);
+      prisma.notification.createMany.mockRejectedValue(new Error('insert 실패'));
+
+      await expect(
+        service.notifyScheduleEvent(prisma as unknown as PrismaService, baseParams),
+      ).rejects.toThrow('insert 실패');
+    });
+
+    it('학부모 조회가 실패해도 예외를 전파한다', async () => {
+      prisma.parentChildLink.findMany.mockRejectedValue(new Error('조회 실패'));
+
+      await expect(
+        service.notifyScheduleEvent(prisma as unknown as PrismaService, baseParams),
+      ).rejects.toThrow('조회 실패');
+    });
+
+    // 읽기·쓰기 모두 전달받은 클라이언트로 해야 한다. 한쪽이라도 전역 this.prisma를 쓰면
+    // 트랜잭션 밖에서 읽거나 쓰는 어긋남이 생겨 롤백이 성립하지 않는다.
+    it('전역 prisma가 아니라 전달받은 클라이언트로 읽고 쓴다', async () => {
+      const tx = makePrisma();
+      tx.parentChildLink.findMany.mockResolvedValue([{ parentId: 'pp1' }]);
+
+      await service.notifyScheduleEvent(tx as unknown as PrismaService, baseParams);
+
+      expect(tx.parentChildLink.findMany).toHaveBeenCalledOnce();
+      expect(tx.notification.createMany).toHaveBeenCalledOnce();
+      expect(prisma.parentChildLink.findMany).not.toHaveBeenCalled();
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
     });
   });
 

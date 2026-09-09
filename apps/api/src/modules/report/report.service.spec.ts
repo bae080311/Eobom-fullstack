@@ -13,14 +13,23 @@ import type { NotificationsService } from '../notifications/notifications.servic
 // Mock factories
 // ---------------------------------------------------------------------------
 
-const makePrisma = () => ({
-  schedule: { findUnique: vi.fn() },
-  therapistProfile: { findUnique: vi.fn() },
-  parentProfile: { findUnique: vi.fn() },
-  organizationMembership: { findFirst: vi.fn() },
-  parentChildLink: { findUnique: vi.fn() },
-  sessionReport: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
-});
+const makePrisma = () => {
+  const models = {
+    schedule: { findUnique: vi.fn() },
+    therapistProfile: { findUnique: vi.fn() },
+    parentProfile: { findUnique: vi.fn() },
+    organizationMembership: { findFirst: vi.fn() },
+    parentChildLink: { findUnique: vi.fn() },
+    sessionReport: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
+  };
+
+  // 리포트 최초 생성과 알림은 한 트랜잭션이다. tx는 전역 클라이언트와 다른 객체로 둬서
+  // 서비스가 알림에 tx를 넘기는지 확인할 수 있게 한다(모델 mock은 같은 참조를 공유).
+  const txClient = { ...models };
+  const prisma = { ...models, txClient, $transaction: vi.fn() };
+  prisma.$transaction.mockImplementation((cb: (tx: typeof txClient) => unknown) => cb(txClient));
+  return prisma;
+};
 
 const makeOllama = () => ({ generateReport: vi.fn() });
 
@@ -241,13 +250,27 @@ describe('ReportService', () => {
 
         await service.generate('s1', therapistUser, { memo: '오늘 세션 메모' });
 
-        expect(notifications.notifyScheduleEvent).toHaveBeenCalledWith({
+        // 첫 인자는 리포트 생성과 같은 트랜잭션의 클라이언트다.
+        expect(notifications.notifyScheduleEvent).toHaveBeenCalledWith(prisma.txClient, {
           scheduleId: 's1',
           childId: 'c1',
           organizationId: 'org1',
           type: NotificationType.SESSION_REPORT_CREATED,
           payload: { startAt: '2025-06-01T05:00:00.000Z' },
         });
+      });
+
+      // 여기서 알림을 놓치면 복구 경로가 없다 — 이후 generate는 전부 update 경로라
+      // 알림을 보내지 않으므로, 리포트만 커밋되면 학부모는 영구히 모른다.
+      it('알림 생성이 실패하면 리포트 최초 생성도 실패한다', async () => {
+        arrangeHappyPath();
+        notifications.notifyScheduleEvent.mockRejectedValue(new Error('알림 실패'));
+
+        await expect(
+          service.generate('s1', therapistUser, { memo: '오늘 세션 메모' }),
+        ).rejects.toThrow('알림 실패');
+        // unique 위반이 아니므로 update 경로로 빠지지 않는다.
+        expect(prisma.sessionReport.update).not.toHaveBeenCalled();
       });
 
       // 재생성은 덮어쓰기다. 문구를 다듬을 때마다 알림이 쌓이면 소음이 된다.

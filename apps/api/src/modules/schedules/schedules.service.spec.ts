@@ -18,7 +18,7 @@ import type { NotificationsService } from '../notifications/notifications.servic
 // ---------------------------------------------------------------------------
 
 const makePrisma = () => {
-  const prisma = {
+  const models = {
     therapistProfile: { findUnique: vi.fn() },
     parentProfile: { findUnique: vi.fn() },
     parentChildLink: { findUnique: vi.fn(), findMany: vi.fn() },
@@ -33,10 +33,14 @@ const makePrisma = () => {
     },
     recurringRule: { create: vi.fn() },
     notification: { createMany: vi.fn() },
-    $transaction: vi.fn(),
   };
-  // 서비스는 $transaction(cb)를 호출하므로, cb에 동일한 mock을 tx로 전달해 그대로 재사용한다.
-  prisma.$transaction.mockImplementation((cb: (tx: typeof prisma) => unknown) => cb(prisma));
+
+  // 트랜잭션 콜백에 넘어가는 tx는 전역 클라이언트와 **다른 객체**여야 한다 — 서비스가
+  // 알림 생성에 tx를 넘기는지 전역 prisma를 넘기는지 구분할 수 없으면 롤백 회귀를
+  // 잡지 못한다. 모델 mock은 같은 참조를 공유하므로 기존 단정은 그대로 동작한다.
+  const txClient = { ...models };
+  const prisma = { ...models, txClient, $transaction: vi.fn() };
+  prisma.$transaction.mockImplementation((cb: (tx: typeof txClient) => unknown) => cb(txClient));
   return prisma;
 };
 
@@ -576,13 +580,37 @@ describe('SchedulesService', () => {
       await service.create(baseDto, 'u1');
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      // 첫 인자는 트랜잭션 클라이언트다 — params는 두 번째.
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][1];
       expect(arg.type).toBe(NotificationType.SCHEDULE_CREATED);
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
       // 완성된 문장이 아니라 문구 조립용 원자 데이터를 넘긴다.
       expect(arg.payload).toEqual({ startAt: '2025-06-01T10:00:00.000Z' });
+    });
+
+    // 알림은 일정과 같은 트랜잭션에 있다. 알림을 남길 수 없으면 일정 생성도 실패해야
+    // 한다 — 일정만 커밋되면 학부모는 새 일정을 영구히 모른다.
+    it('알림 생성이 실패하면 일정 생성도 실패한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.schedule.create.mockResolvedValue(makeScheduleRow());
+      notifications.notifyScheduleEvent.mockRejectedValue(new Error('알림 실패'));
+
+      await expect(service.create(baseDto, 'u1')).rejects.toThrow('알림 실패');
+    });
+
+    it('알림을 일정과 같은 트랜잭션에서 생성한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.organizationMembership.findFirst.mockResolvedValue(makeMembership());
+      prisma.schedule.create.mockResolvedValue(makeScheduleRow());
+
+      await service.create(baseDto, 'u1');
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      // 전역 클라이언트가 아니라 tx가 넘어가야 롤백이 성립한다.
+      expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
     });
   });
 
@@ -703,7 +731,8 @@ describe('SchedulesService', () => {
       await service.createRecurring(baseDto, 'u1');
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      // 첫 인자는 트랜잭션 클라이언트다 — params는 두 번째.
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][1];
       expect(arg.type).toBe(NotificationType.SCHEDULE_CREATED);
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
@@ -713,6 +742,15 @@ describe('SchedulesService', () => {
         startAt: '2025-06-01T10:00:00.000Z',
         scheduleCount: 2,
       });
+      // 규칙·일정 일괄 생성과 같은 트랜잭션이어야 한다.
+      expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
+    });
+
+    it('알림 생성이 실패하면 반복 일정 일괄 생성도 실패한다', async () => {
+      setupSuccess();
+      notifications.notifyScheduleEvent.mockRejectedValue(new Error('알림 실패'));
+
+      await expect(service.createRecurring(baseDto, 'u1')).rejects.toThrow('알림 실패');
     });
 
     it('endDate 미전달 시 RecurringRule의 endDate는 null로 저장된다', async () => {
@@ -867,7 +905,8 @@ describe('SchedulesService', () => {
       );
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      // 첫 인자는 트랜잭션 클라이언트다 — params는 두 번째.
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][1];
       expect(arg.type).toBe(NotificationType.SCHEDULE_UPDATED);
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
@@ -885,10 +924,26 @@ describe('SchedulesService', () => {
       await service.update('s1', { title: '수정된 제목' }, 'u1');
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      // 첫 인자는 트랜잭션 클라이언트다 — params는 두 번째.
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][1];
       expect(arg.type).toBe(NotificationType.SCHEDULE_UPDATED);
       // 시간이 그대로면 prevStartAt을 넣지 않아 "→" 문구가 뜨지 않는다.
       expect(arg.payload.prevStartAt).toBeUndefined();
+    });
+
+    // 시간이 바뀐 것을 학부모가 모르면 엉뚱한 시각에 아이를 데려온다.
+    it('알림 생성이 실패하면 일정 변경도 실패한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ status: ScheduleStatus.RESCHEDULED }),
+      );
+      notifications.notifyScheduleEvent.mockRejectedValue(new Error('알림 실패'));
+
+      await expect(service.update('s1', { startAt: '2025-06-01T09:00:00Z' }, 'u1')).rejects.toThrow(
+        '알림 실패',
+      );
+      expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
     });
   });
 
@@ -976,11 +1031,25 @@ describe('SchedulesService', () => {
       await service.cancel('s1', 'u1');
 
       expect(notifications.notifyScheduleEvent).toHaveBeenCalledOnce();
-      const arg = notifications.notifyScheduleEvent.mock.calls[0][0];
+      // 첫 인자는 트랜잭션 클라이언트다 — params는 두 번째.
+      const arg = notifications.notifyScheduleEvent.mock.calls[0][1];
       expect(arg.type).toBe(NotificationType.SCHEDULE_CANCELED);
       expect(arg.scheduleId).toBe('s1');
       expect(arg.childId).toBe('c1');
       expect(arg.organizationId).toBe('org1');
+    });
+
+    // 취소를 모르면 학부모가 헛걸음한다.
+    it('알림 생성이 실패하면 일정 취소도 실패한다', async () => {
+      prisma.therapistProfile.findUnique.mockResolvedValue(makeProfile());
+      prisma.schedule.findUnique.mockResolvedValue(makeScheduleRow());
+      prisma.schedule.update.mockResolvedValue(
+        makeScheduleRow({ status: ScheduleStatus.CANCELED }),
+      );
+      notifications.notifyScheduleEvent.mockRejectedValue(new Error('알림 실패'));
+
+      await expect(service.cancel('s1', 'u1')).rejects.toThrow('알림 실패');
+      expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
     });
   });
 
