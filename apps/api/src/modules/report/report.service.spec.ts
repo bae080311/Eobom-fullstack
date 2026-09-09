@@ -23,9 +23,17 @@ const makePrisma = () => {
     sessionReport: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
   };
 
-  // 리포트 최초 생성과 알림은 한 트랜잭션이다. tx는 전역 클라이언트와 다른 객체로 둬서
-  // 서비스가 알림에 tx를 넘기는지 확인할 수 있게 한다(모델 mock은 같은 참조를 공유).
-  const txClient = { ...models };
+  // 리포트 최초 생성과 알림은 한 트랜잭션이다. tx는 전역 클라이언트와 **다른 객체**여야
+  // 한다 — 같은 객체면 서비스가 `tx.sessionReport.create`를 `this.prisma.sessionReport.create`로
+  // 되돌려도 테스트가 통과하고, 그러면 알림이 실패해도 리포트 insert만 커밋돼 남는다.
+  //
+  // tx의 쓰기 메서드는 전역 spy에 **위임**한다. 덕분에 `prisma.sessionReport.create`로
+  // 동작을 지정하고 호출을 단정하는 기존 코드가 그대로 동작하면서,
+  // `prisma.txClient.sessionReport.create`가 호출됐는지로 tx 경유 여부를 따로 볼 수 있다.
+  const txClient = {
+    ...models,
+    sessionReport: { ...models.sessionReport, create: vi.fn(models.sessionReport.create) },
+  };
   const prisma = { ...models, txClient, $transaction: vi.fn() };
   prisma.$transaction.mockImplementation((cb: (tx: typeof txClient) => unknown) => cb(txClient));
   return prisma;
@@ -258,6 +266,9 @@ describe('ReportService', () => {
           type: NotificationType.SESSION_REPORT_CREATED,
           payload: { startAt: '2025-06-01T05:00:00.000Z' },
         });
+        // 리포트 insert **자체도** tx를 거쳐야 한다. 전역 클라이언트로 새면 알림이
+        // 실패해도 리포트만 커밋돼 남는다.
+        expect(prisma.txClient.sessionReport.create).toHaveBeenCalledOnce();
       });
 
       // 여기서 알림을 놓치면 복구 경로가 없다 — 이후 generate는 전부 update 경로라

@@ -35,10 +35,25 @@ const makePrisma = () => {
     notification: { createMany: vi.fn() },
   };
 
-  // 트랜잭션 콜백에 넘어가는 tx는 전역 클라이언트와 **다른 객체**여야 한다 — 서비스가
-  // 알림 생성에 tx를 넘기는지 전역 prisma를 넘기는지 구분할 수 없으면 롤백 회귀를
-  // 잡지 못한다. 모델 mock은 같은 참조를 공유하므로 기존 단정은 그대로 동작한다.
-  const txClient = { ...models };
+  // 트랜잭션 콜백에 넘어가는 tx는 전역 클라이언트와 **다른 객체**여야 한다 — 같은 객체면
+  // 서비스가 `tx.schedule.update`를 `this.prisma.schedule.update`로 되돌려도 테스트가
+  // 통과하고, 그러면 알림이 실패해도 일정 쓰기만 커밋돼 남는다(= 롤백 무력화).
+  //
+  // tx의 쓰기 메서드는 전역 spy에 **위임**한다. 덕분에 `prisma.schedule.update`로 동작을
+  // 지정하고 호출을 단정하는 기존 코드가 그대로 동작하면서,
+  // `prisma.txClient.schedule.update`가 호출됐는지로 tx 경유 여부를 따로 볼 수 있다.
+  // (`confirm`·`acknowledge`는 트랜잭션이 아니므로 전역 spy만 기록된다.)
+  const txClient = {
+    ...models,
+    schedule: {
+      ...models.schedule,
+      create: vi.fn(models.schedule.create),
+      update: vi.fn(models.schedule.update),
+      createMany: vi.fn(models.schedule.createMany),
+      findMany: vi.fn(models.schedule.findMany),
+    },
+    recurringRule: { create: vi.fn(models.recurringRule.create) },
+  };
   const prisma = { ...models, txClient, $transaction: vi.fn() };
   prisma.$transaction.mockImplementation((cb: (tx: typeof txClient) => unknown) => cb(txClient));
   return prisma;
@@ -611,6 +626,8 @@ describe('SchedulesService', () => {
       expect(prisma.$transaction).toHaveBeenCalledOnce();
       // 전역 클라이언트가 아니라 tx가 넘어가야 롤백이 성립한다.
       expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
+      // 일정 insert **자체도** tx를 거쳐야 한다. 전역으로 새면 알림 실패에도 일정이 남는다.
+      expect(prisma.txClient.schedule.create).toHaveBeenCalledOnce();
     });
   });
 
@@ -744,6 +761,8 @@ describe('SchedulesService', () => {
       });
       // 규칙·일정 일괄 생성과 같은 트랜잭션이어야 한다.
       expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
+      expect(prisma.txClient.recurringRule.create).toHaveBeenCalledOnce();
+      expect(prisma.txClient.schedule.createMany).toHaveBeenCalledOnce();
     });
 
     it('알림 생성이 실패하면 반복 일정 일괄 생성도 실패한다', async () => {
@@ -944,6 +963,7 @@ describe('SchedulesService', () => {
         '알림 실패',
       );
       expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
+      expect(prisma.txClient.schedule.update).toHaveBeenCalledOnce();
     });
   });
 
@@ -1050,6 +1070,7 @@ describe('SchedulesService', () => {
 
       await expect(service.cancel('s1', 'u1')).rejects.toThrow('알림 실패');
       expect(notifications.notifyScheduleEvent.mock.calls[0][0]).toBe(prisma.txClient);
+      expect(prisma.txClient.schedule.update).toHaveBeenCalledOnce();
     });
   });
 
