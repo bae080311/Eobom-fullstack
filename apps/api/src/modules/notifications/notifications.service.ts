@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationType } from '@eobom/shared';
 import type { NotificationResponseDto, NotificationPayload } from '@eobom/shared';
@@ -61,47 +62,54 @@ export class NotificationsService {
     this.logger.log(`markAllAsRead: parentId=${profile.id}`);
   }
 
-  async notifyScheduleEvent(params: {
-    scheduleId: string;
-    childId: string;
-    organizationId: string;
-    type: NotificationType;
-    /** 완성된 문장이 아니라 문구 조립에 필요한 값만 담는다 — 번역은 웹이 한다. */
-    payload: NotificationPayload;
-  }): Promise<void> {
-    try {
-      const links = await this.prisma.parentChildLink.findMany({
-        where: { childId: params.childId },
-        select: { parentId: true },
-      });
+  /**
+   * 일정 이벤트 알림을 연결된 학부모 수만큼 생성한다.
+   *
+   * **호출자는 도메인 쓰기와 같은 트랜잭션의 `tx`를 넘겨야 한다.** 예외를 삼키지 않으므로
+   * 알림을 남길 수 없으면 도메인 쓰기까지 롤백된다 — 일정만 바뀌고 학부모는 영구히 모르는
+   * 상태(조용한 누락)보다 낫다. 특히 세션 리포트는 재생성이 update 경로라 알림을 보내지
+   * 않으므로, 최초 작성에서 알림을 놓치면 복구 경로가 없다.
+   *
+   * 읽기(`parentChildLink`)와 쓰기(`notification`)를 같은 `client`로 수행한다. 한쪽만
+   * 트랜잭션에 넣으면 밖에서 읽고 안에서 쓰는 어긋남이 생긴다.
+   */
+  async notifyScheduleEvent(
+    client: Prisma.TransactionClient | PrismaService,
+    params: {
+      scheduleId: string;
+      childId: string;
+      organizationId: string;
+      type: NotificationType;
+      /** 완성된 문장이 아니라 문구 조립에 필요한 값만 담는다 — 번역은 웹이 한다. */
+      payload: NotificationPayload;
+    },
+  ): Promise<void> {
+    const links = await client.parentChildLink.findMany({
+      where: { childId: params.childId },
+      select: { parentId: true },
+    });
 
-      if (links.length === 0) {
-        this.logger.log(
-          `notifyScheduleEvent: no parents linked to child=${params.childId}, skipping (type=${params.type} scheduleId=${params.scheduleId})`,
-        );
-        return;
-      }
-
-      await this.prisma.notification.createMany({
-        data: links.map((l) => ({
-          parentId: l.parentId,
-          type: params.type,
-          scheduleId: params.scheduleId,
-          childId: params.childId,
-          organizationId: params.organizationId,
-          payload: { ...params.payload },
-        })),
-      });
-
+    if (links.length === 0) {
       this.logger.log(
-        `notifyScheduleEvent: type=${params.type} scheduleId=${params.scheduleId} count=${links.length}`,
+        `notifyScheduleEvent: no parents linked to child=${params.childId}, skipping (type=${params.type} scheduleId=${params.scheduleId})`,
       );
-    } catch (error) {
-      this.logger.error(
-        `notifyScheduleEvent failed: type=${params.type} scheduleId=${params.scheduleId}`,
-        error,
-      );
+      return;
     }
+
+    await client.notification.createMany({
+      data: links.map((l) => ({
+        parentId: l.parentId,
+        type: params.type,
+        scheduleId: params.scheduleId,
+        childId: params.childId,
+        organizationId: params.organizationId,
+        payload: { ...params.payload },
+      })),
+    });
+
+    this.logger.log(
+      `notifyScheduleEvent: type=${params.type} scheduleId=${params.scheduleId} count=${links.length}`,
+    );
   }
 
   private toDto(n: {
