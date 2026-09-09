@@ -39,8 +39,10 @@ vi.mock('ky', () => ({
 
 import { ApiError, api } from './api';
 
-function makeKyRes(body: unknown, status = 200) {
-  return { status, json: vi.fn().mockResolvedValue(body) };
+// API는 성공 응답을 { data: ... } 로 감싸 보낸다 (전역 TransformInterceptor).
+// api.ts가 그걸 벗기는지 확인하려면 목도 감싼 형태여야 한다.
+function makeKyRes(data: unknown, status = 200) {
+  return { status, json: vi.fn().mockResolvedValue({ data }) };
 }
 
 describe('ApiError', () => {
@@ -59,11 +61,24 @@ describe('api', () => {
     Object.values(kyMethods).forEach((m) => m.mockReset());
   });
 
-  it('get — 200 응답의 JSON을 파싱해 반환한다', async () => {
+  it('get — 200 응답의 data 엔벨로프를 벗겨 반환한다', async () => {
     kyMethods.get.mockResolvedValue(makeKyRes({ id: 1 }));
     const result = await api.get<{ id: number }>('/users');
     expect(result).toEqual({ id: 1 });
     expect(kyMethods.get).toHaveBeenCalledWith('/users', expect.any(Object));
+  });
+
+  it('배열 응답도 엔벨로프를 벗겨 배열 그대로 반환한다', async () => {
+    kyMethods.get.mockResolvedValue(makeKyRes([{ id: 1 }, { id: 2 }]));
+    const result = await api.get<{ id: number }[]>('/schedules');
+    expect(result).toEqual([{ id: 1 }, { id: 2 }]);
+  });
+
+  // 리포트 조회는 "없음"을 404가 아니라 data: null로 표현한다 (레이어 5 §5.10).
+  it('data가 null이면 null을 반환한다', async () => {
+    kyMethods.get.mockResolvedValue(makeKyRes(null));
+    const result = await api.get<unknown>('/schedules/s1/report');
+    expect(result).toBeNull();
   });
 
   it('post — JSON body를 포함해 ky.post를 호출한다', async () => {

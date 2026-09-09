@@ -25,7 +25,7 @@ export class ReportService {
     scheduleId: string,
     user: IUser,
     dto: GenerateReportDto,
-  ): Promise<{ data: SessionReportResponseDto }> {
+  ): Promise<SessionReportResponseDto> {
     this.logger.log(`generate: scheduleId=${scheduleId} userId=${user.id} role=${user.role}`);
 
     if (user.role !== UserRole.THERAPIST) {
@@ -104,13 +104,10 @@ export class ReportService {
     }
 
     // 생성은 치료사 전용이므로 원본 메모를 함께 돌려준다 (재생성 폼 프리필용).
-    return { data: this.toDto(saved, { includeRawMemo: true }) };
+    return this.toDto(saved, { includeRawMemo: true });
   }
 
-  async findOne(
-    scheduleId: string,
-    user: IUser,
-  ): Promise<{ data: SessionReportResponseDto | null }> {
+  async findOne(scheduleId: string, user: IUser): Promise<SessionReportResponseDto | null> {
     this.logger.log(`findOne: scheduleId=${scheduleId} userId=${user.id} role=${user.role}`);
 
     const schedule = await this.prisma.schedule.findUnique({ where: { id: scheduleId } });
@@ -151,11 +148,11 @@ export class ReportService {
     }
 
     const report = await this.prisma.sessionReport.findUnique({ where: { scheduleId } });
-    if (!report) return { data: null };
+    if (!report) return null;
 
     // 학부모에게는 원본 메모를 내리지 않는다 — 요약본을 공유하는 것이 이 기능의 목적이다.
     const includeRawMemo = user.role !== UserRole.PARENT;
-    return { data: this.toDto(report, { includeRawMemo }) };
+    return this.toDto(report, { includeRawMemo });
   }
 
   /** Prisma의 unique 제약 위반(P2002)인지 판별한다. */
