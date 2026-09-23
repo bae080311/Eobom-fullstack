@@ -2,6 +2,7 @@
 
 import type { FormEvent, ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { useModalDialog } from '@/shared/lib/useModalDialog';
 
 interface Props {
   open: boolean;
@@ -29,21 +30,27 @@ export function FormModal({
   onClose,
 }: Props) {
   const t = useTranslations('shared.formModal');
+  const { ref, titleId, onKeyDown } = useModalDialog({ open, onClose, locked: isPending });
   if (!open) return null;
 
   return (
     <div
+      ref={ref}
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 px-5 pb-8"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
       onClick={onClose}
+      onKeyDown={onKeyDown}
     >
       <form
         onSubmit={onSubmit}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{title}</h2>
+        <h2 id={titleId} className="text-title3 font-bold tracking-tighter text-gray-900 m-0">
+          {title}
+        </h2>
 
         {children}
 

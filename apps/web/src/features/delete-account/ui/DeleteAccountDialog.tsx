@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useModalDialog } from '@/shared/lib/useModalDialog';
 
 interface Props {
   open: boolean;
@@ -24,6 +25,11 @@ export function DeleteAccountDialog({
   onCancel,
 }: Props) {
   const t = useTranslations('features.deleteAccount');
+  const { ref, titleId, onKeyDown } = useModalDialog({
+    open,
+    onClose: onCancel,
+    locked: isPending,
+  });
   if (!open) return null;
 
   function handleSubmit(e: React.FormEvent) {
@@ -41,17 +47,22 @@ export function DeleteAccountDialog({
 
   return (
     <div
+      ref={ref}
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 px-5 pb-8"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
       onClick={onCancel}
+      onKeyDown={onKeyDown}
     >
       <form
         onSubmit={handleSubmit}
         onClick={stopPropagation}
         className="w-full max-w-md rounded-2xl bg-white p-6 flex flex-col gap-4"
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{t('title')}</h2>
+        <h2 id={titleId} className="text-title3 font-bold tracking-tighter text-gray-900 m-0">
+          {t('title')}
+        </h2>
 
         <div className="flex flex-col gap-2">
           <p className="text-body text-gray-600 leading-relaxed m-0">{t('warning')}</p>
