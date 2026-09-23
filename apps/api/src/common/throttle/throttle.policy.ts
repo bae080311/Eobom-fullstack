@@ -38,6 +38,9 @@ export const THROTTLE_POLICIES = {
 
   /** 초대코드 브루트포스 차단 — 코드 자체가 인증 수단이라 리밋이 곧 보안 경계다. */
   redeemInviteCode: { limit: 10, ttl: 600_000 },
+
+  /** 계정 삭제는 비밀번호를 받으므로 브루트포스 표면이다. 되돌릴 수도 없다. */
+  deleteAccount: { limit: 5, ttl: 600_000 },
 } as const;
 
 export type ThrottlePolicyName = keyof typeof THROTTLE_POLICIES;
