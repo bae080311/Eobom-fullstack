@@ -12,6 +12,14 @@ vi.mock('@/features/edit-profile', () => ({
     open ? <div data-testid="edit-dialog">edit</div> : null,
 }));
 
+vi.mock('@/features/delete-account', () => ({
+  DeleteAccountButton: ({ isTherapist }: { isTherapist: boolean }) => (
+    <button type="button" data-testid="delete-account" data-therapist={isTherapist}>
+      회원 탈퇴
+    </button>
+  ),
+}));
+
 import { MyInfoView } from './MyInfoView';
 
 const parentUser: UserWithProfile = {
@@ -101,5 +109,15 @@ describe('MyInfoView', () => {
   it('THERAPIST 계정이면 "초대코드 입력" 링크를 보여주지 않는다', () => {
     render(<MyInfoView user={therapistUser} />);
     expect(screen.queryByRole('link', { name: /초대코드 입력/ })).toBeNull();
+  });
+
+  it('회원 탈퇴 버튼을 역할과 함께 렌더한다', () => {
+    render(<MyInfoView user={therapistUser} />);
+    expect(screen.getByTestId('delete-account')).toHaveAttribute('data-therapist', 'true');
+  });
+
+  it('학부모에게는 치료사 안내가 걸리지 않도록 isTherapist=false로 넘긴다', () => {
+    render(<MyInfoView user={parentUser} />);
+    expect(screen.getByTestId('delete-account')).toHaveAttribute('data-therapist', 'false');
   });
 });

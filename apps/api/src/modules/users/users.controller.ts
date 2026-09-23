@@ -1,10 +1,20 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
-import { updateProfileSchema } from '@eobom/shared';
-import type { IUser, UpdateProfileDto } from '@eobom/shared';
+import { ThrottlePolicy } from '../../common/throttle/throttle.policy.js';
+import { deleteAccountSchema, updateProfileSchema } from '@eobom/shared';
+import type { DeleteAccountDto, IUser, UpdateProfileDto } from '@eobom/shared';
 
 @Controller('users')
 export class UsersController {
@@ -23,5 +33,16 @@ export class UsersController {
     @Body(new ZodValidationPipe(updateProfileSchema)) dto: UpdateProfileDto,
   ) {
     return this.usersService.updateMe(user.id, dto);
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ThrottlePolicy('deleteAccount')
+  @UseGuards(JwtAuthGuard)
+  deleteMe(
+    @CurrentUser() user: IUser,
+    @Body(new ZodValidationPipe(deleteAccountSchema)) dto: DeleteAccountDto,
+  ) {
+    return this.usersService.deleteMe(user.id, dto);
   }
 }

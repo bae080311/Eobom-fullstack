@@ -59,6 +59,11 @@ enum NotificationType {
 
 // ==================== Users ====================
 
+/// 계정 삭제는 소프트 삭제(`deletedAt`) + 개인식별정보 익명화로 처리한다.
+/// 물리 삭제는 스키마가 이미 막고 있다 — Schedule·RecurringRule·InviteCode·
+/// Organization·JoinCodeRotation이 TherapistProfile을 onDelete 미지정(= Restrict)으로
+/// 참조하므로, 일정을 하나라도 만든 치료사의 User 행은 DB가 지우기를 거부한다.
+/// 그 기록들은 기관 자산이라 남아야 하는 것이 맞다.
 model User {
   id              String    @id @default(uuid())
   email           String    @unique
@@ -66,6 +71,8 @@ model User {
   name            String
   role            UserRole
   emailVerifiedAt DateTime?
+  /// null이 아니면 탈퇴한 계정. 로그인·토큰 검증에서 전부 차단된다.
+  deletedAt       DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

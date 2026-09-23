@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/api', () => ({
-  api: { get: vi.fn(), patch: vi.fn() },
+  api: { get: vi.fn(), patch: vi.fn(), delete: vi.fn() },
   ApiError: class ApiError extends Error {
     constructor(
       message: string,
@@ -13,11 +13,12 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { api } from '@/lib/api';
-import { fetchUserMe, updateMyProfile } from './index';
+import { fetchUserMe, updateMyProfile, deleteMyAccount } from './index';
 import type { UserWithProfile } from '../model/types';
 
 const mockGet = vi.mocked(api.get);
 const mockPatch = vi.mocked(api.patch);
+const mockDelete = vi.mocked(api.delete);
 
 const mockUser: UserWithProfile = {
   id: 'u1',
@@ -76,5 +77,20 @@ describe('updateMyProfile', () => {
   it('수정된 user를 반환한다', async () => {
     mockPatch.mockResolvedValue(mockUser);
     expect(await updateMyProfile('test-token', { name: '김치료' })).toEqual(mockUser);
+  });
+});
+
+describe('deleteMyAccount', () => {
+  beforeEach(() => {
+    mockDelete.mockReset();
+  });
+
+  it('DELETE /users/me를 비밀번호 본문·토큰과 함께 호출한다', async () => {
+    mockDelete.mockResolvedValue(undefined);
+    await deleteMyAccount('test-token', { password: 'pw' });
+    expect(mockDelete).toHaveBeenCalledWith(
+      '/users/me',
+      expect.objectContaining({ token: 'test-token', json: { password: 'pw' } }),
+    );
   });
 });
