@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useModalDialog } from '@/shared/lib/useModalDialog';
 
 interface Props {
   open: boolean;
@@ -26,20 +27,26 @@ export function ConfirmDialog({
   onCancel,
 }: Props) {
   const t = useTranslations('shared.confirmDialog');
+  const { ref, titleId, onKeyDown } = useModalDialog({ open, onClose: onCancel, locked: loading });
   if (!open) return null;
 
   return (
     <div
+      ref={ref}
       className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 px-5 pb-8"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
       onClick={onCancel}
+      onKeyDown={onKeyDown}
     >
       <div
         className="w-full max-w-md rounded-2xl bg-white p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-title3 font-bold tracking-tighter text-gray-900 m-0">{title}</h2>
+        <h2 id={titleId} className="text-title3 font-bold tracking-tighter text-gray-900 m-0">
+          {title}
+        </h2>
         {description && (
           <p className="text-body text-gray-600 mt-2 leading-relaxed m-0">{description}</p>
         )}
