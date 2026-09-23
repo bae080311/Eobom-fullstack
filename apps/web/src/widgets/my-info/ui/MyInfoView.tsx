@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { UserWithProfile } from '@/entities/user';
 import { useLogout } from '@/features/auth';
+import { DeleteAccountButton } from '@/features/delete-account';
 import { EditProfileDialog } from '@/features/edit-profile';
 import { ConfirmDialog, IconChevronRight, IconShield, IconFileText } from '@/shared/ui';
 import { formatDateLabel } from '@/shared/lib/date';
@@ -120,6 +121,8 @@ export function MyInfoView({ user, isOwner }: Props) {
           >
             {t('logoutMenu')}
           </button>
+          <hr className="border-0 border-t border-gray-100 m-0" />
+          <DeleteAccountButton isTherapist={isTherapist} />
         </div>
         <p className="mt-5 text-center text-caption text-gray-600 m-0">{t('appFooter')}</p>
       </section>
