@@ -13,7 +13,7 @@
     "test:e2e:ui": "playwright test -c e2e/playwright.config.ts --ui",
     "e2e:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "e2e:db:down": "docker compose -f docker-compose.test.yml down",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" \"!.claude-config/**\" --ignore-path .gitignore",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
