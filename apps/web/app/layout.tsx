@@ -38,6 +38,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // `env(safe-area-inset-*)`는 viewport-fit=cover 일 때만 0이 아닌 값을 준다.
+  // 이게 없어서 하단 탭바의 `.safe-area-inset-bottom`이 아무 일도 하지 않았고,
+  // 노치 기기·웹뷰에서 홈 인디케이터에 탭바가 가렸다.
+  viewportFit: 'cover',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
