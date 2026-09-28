@@ -1,0 +1,21 @@
+{
+  "name": "@eobom/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "description": "이어봄 네이티브 셸 (Capacitor + 원격 URL). apps/web을 그대로 웹뷰로 띄운다.",
+  "scripts": {
+    "sync": "cap sync ios",
+    "open:ios": "cap open ios",
+    "lint": "eslint capacitor.config.ts --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@types/node": "22.10.2",
+    "typescript": "5.9.3"
+  }
+}
