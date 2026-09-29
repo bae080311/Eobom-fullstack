@@ -9,8 +9,28 @@ import { randomUUID } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { Prisma } from '@prisma/client';
 import { OrgMemberRole, OrgMembershipStatus, UserRole } from '@eobom/shared';
-import type { DeleteAccountDto, UpdateProfileDto } from '@eobom/shared';
+import type { DeleteAccountDto, UpdateProfileDto, UserProfileResponseDto } from '@eobom/shared';
 import { PrismaService } from '../../database/prisma.service.js';
+
+/**
+ * `/users/me` 응답에 실어도 되는 필드만 고른다 (`UserProfileResponseDto` 와 1:1).
+ *
+ * 이전에는 Prisma 행을 통째로 반환해 **`passwordHash` 가 클라이언트까지 내려갔다.**
+ * 웹은 렌더하지 않지만 네트워크 응답·프록시 로그·Sentry breadcrumb 에는 남는다.
+ * 프로필도 `id`·`userId` 까지 함께 나갔다.
+ *
+ * `include` 가 아니라 `select` 인 것이 핵심이다 — User 에 컬럼이 늘어도 자동으로
+ * 응답에 새지 않는다. 새 필드를 노출하려면 여기에 명시적으로 추가해야 한다.
+ */
+const ME_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  createdAt: true,
+  therapistProfile: { select: { licenseNumber: true } },
+  parentProfile: { select: { phoneNumber: true } },
+} satisfies Prisma.UserSelect;
 
 /** 탈퇴 계정의 이메일을 대체할 도메인. 실제로 메일이 가지 않는 예약 도메인이다. */
 const DELETED_EMAIL_DOMAIN = 'deleted.eobom.local';
@@ -24,16 +44,24 @@ export class UsersService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMe(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { therapistProfile: true, parentProfile: true },
-    });
-    if (!user) throw new NotFoundException();
-    return user;
+  /**
+   * Prisma 가 만든 `UserRole` 과 `@eobom/shared` 의 `UserRole` 은 값이 같아도 서로
+   * 다른 타입이라 경계에서 한 번 맞춰 준다 (`auth.service` 와 같은 처리).
+   */
+  private toProfileDto(row: Prisma.UserGetPayload<{ select: typeof ME_SELECT }>) {
+    return { ...row, role: row.role as UserRole } satisfies UserProfileResponseDto;
   }
 
-  async updateMe(userId: string, dto: UpdateProfileDto) {
+  async getMe(userId: string): Promise<UserProfileResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: ME_SELECT,
+    });
+    if (!user) throw new NotFoundException();
+    return this.toProfileDto(user);
+  }
+
+  async updateMe(userId: string, dto: UpdateProfileDto): Promise<UserProfileResponseDto> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       this.logger.warn(`updateMe: user ${userId} not found`);
@@ -72,10 +100,10 @@ export class UsersService {
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data,
-      include: { therapistProfile: true, parentProfile: true },
+      select: ME_SELECT,
     });
     this.logger.log(`User ${userId} updated profile`);
-    return updated;
+    return this.toProfileDto(updated);
   }
 
   /**
