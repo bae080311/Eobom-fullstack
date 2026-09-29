@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { ScheduleStatus } from '@eobom/shared';
 import type { ScheduleResponseDto } from '@eobom/shared';
 import { useTodaySchedules, useWeekSchedules } from '@/entities/schedule';
 import type { UserWithProfile } from '@/entities/user';
@@ -16,6 +17,17 @@ interface Props {
   organizationName: string | null;
   todayLabel: string;
   weekStart: string;
+}
+
+/**
+ * 취소된 수업은 일정이 아니다.
+ *
+ * `GET /schedules` 는 호출자가 `status` 를 주지 않으면 **취소 건까지 함께 돌려준다**
+ * (`buildDateAndStatusWhere` 는 `query.status` 가 있을 때만 필터한다). 그대로 세면
+ * 주간 리본 막대와 건수가 부풀고, 치료사는 없는 수업을 있다고 읽는다.
+ */
+function excludeCanceled(schedules: ScheduleResponseDto[]): ScheduleResponseDto[] {
+  return schedules.filter((s) => s.status !== ScheduleStatus.CANCELED);
 }
 
 /**
@@ -51,8 +63,12 @@ export function TherapistDashboard({
 }: Props) {
   const t = useTranslations('widgets.therapistDashboard');
   const tSchedule = useTranslations('entities.schedule');
-  const { data: todaySchedules = [] } = useTodaySchedules(todayInitialData);
-  const { data: weekSchedules = [] } = useWeekSchedules(weekInitialData);
+  const { data: todayRaw = [] } = useTodaySchedules(todayInitialData);
+  const { data: weekRaw = [] } = useWeekSchedules(weekInitialData);
+
+  // 건수와 목록이 같은 기준을 쓰도록 한 번만 거른다
+  const todaySchedules = excludeCanceled(todayRaw);
+  const weekSchedules = excludeCanceled(weekRaw);
 
   const weekStartParsed = new Date(weekStart);
   const weekDays = buildWeekDays(weekStartParsed, weekSchedules, tSchedule.raw('dow'));
