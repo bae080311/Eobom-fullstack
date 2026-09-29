@@ -1,4 +1,22 @@
 import { z } from "zod";
+import type { UserRole } from "../enums/index.js";
+
+/**
+ * `GET /users/me` · `PATCH /users/me` 가 돌려주는 필드 전부.
+ *
+ * 이 타입에 없는 것은 응답에 실리지 않는다 — 특히 `passwordHash`. 서비스가 Prisma
+ * 행을 통째로 반환하면 비밀번호 해시가 클라이언트까지 내려가므로, 서비스는 이
+ * 계약과 같은 `select` 로 필드를 못박는다.
+ */
+export interface UserProfileResponseDto {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  createdAt: Date;
+  therapistProfile: { licenseNumber: string | null } | null;
+  parentProfile: { phoneNumber: string | null } | null;
+}
 
 export const updateProfileSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요").optional(),

@@ -30,6 +30,28 @@ const makePrisma = () => {
   };
 };
 
+/** `/users/me` 가 실제로 돌려주는 모양 — `ME_SELECT` 와 1:1. */
+const ME_ROW = {
+  id: 'u1',
+  email: 'a@b.com',
+  name: 'Alice',
+  role: 'THERAPIST',
+  createdAt: new Date('2026-01-01T00:00:00Z'),
+  therapistProfile: null,
+  parentProfile: null,
+};
+
+/** 서비스가 Prisma 에 넘겨야 하는 select. 여기 없는 필드는 응답에 실리지 않는다. */
+const EXPECTED_ME_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  createdAt: true,
+  therapistProfile: { select: { licenseNumber: true } },
+  parentProfile: { select: { phoneNumber: true } },
+};
+
 const THERAPIST = {
   id: 'u1',
   role: 'THERAPIST',
@@ -51,14 +73,30 @@ describe('UsersService', () => {
 
   describe('getMe', () => {
     it('returns user with profiles when found', async () => {
-      const user = { id: 'u1', email: 'a@b.com', therapistProfile: null, parentProfile: null };
+      const user = { ...ME_ROW };
       prisma.user.findUnique.mockResolvedValue(user);
       const result = await service.getMe('u1');
       expect(result).toEqual(user);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'u1' },
-        include: { therapistProfile: true, parentProfile: true },
+        select: EXPECTED_ME_SELECT,
       });
+    });
+
+    // 회귀 방지: 예전에는 Prisma 행을 통째로 반환해 passwordHash 가 클라이언트까지
+    // 내려갔다. include 로 돌아가면 User 에 컬럼이 느는 순간 다시 샌다.
+    it('selects only the public profile fields — never passwordHash', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...ME_ROW });
+      await service.getMe('u1');
+
+      const arg = prisma.user.findUnique.mock.calls[0][0];
+      expect(arg.include).toBeUndefined();
+      expect(Object.keys(arg.select).sort()).toEqual(Object.keys(EXPECTED_ME_SELECT).sort());
+      expect(arg.select).not.toHaveProperty('passwordHash');
+      expect(arg.select).not.toHaveProperty('deletedAt');
+      // 프로필도 id·userId 없이 표시용 필드만 고른다
+      expect(arg.select.therapistProfile).toEqual({ select: { licenseNumber: true } });
+      expect(arg.select.parentProfile).toEqual({ select: { phoneNumber: true } });
     });
 
     it('throws NotFoundException when user not found', async () => {
@@ -92,7 +130,7 @@ describe('UsersService', () => {
             },
           },
         },
-        include: { therapistProfile: true, parentProfile: true },
+        select: EXPECTED_ME_SELECT,
       });
       expect(result).toEqual(updated);
     });
@@ -119,7 +157,7 @@ describe('UsersService', () => {
             },
           },
         },
-        include: { therapistProfile: true, parentProfile: true },
+        select: EXPECTED_ME_SELECT,
       });
       expect(result).toEqual(updated);
     });
