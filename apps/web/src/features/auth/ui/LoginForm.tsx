@@ -37,12 +37,15 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           aria-invalid={errors.email ? true : undefined}
+          // 오류가 있을 때만 연결한다 — 스크린리더가 필드로 돌아왔을 때 그 필드의
+          // 오류를 읽을 수 있어야 한다. `aria-invalid` 만으로는 무엇이 잘못됐는지 알 수 없다.
+          aria-describedby={errors.email ? 'email-error' : undefined}
           {...register('email')}
           className={FIELD}
           placeholder="example@email.com"
         />
         {errors.email && (
-          <p role="alert" className="text-body2 text-danger-strong m-0">
+          <p id="email-error" role="alert" className="text-body2 text-danger-strong m-0">
             {errors.email.message}
           </p>
         )}
@@ -57,12 +60,13 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           aria-invalid={errors.password ? true : undefined}
+          aria-describedby={errors.password ? 'password-error' : undefined}
           {...register('password')}
           className={FIELD}
           placeholder={t('passwordPlaceholder')}
         />
         {errors.password && (
-          <p role="alert" className="text-body2 text-danger-strong m-0">
+          <p id="password-error" role="alert" className="text-body2 text-danger-strong m-0">
             {errors.password.message}
           </p>
         )}

@@ -26,17 +26,13 @@ export function TimeRail({ dow, time, title, subtitle, trailing, muted }: Props)
   return (
     <div className="flex items-baseline gap-4 py-4">
       <div className="w-[68px] shrink-0">
-        {/* 11px 은 작은 글자라 AA 4.5:1 이 필요하다 — gray-500(#8B95A1)은 흰 배경에서 약 3.0:1로 미달 */}
-        {dow && (
-          <div
-            className={`text-eyebrow font-semibold ${muted ? 'text-gray-500' : 'text-gray-700'}`}
-          >
-            {dow}
-          </div>
-        )}
+        {/* muted 여도 gray-700 아래로 내리지 않는다 — 11px·15px 은 AA 4.5:1 이 필요하고
+            gray-500(#8B95A1)은 흰 배경에서 약 3.0:1, gray-400 은 약 2.2:1 로 둘 다 미달이다.
+            지난 일정의 "낮춘 목소리"는 시각·제목이 gray-900 에서 gray-700 으로 내려가는 것으로 낸다. */}
+        {dow && <div className="text-eyebrow font-semibold text-gray-700">{dow}</div>}
         <div
           className={`text-time-row font-extrabold tabular-nums ${dow ? 'mt-0.5' : ''} ${
-            muted ? 'text-gray-400' : 'text-gray-900'
+            muted ? 'text-gray-700' : 'text-gray-900'
           }`}
         >
           {time}
@@ -46,7 +42,7 @@ export function TimeRail({ dow, time, title, subtitle, trailing, muted }: Props)
       <div className="min-w-0 flex-1">
         <div
           className={`text-callout font-semibold truncate ${
-            muted ? 'text-gray-500' : 'text-gray-900'
+            muted ? 'text-gray-700' : 'text-gray-900'
           }`}
         >
           {title}
