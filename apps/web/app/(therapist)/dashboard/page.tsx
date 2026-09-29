@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { PageShell, PageTopBar, IconLink, IconBell } from '@/shared/ui';
 import { fetchSchedules } from '@/entities/schedule';
 import { fetchUserMe } from '@/entities/user';
+import { fetchMyOrganization } from '@/entities/organization';
 import { TherapistDashboard } from '@/widgets/therapist-dashboard';
 import { TherapistTabBar } from '@/widgets/therapist-tab-bar';
 import { getKSTStartOfDay, getKSTWeekStart, formatDateLabel } from '@/shared/lib/date';
@@ -24,13 +25,14 @@ export default async function TherapistDashboardPage() {
   const weekFrom = getKSTWeekStart();
   const weekTo = new Date(weekFrom.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
 
-  const [todaySchedules, weekSchedules, userProfile] = token
+  const [todaySchedules, weekSchedules, userProfile, organization] = token
     ? await Promise.all([
         fetchSchedules(token, todayFrom, todayTo),
         fetchSchedules(token, weekFrom, weekTo),
         fetchUserMe(token),
+        fetchMyOrganization(token),
       ])
-    : [[], [], null];
+    : [[], [], null, null];
 
   const todayLabel = formatDateLabel(todayFrom.toISOString());
 
@@ -47,6 +49,7 @@ export default async function TherapistDashboardPage() {
         todayInitialData={todaySchedules}
         weekInitialData={weekSchedules}
         userProfile={userProfile}
+        organizationName={organization?.name ?? null}
         todayLabel={todayLabel}
         weekStart={weekFrom.toISOString()}
       />
