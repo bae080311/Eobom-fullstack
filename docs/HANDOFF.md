@@ -4,77 +4,106 @@
 
 ## 최근 완료
 
-이번 세션에 PR 2개를 올렸습니다.
+- **시간 축 디자인** — "AI 느낌이 난다"는 지적을 받아 4개 화면(랜딩·로그인·치료사 대시보드·학부모 홈)과 디자인 토큰 재작업. 아래 "이번 세션" 참조.
+- **`#63` Capacitor iOS 웹뷰 셸 + safe-area 수정** (열려 있음) — Phase 6 항목 6. 쿠키 인증 가정을 시뮬레이터에서 실측 확인.
+- **`#64` `/users/me` 의 `passwordHash` 노출 수정** (머지) — Prisma 행을 통째로 반환하던 것을 `select` 로 못박음.
 
-- **`#63` Capacitor iOS 웹뷰 셸 + safe-area 수정** — Phase 6 항목 6. Phase 6 전체를 떠받치던 쿠키 인증 가정을 실측으로 닫았습니다.
-- **`#64` `/users/me` 가 `passwordHash` 를 노출하던 것 수정** — `#63` 검증 중 발견한 별개 보안 이슈.
+그 전: 계정 삭제(`#58`), 모달 포커스·접근성(`#60`), 알림 durability(`#57`).
 
-그 전: 계정 삭제(`DELETE /users/me`, `#58`), 모달 포커스·접근성(`#60`), 알림 durability(`#57`).
+## 이번 세션 — 시간 축 디자인
 
-## 이번 세션 ① — Capacitor 셸 (`#63`)
+### 진단
 
-`apps/web` 을 한 줄도 고치지 않고 배포 사이트를 원격 URL(`server.url`)로 가리키는 얇은 네이티브 셸(`apps/mobile`). Capacitor 8.5.2, iOS만(SPM이라 Pods 없음).
+토큰은 문제가 아니었습니다(Toss 급 그레이 스케일 + Pretendard Variable 45~920). **구성이 전부 기본값**이었습니다.
 
-**Decision Log 2026-09-09 의 전제를 실측으로 확인했습니다.** "원격 URL이면 웹뷰 오리진이 사이트 오리진과 같아 쿠키 인증이 그대로 동작한다" — iOS 26.5 시뮬레이터에서 4단계 전부 확인: 원격 사이트 렌더 → cross-origin API 왕복 → `document.cookie` 유지 → 이동 후 **미들웨어·RSC가 쿠키를 읽어** 로그인된 대시보드 렌더.
+- 랜딩·로그인이 `justify-center` + `text-center` — 가운데로 쌓기만 하고 구성이 없음
+- Variable 폰트를 400~800 고정 단계로만 사용. 가장 표현력 있는 축이 놀고 있었음
+- 히어로에 장식용 반투명 원 2개. 반대로 **가장 의미 있는 구조인 주간 리듬은 회색 점 7개**로 렌더 — 정확히 뒤바뀜
+- `brand.soft`·`ink` 를 정의해두고 대부분 `brand` DEFAULT 만 평면으로 사용
+- 빈 화면이 상태 보고("오늘 예정된 일정이 없습니다")
 
-> **`server.allowNavigation` 이 없으면 세션이 통째로 날아갑니다.** 빠지면 client-side 네비게이션이 **Safari로 빠져나가고**, 웹뷰와 Safari는 쿠키 저장소가 달라 로그인 상태가 사라집니다. 실제로 이 증상을 먼저 만났습니다(대시보드로 갔더니 Safari에서 로그인 화면). `capacitor.config.ts` 가 `server.url` 의 호스트를 자동으로 넣습니다.
+### 방향: 시간 축
 
-**safe-area 는 지금까지 아무 일도 하지 않고 있었습니다.** `viewportFit: 'cover'` 가 없어 `env(safe-area-inset-*)` 가 항상 0이었고, 컴파일된 CSS에서 `.safe-area-inset-bottom` 이 `.pb-2` 를 이겨 **탭바 하단 여백이 8px가 아니라 0**이었습니다. 유틸리티를 없애고 각 호출부에서 `pb-[calc(0.5rem+env(safe-area-inset-bottom))]` 처럼 기본값을 calc에 흡수했습니다. 브라우저·PWA에서도 고쳐지는 버그입니다.
+이 제품의 고유 소재는 **시간표**입니다. 세션은 고정 요일에 반복되므로 "주(週)"가 실제로 정보를 담고, 학부모가 앱을 켜는 이유는 "다음 수업 언제"뿐입니다. 그래서 **화면에서 가장 큰 것이 항상 시각**이고, 시각이 왼쪽 축으로 정렬돼 행이 쌓이면 시간표처럼 읽힙니다.
 
-## 이번 세션 ② — `/users/me` 의 `passwordHash` 노출 (`#64`)
+`shared/ui` 에 프리미티브 둘을 두고 랜딩·대시보드·학부모 홈·`SessionRow`·`WeekStrip` 이 한 언어를 쓰게 했습니다.
 
-`UsersService.getMe`/`updateMe` 가 Prisma 행을 통째로 반환해 **argon2 해시가 클라이언트까지 내려갔습니다.** 프로필도 `id`·`userId` 가 함께 나갔습니다. 웹은 렌더하지 않지만 네트워크 응답·프록시 로그·Sentry breadcrumb에는 남습니다 — 전에 고친 `rawMemo` 유출(레이어 5 §5.10 간극 ②)과 같은 유형입니다.
+| 프리미티브   | 역할                                                         |
+| ------------ | ------------------------------------------------------------ |
+| `TimeRail`   | 시각을 왼쪽 축으로 고정. 카드·그림자 없이 가는 구분선만      |
+| `WeekRibbon` | 세션 **수**를 막대 높이로 인코딩(0=가는 선, 1=기본, 2+=높음) |
 
-`ME_SELECT` 상수로 7개 필드만 `select` 하도록 못박았습니다. **`include` 가 아니라 `select` 인 것이 핵심**입니다 — `User` 에 컬럼이 늘어도 자동으로 새지 않습니다. 새 필드 노출은 `ME_SELECT` 에 명시적으로 추가해야 하고, 단위 테스트가 `include` 로 돌아가는 것을 막습니다.
+신규 토큰 — `brand.ground`(#14332C, 시간 면 바탕) · `signal`(앰버, 변경 알림용) · `text-time`(48px/900/-0.045em) · `text-time-row` · `text-eyebrow`.
 
-계약은 `packages/shared` 의 `UserProfileResponseDto` 로 고정했습니다.
+> **두 번째 서체는 들이지 않았습니다.** 폰에서 흘끗 보는 한국어 유틸리티에 라틴 서체를 섞으면 한글 본문과 베이스라인이 어긋나고 장식이 됩니다. 대신 Pretendard Variable 축을 끝까지 써서 성격을 냈습니다 — 일반적인 "display/body 페어링" 권고에서 의도적으로 이탈한 지점입니다.
 
-## 검증
+### 작업 중 고친 별건 2개
 
-`pnpm lint` · `typecheck` · `build` · `test` 전부 통과. **API 324 → 325**, web 396 유지.
+1. **`소속 센터 없음` 이 조건 없이 렌더되고 있었습니다.** 대시보드 페이지가 기관을 아예 조회하지 않아 **모든 치료사에게 영원히** 그렇게 떴습니다. `fetchMyOrganization` 을 붙였습니다.
+2. **11px 아이브로우에 `gray-500`** 을 썼다가 흰 배경 대비 약 3.0:1 로 AA 미달이라 `gray-700` 으로 상향(직전에 만든 회귀).
 
-**실측 확인**
+### CodeRabbit 리뷰 반영 (`#67`)
 
-- `#63`: iOS 26.5 시뮬레이터에서 앱 실행 → 로그인 → 대시보드가 **웹뷰 안에서** 렌더(헤더에 계정 이름)
-- `#64`: 개발 DB + 빌드된 서비스로 `GET`·`PATCH /users/me` 호출 → 응답에 `passwordHash`·`emailVerifiedAt`·`deletedAt`·프로필 `id` 전부 없음, 웹이 쓰는 7개 필드만 존재
+3건 모두 반영했고, **두 건은 제가 만든 회귀**였습니다.
 
-검증용 계정·기관·하네스 파일·임시 스크립트는 모두 삭제했습니다(잔여 0건 확인).
+1. **🟠 취소된 수업이 대시보드 집계에 포함** — `GET /schedules` 는 호출자가 `status` 를 주지 않으면 취소 건까지 돌려줍니다(`buildDateAndStatusWhere` 가 `query.status` 있을 때만 필터). 원래도 있던 버그지만, 리본을 개수 인코딩으로 바꾸면서 **요일당 점 하나이던 것이 막대 높이까지 부풀어** 악화됐습니다. `excludeCanceled()` 로 한 번만 걸러 건수·목록·리본에 함께 씁니다.
+2. **🟡 `TimeRail` 의 `muted` 경로가 AA 미달** — 11px 대비를 고칠 때 non-muted 만 올리고 `muted` 를 빠뜨렸습니다. `gray-400`(약 2.2:1)·`gray-500`(약 3.0:1) → `gray-700`.
+3. **🟡 로그인 폼이 오류 문단을 참조하지 않음** — `aria-invalid` 만 세워 두어 스크린리더가 필드로 돌아왔을 때 원인을 알 수 없었습니다. 조건부 `aria-describedby` 로 연결.
+
+> **동작 변경 (2026-09-29 결정)**: 취소된 수업은 **대시보드에서 아예 보이지 않습니다** — 건수·목록·주간 리본 전부. 건수와 목록이 어긋나면 안 되어 함께 걸렀고, 사용자 확인을 받아 확정했습니다.
+>
+> 이전 `ScheduleCard` 는 `CANCELED` 배지로 보여줬지만, 대시보드는 "오늘 뭘 하나"를 보는 화면이고 취소 이력은 `/schedules` 에서 확인합니다. 배지로 보여주는 안(= `TimeRail` 의 `trailing` 슬롯 활용, 건수에서만 제외)은 기각했습니다.
+
+### 검증
+
+`pnpm lint` · `typecheck` · `build` · `test` 전부 통과. **web 396 → 399**, API 325 유지.
+
+**시뮬레이터에서 4화면 육안 확인**(iOS 26.5, Safari 로 dev 서버 접속) — 랜딩·로그인·치료사 대시보드(일정 3건 + 주간 6건)·학부모 홈. 확인용 계정·기관·아동·일정과 쿠키 주입 하네스는 모두 삭제했습니다(잔여 0건).
+
+### Notion 레이어 문서 갱신 완료
+
+세션 도중 Notion MCP 연결이 다른 워크스페이스로 잡혀 있어 보류했다가, 재연결 후 채웠습니다.
+
+- **레이어 5 §5.4** — `/users/me` 응답 7개 필드 + `UserProfileResponseDto`, `passwordHash` 유출 이력과 `include`/`select` 차이
+- **레이어 6 §6.12** — 시간 축 디자인 언어(진단·프리미티브·토큰·서체 판단·접근성·카피 원칙). §6.2·§6.5·§6.8 현행화
+- **레이어 8** — §8.1 Phase 6 `계획` → `진행 중`, §8.7 항목 6 `구현 완료(PR #63 리뷰 중)`, Decision Log 2건(Capacitor 실측 / 시간 축 디자인)
 
 ## 미해결 / 결정 필요
 
-1. **Notion 레이어 문서를 갱신하지 못했습니다.** 세션 도중 Notion MCP 연결이 **다른 워크스페이스**(정재원컴퍼니 / s24049@gsm.hs.kr)로 바뀌어 이어봄 페이지에 접근할 수 없습니다. 재연결 후 **레이어 5 §5.4**(`/users/me` 응답 필드 + `passwordHash` 유출 이력)와 **레이어 8 §8.7**(Phase 6 항목 6 완료 + Decision Log)를 채워야 합니다.
-2. **번들 ID 가 임시값**(`kr.co.eobom.app`). 도메인 확정 시 바꾸고 `npx cap add ios` 재생성 필요 — **늦을수록 비쌉니다.**
-3. **가로 방향이 열려 있습니다.** `Info.plist` 가 Capacitor 기본값인데 웹 UI는 하단 탭바 고정의 세로 전용 레이아웃입니다.
-4. `maximumScale: 1, userScalable: false` 는 WCAG 1.4.4(200% 확대) 위반 소지. 웹뷰로 가면 더 눈에 띕니다.
-5. **Android 없음.** 로컬에 SDK가 없어 `cap add android` 미실행. Play는 신규 개인 개발자에게 테스터 20명·**14일 연속 비공개 테스트**를 요구하므로 일정에 미리 넣어야 합니다.
-6. **기관이 ACTIVE 멤버 0명으로 남을 수 있습니다** (1인 기관 OWNER 탈퇴). 기관 아카이빙 정책 필요.
-7. **탈퇴 계정 하드 삭제(purge) 정책 미정.** 스케줄러 인프라가 없습니다.
-8. **배포 워크플로 실행 검증 안 됨.** 셋 다 기본값 꺼짐.
-9. **백업 스토리지 대상 미선정.**
-10. **API 이미지 1.78 GB.**
-11. **`JoinCodeRotation` 웹 UI 없음.** · **`LoggingInterceptor` 죽은 코드** · **리포트 e2e 없음**(Ollama 의존) · 알림 payload `readAt`/`isRead` 명세 불일치(의도적)
+1. **`확인` 버튼 계열 동사가 흐름 내에서 불일치**합니다. 히어로는 "확인", 일정 상세 푸터는 "일정 확인". `features` 전반이라 이번 4화면 범위를 넘겨 남겼습니다.
+2. **`ScheduleCard` 는 아직 옛 카드 언어**입니다(일정 목록·아동 상세 등). 시간 축으로 통일하는 것이 다음 후보.
+3. **번들 ID 가 임시값**(`kr.co.eobom.app`). 도메인 확정 시 `npx cap add ios` 재생성 필요 — 늦을수록 비쌉니다.
+4. **가로 방향이 열려 있습니다.** 웹 UI 는 하단 탭바 고정의 세로 전용 레이아웃입니다.
+5. `maximumScale: 1, userScalable: false` 는 WCAG 1.4.4(200% 확대) 위반 소지.
+6. **Android 없음.** Play 는 신규 개인 개발자에게 테스터 20명·14일 비공개 테스트를 요구합니다.
+7. **기관이 ACTIVE 멤버 0명으로 남을 수 있습니다**(1인 기관 OWNER 탈퇴). 아카이빙 정책 필요.
+8. **`signal`(앰버) 토큰은 정의만 해두고 적용 전**입니다. 일정 변경을 `danger`(빨강)로 알리는 현행을 바꾸려면 `entities/schedule/model/status.ts` 를 건드려야 합니다.
+9. **탈퇴 계정 purge 정책 미정** · **배포 워크플로 실행 검증 안 됨** · **백업 스토리지 미선정** · **API 이미지 1.78 GB** · **`JoinCodeRotation` 웹 UI 없음** · **`LoggingInterceptor` 죽은 코드** · **리포트 e2e 없음**
+
+> **열린 PR 2개가 같은 파일을 건드립니다.** `#63`(Capacitor 셸)과 `#67`(시간 축 디자인)이 모두 `app/layout.tsx`·`app/globals.css`·`shared/ui/pageShell.tsx` 를 수정합니다. 먼저 머지되는 쪽 기준으로 나머지를 리베이스하세요.
 
 ## 다음 작업 후보 (우선순위 순)
 
-1. **웹 배포 실연결** — Vercel 프로젝트 + 시크릿 3종 → `DEPLOY_WEB_ENABLED=true`. **사람 손 필요.** 셸이 가리킬 실제 도메인이 없으면 스토어 제출이 불가능합니다.
-2. **개인정보처리방침 페이지** — 아동 이름·치료 메모는 건강 관련 민감정보라 App Privacy 라벨과 함께 스토어 필수인데 페이지 자체가 없습니다. 웹 전용·마이그레이션 없음.
-3. **`DeviceToken` 테이블 + `POST /devices`·`DELETE /devices/:token`** (마이그레이션 1건).
-4. **FCM 발송** — `firebase-admin`, `UNREGISTERED` 응답 시 토큰 행 삭제.
-5. **웹 브릿지** — `window.Capacitor` 감지 → 권한 요청 → 토큰 등록 → 알림 탭 딥링크. client 컴포넌트 1개.
+1. **웹 배포 실연결** — Vercel 프로젝트 + 시크릿 3종 → `DEPLOY_WEB_ENABLED=true`. **사람 손 필요.** 셸이 가리킬 도메인이 없으면 스토어 제출 불가.
+2. **개인정보처리방침 페이지** — 아동 이름·치료 메모는 건강 관련 민감정보라 App Privacy 라벨과 함께 스토어 필수인데 페이지 자체가 없습니다.
+3. **`ScheduleCard` 시간 축 통일** — 디자인 일관성의 남은 절반. 웹 전용·마이그레이션 없음.
+4. **`DeviceToken` + `POST /devices`·`DELETE /devices/:token`** (마이그레이션 1건) → **FCM 발송** → **웹 브릿지**.
 
 ## 참고
 
-- **네이티브 셸을 로컬에서 띄우는 법·주의사항은 `apps/mobile/README.md`** 에 있습니다. 특히 **`pnpm dev`(turbo)로는 `WEB_URL` 이 API에 전달되지 않습니다** — turbo가 미선언 환경변수를 거릅니다. LAN IP로 띄우면 CORS가 어긋나는데 웹뷰에서는 `TypeError: Load failed` 로만 보여 원인을 찾기 어렵습니다. `pnpm --filter` 로 각각 띄우세요.
-- **`server.url` 은 `cap sync` 시점에 네이티브 프로젝트로 구워집니다.** 주소를 바꾸면 sync를 다시 해야 합니다.
-- **Xcode 26.6 은 iOS 26.5 플랫폼이 필요합니다.** 없으면 iOS destination이 0개라 빌드가 안 됩니다(`xcodebuild -downloadPlatform iOS`, 약 8.5GB).
-- **`| tail` 로 파이프하면 종료 코드가 가려집니다.** 빌드 실패가 exit 0으로 보였습니다 — 파이프라인 뒤 `$?` 는 마지막 명령(`tail`)의 것입니다.
+- **네이티브 셸 로컬 실행법은 `apps/mobile/README.md`.** `pnpm dev`(turbo)로는 `WEB_URL` 이 API 에 전달되지 않습니다 — turbo 가 미선언 환경변수를 거릅니다. LAN IP 로 띄우면 CORS 가 어긋나는데 웹뷰에서는 `TypeError: Load failed` 로만 보입니다.
+- **`dev` 와 프로덕션 `build` 를 동시에 돌리지 마세요.** 같은 `.next` 를 공유해 `Cannot find module './xxx.js'` 로 깨집니다. 깨지면 `.next` 삭제 후 재기동.
+- **`| tail` 로 파이프하면 종료 코드가 가려집니다.** 파이프라인 뒤 `$?` 는 마지막 명령의 것이라 빌드 실패가 exit 0 으로 보입니다.
+- **11px 이하 글자에는 `gray-700` 이상**을 쓰세요. `gray-500` 은 흰 배경에서 AA 미달입니다.
 - **응답에 새 필드를 노출할 때는 `ME_SELECT` 처럼 `select` 로 못박으세요.** `include`·행 통째 반환은 컬럼이 늘 때 조용히 샙니다.
-- **인증에서 "이 사용자가 존재하는가"를 판단하는 곳은 `UsersService.findById`/`findByEmail` 둘뿐입니다.** 직접 `prisma.user.findUnique` 를 쓰면 탈퇴 계정이 통과합니다.
-- **알림을 새로 보내는 코드에는 `notifyScheduleEvent(tx, params)` 에 도메인 쓰기와 같은 `tx`** 를 넘기세요. 전역 `this.prisma` 는 타입은 통과하지만 롤백이 성립하지 않습니다.
-- **세션 리포트를 로컬에서 보려면 Ollama가 떠 있어야 합니다.** `OLLAMA_URL`·`OLLAMA_MODEL`. 없으면 503.
-- **스키마를 바꾸면 반드시 `pnpm db:migrate`.** `db-check.yml` 이 CI에서 드리프트를 잡습니다(`prisma/**` 변경 시에만).
-- **e2e 테스트 DB 포트 5434를 다른 프로젝트 컨테이너가 잡고 있을 수 있습니다.** 실행 전 `pnpm dev` 를 내려야 합니다(`reuseExistingServer: false`).
-- **레이트 리밋 수치는 환경변수로 못 바꿉니다.** `@Throttle` 은 컨트롤러 import 시점에 평가되고 이는 `.env` 를 읽기 전입니다. 값은 `throttle.policy.ts` 상수, 환경변수로는 끄기만 됩니다.
-- **PR의 base는 항상 main으로.** 스택 PR은 머지 순서가 엇갈리면 내용이 누락되고 CodeRabbit이 리뷰를 건너뜁니다.
-- **Sentry 스크러빙은 api·web 두 곳에 복제돼 있습니다.** 한쪽만 고치면 구멍이 남습니다.
-- **`graphify-out/` 은 gitignore** 대상입니다. `/graphify .` 로 재생성하며, docs·이미지 시맨틱 추출은 `GEMINI_API_KEY` 가 있어야 채워집니다.
+- **인증에서 "이 사용자가 존재하는가"를 판단하는 곳은 `UsersService.findById`/`findByEmail` 둘뿐입니다.**
+- **알림을 새로 보내는 코드에는 `notifyScheduleEvent(tx, params)` 에 도메인 쓰기와 같은 `tx`** 를 넘기세요.
+- **스키마를 바꾸면 반드시 `pnpm db:migrate`.** `db-check.yml` 이 CI 에서 드리프트를 잡습니다.
+- **e2e 실행 전 `pnpm dev` 를 내려야 합니다**(`reuseExistingServer: false`). 테스트 DB 포트 5434 를 다른 프로젝트 컨테이너가 잡고 있을 수 있습니다.
+- **레이트 리밋 수치는 환경변수로 못 바꿉니다.** 값은 `throttle.policy.ts` 상수, 환경변수로는 끄기만 됩니다.
+- **PR 의 base 는 항상 main 으로.** 스택 PR 은 머지 순서가 엇갈리면 내용이 누락되고 CodeRabbit 이 리뷰를 건너뜁니다.
+- **Notion MCP 쓰기에서 한글 음절이 깨질 수 있습니다** — 2026-09-29 에 **한 번** 재현했습니다. 보낸 `뒤바뀐` 이 서버 에러 에코에는 `뒤바뀜` 으로 나타나 `old_str` 매칭이 실패했습니다. 그 호출에서는 같은 배치의 다른 수정도 적용되지 않았고, 그 시점까지 그 페이지에 쓴 본문을 다시 읽어 보니 정상이었습니다.
+  - **관찰 1건이라 일반 보장으로 읽지 마세요.** "깨짐은 `old_str` 에서만 일어난다"·"배치는 항상 롤백된다"·"쓰기 내용은 늘 안전하다" 는 이 사례가 뒷받침하지 못합니다.
+  - 실무적으로는: `old_str` 은 짧고 ASCII·마크업이 섞인 앵커로 잡고, 매칭이 실패하면 **에러 메시지가 내가 보낸 문자열을 그대로 에코**하므로 어떤 글자가 깨졌는지 보고 앵커만 바꿔 재시도합니다. 중요한 쓰기 뒤에는 `notion-fetch` 로 실제 저장 결과를 확인하세요.
+- **Notion 연결 워크스페이스를 먼저 확인하세요.** `notion-fetch` 에 `self` 를 넣으면 현재 워크스페이스·계정이 나옵니다. 다른 계정으로 붙어 있으면 이어봄 페이지가 404 로만 보여 원인을 찾기 어렵습니다. 바꾸려면 사용자가 `/mcp` 로 재인증해야 합니다 — 이 MCP 에는 `authenticate` 도구가 없습니다.
+- **Sentry 스크러빙은 api·web 두 곳에 복제**돼 있습니다. 한쪽만 고치면 구멍이 남습니다.

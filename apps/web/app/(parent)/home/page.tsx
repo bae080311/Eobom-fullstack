@@ -145,6 +145,8 @@ export default async function ParentHomePage() {
           })}
           acknowledgeLabel={tHero('acknowledgeButton')}
           changeRequestLabel={tHero('changeRequestButton')}
+          therapistTermLabel={tHero('therapistTerm')}
+          locationTermLabel={tHero('locationTerm')}
         />
       )}
 
@@ -163,15 +165,18 @@ export default async function ParentHomePage() {
             </Link>
           }
         />
-        <div className="flex flex-col gap-2">
-          {upcoming.length === 0 ? (
-            <p className="text-body text-gray-600 text-center py-8">{tApp('noUpcoming')}</p>
-          ) : (
-            upcoming.map((s) => (
-              <SessionRow key={s.id} session={s} todayLabel={tSchedule('today')} />
-            ))
-          )}
-        </div>
+        {upcoming.length === 0 ? (
+          <p className="text-body text-gray-600 py-8 m-0">{tApp('noUpcoming')}</p>
+        ) : (
+          // 카드 대신 가는 구분선 — 시각이 왼쪽 축으로 정렬돼 시간표처럼 읽힌다
+          <ul className="list-none p-0 m-0 divide-y divide-gray-100">
+            {upcoming.map((s) => (
+              <li key={s.id}>
+                <SessionRow session={s} todayLabel={tSchedule('today')} />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="px-5 mt-7">

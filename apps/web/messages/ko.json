@@ -406,7 +406,9 @@
     "nextSessionHero": {
       "sessionLabel": "{name}의 {type}",
       "acknowledgeButton": "확인",
-      "changeRequestButton": "변경 요청"
+      "changeRequestButton": "변경 요청",
+      "therapistTerm": "담당",
+      "locationTerm": "장소"
     },
     "organizationDashboard": {
       "orgInfoTitle": "기관 정보",
@@ -460,9 +462,12 @@
       "greetingSuffix": "치료사님",
       "noOrg": "소속 센터 없음",
       "todayScheduleCount": "오늘 일정 · {count}건",
-      "noTodaySchedule": "오늘 예정된 일정이 없습니다",
+      "noTodaySchedule": "오늘은 수업이 없어요",
       "weekScheduleCount": "이번 주 · {count}건",
-      "viewAll": "전체 일정"
+      "viewAll": "전체 일정",
+      "noTodayScheduleAction": "일정 추가하기",
+      "weekRibbonLabel": "이번 주 일정",
+      "weekRibbonCount": "{count}건"
     },
     "therapistTabBar": {
       "home": "홈",
@@ -496,10 +501,16 @@
       }
     },
     "landing": {
-      "tagline": "치료 일정을 함께 확인하세요",
-      "description": "언어치료사와 학부모가 치료 일정을 실시간으로 공유하고, 일정 변경을 빠르게 확인할 수 있는 서비스입니다.",
+      "tagline": "치료사와 학부모가 같은 일정을 봅니다",
+      "description": "수업 시간이 바뀌면 학부모에게 바로 알립니다. 학부모는 다음 수업을, 치료사는 오늘 일정을 첫 화면에서 확인합니다.",
       "loginButton": "로그인",
-      "signupButton": "회원가입"
+      "signupButton": "회원가입",
+      "previewEyebrow": "학부모 화면",
+      "previewUntil": "내일",
+      "previewDow": "수요일",
+      "previewTime": "14:00",
+      "previewTitle": "언어치료 · 40분",
+      "previewTherapist": "김치료 선생님"
     },
     "auth": {
       "loginTitle": "로그인",

@@ -26,4 +26,28 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* 랜딩의 페이지 로드 시퀀스. 흩뿌린 효과 대신 한 번의 정돈된 등장만 둔다.
+     `--rise-delay` 로 순서를 준다. */
+  .rise {
+    animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
 }

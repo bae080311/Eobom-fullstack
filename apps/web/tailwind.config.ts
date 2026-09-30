@@ -16,6 +16,16 @@ const config: Config = {
           soft: '#E4EFEB',
           softer: '#F1F7F4',
           ink: '#1F4A41',
+          // 시간 면(時面)의 바탕. brand.ink보다 더 내려간 진한 초록으로, 흰 숫자가
+          // 울릴 만큼의 대비를 만든다. 이 앱에서 과감함을 쓰는 유일한 자리다.
+          ground: '#14332C',
+        },
+        // 변경·확인 필요를 알리는 색. 지금까지 일정 변경을 danger(빨강)로 표시했는데
+        // 재조정은 오류가 아니다 — 주의는 끌되 잘못됐다고 말하지 않는 온도가 필요하다.
+        signal: {
+          DEFAULT: '#B5761F',
+          soft: '#FBF1E0',
+          ink: '#7A4E11',
         },
         danger: {
           DEFAULT: '#E5544A',
@@ -66,6 +76,16 @@ const config: Config = {
         title: ['22px', { lineHeight: '1.3', letterSpacing: '-0.02em' }],
         // 32px — 히어로 숫자
         hero: ['32px', { lineHeight: '1.2', letterSpacing: '-0.03em' }],
+        // --- 시간 축(時間軸) ---
+        // 이 제품의 표시용 목소리. 별도 서체를 들이지 않고 Pretendard Variable 의
+        // 축(45~920)을 끝까지 써서 성격을 낸다 — 학부모가 폰으로 흘끗 보는 유틸리티에
+        // 두 번째 서체는 장식이 되고, 한글 본문과 라틴 숫자의 베이스라인도 어긋난다.
+        // 48px — 다음 수업 시각. 화면에서 가장 큰 것이 항상 "시각"이어야 한다.
+        time: ['48px', { lineHeight: '0.95', letterSpacing: '-0.045em' }],
+        // 20px — 목록 행의 시각
+        'time-row': ['20px', { lineHeight: '1.1', letterSpacing: '-0.03em' }],
+        // 11px — 요일·구분 라벨. 자간을 벌려 시각(붙임)과 대비시킨다.
+        eyebrow: ['11px', { lineHeight: '1.3', letterSpacing: '0.08em' }],
       },
       fontWeight: {
         regular: '400',

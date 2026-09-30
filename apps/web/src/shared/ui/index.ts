@@ -2,6 +2,8 @@ export * from './icons';
 export * from './pageShell';
 export * from './pageTopBar';
 export * from './sectionHeader';
+export * from './timeRail';
+export * from './weekRibbon';
 export * from './iconButton';
 export * from './iconLink';
 export * from './confirmDialog';
