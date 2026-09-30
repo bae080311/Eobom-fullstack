@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>이어봄</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(2rem + env(safe-area-inset-top)) 1.5rem
+          calc(2rem + env(safe-area-inset-bottom));
+        background: #f9fafb;
+        color: #191f28;
+        font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 0.5rem;
+      }
+      p {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: #6b7684;
+        margin: 0;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8125rem;
+        background: #f2f4f6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>연결할 주소가 설정되지 않았습니다</h1>
+      <p>
+        이 셸은 배포된 이어봄 사이트를 웹뷰로 띄웁니다.<br />
+        <code>EOBOM_MOBILE_SERVER_URL</code>을 지정하고<br />
+        <code>pnpm --filter @eobom/mobile sync</code>를 다시 실행하세요.
+      </p>
+    </main>
+  </body>
+</html>

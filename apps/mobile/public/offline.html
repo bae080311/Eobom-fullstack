@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>이어봄</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(2rem + env(safe-area-inset-top)) 1.5rem
+          calc(2rem + env(safe-area-inset-bottom));
+        background: #f9fafb;
+        color: #191f28;
+        font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.02em;
+      }
+      p {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: #6b7684;
+        margin: 0 0 1.75rem;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 10px;
+        background: #3d7a6b;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        padding: 0.8125rem 2rem;
+        cursor: pointer;
+      }
+      button:active {
+        background: #2f6356;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>연결할 수 없어요</h1>
+      <p>
+        네트워크 상태를 확인한 뒤<br />
+        다시 시도해주세요.
+      </p>
+      <button type="button" id="retry">다시 시도</button>
+    </main>
+    <script>
+      // 원격 로드 실패 시 Capacitor 가 띄우는 페이지(`server.errorPath`).
+      // 뒤로가기 기록이 없을 수 있으므로 reload 로 원래 주소를 다시 시도한다.
+      document.getElementById('retry').addEventListener('click', function () {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

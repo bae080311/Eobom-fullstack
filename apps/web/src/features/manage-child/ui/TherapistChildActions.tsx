@@ -60,7 +60,7 @@ export function TherapistChildActions({
   }
 
   return (
-    <div className="fixed bottom-0 inset-x-0 px-5 py-3 pb-[30px] bg-white/90 backdrop-blur-xl border-t border-gray-200 flex gap-2 z-50">
+    <div className="fixed bottom-0 inset-x-0 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-white/90 backdrop-blur-xl border-t border-gray-200 flex gap-2 z-50">
       <button
         type="button"
         onClick={() => setEditOpen(true)}
