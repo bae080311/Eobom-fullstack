@@ -78,6 +78,20 @@ export default async function HomePage() {
             {tLanding('signupButton')}
           </Link>
         </div>
+
+        {/* 개인정보처리방침은 계정 없이 닿을 수 있어야 한다 — 스토어 심사와 정보주체 모두
+            설치·가입 전에 읽는다. 랜딩이 앱의 유일한 공개 진입점이라 여기 둔다. */}
+        <footer
+          className="rise mt-14 border-t border-gray-200 pt-5"
+          style={{ '--rise-delay': '340ms' } as React.CSSProperties}
+        >
+          <Link
+            href="/privacy"
+            className="text-body2 font-medium text-gray-700 underline underline-offset-4 decoration-gray-300 transition-colors hover:text-brand hover:decoration-brand focus-visible:outline-none focus-visible:shadow-focus rounded-sm"
+          >
+            {tLanding('privacyLink')}
+          </Link>
+        </footer>
       </div>
     </main>
   );
